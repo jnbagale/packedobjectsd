@@ -5,8 +5,9 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <glib.h>
-#include "config.h"
 
+#include "config.h"
+#include "forwarder.h"
 
 int main(int argc, char** argv)
 {
@@ -14,7 +15,7 @@ int main(int argc, char** argv)
   GError *error = NULL;
   GOptionContext *context;
   gboolean verbose = FALSE;
-   
+  
   GOptionEntry entries[] = 
   {
     { "verbose", 'v', 0, G_OPTION_ARG_NONE, &verbose, "Verbose output", NULL },
@@ -22,7 +23,7 @@ int main(int argc, char** argv)
   };
 
 
-  context = g_option_context_new ("- messaging framework");
+  context = g_option_context_new ("- server");
   g_option_context_add_main_entries (context, entries, PACKAGE_NAME);
   
   if (!g_option_context_parse (context, &argc, &argv, &error)) {
@@ -36,7 +37,6 @@ int main(int argc, char** argv)
     g_printerr("Couldn't create GMainLoop\n");
     exit(EXIT_FAILURE);
   }
-
   
 
   // g_timeout_add((scan_freq * 1000), (GSourceFunc)findDevices, (gpointer)bobj->dbusObject);

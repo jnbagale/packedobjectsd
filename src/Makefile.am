@@ -1,19 +1,19 @@
-INCLUDES = -Wall $(GLIB_CFLAGS) $(GTHREAD_CFLAGS)
+INCLUDES = -Wall $(GLIB_CFLAGS) $(GTHREAD_CFLAGS) $(LIBZMQ_CFLAGS)
 
-bin_PROGRAMS = server #broker node
+bin_PROGRAMS = server broker node
 
-#broker_SOURCES = config.h broker.c
+broker_SOURCES = config.h broker.c forwarder.c forwarder.h
 
-#broker_LDADD = $(GLIB_LIBS) $(GTHREAD_LIBS) 
+broker_LDADD = $(GLIB_LIBS) $(GTHREAD_LIBS) $(LIBZMQ_LIBS)
 
-# broker_DATA =
+broker_DATA =
 
-# %brokerdir = /var/lib/misc
+brokerdir = /var/lib/misc
 
 server_SOURCES = config.h server.c
 
-server_LDADD = $(GLIB_LIBS) $(GTHREAD_LIBS)
+server_LDADD = $(GLIB_LIBS) $(GTHREAD_LIBS) $(LIBZMQ_LIBS)
 
-#node_SOURCES = config.h main.c
+node_SOURCES = config.h node.c subscriber.c subscriber.h publisher.c publisher.h
 
-#node_LDADD = $(GLIB_LIBS) $(GTHREAD_LIBS)
+node_LDADD = $(GLIB_LIBS) $(GTHREAD_LIBS) $(LIBZMQ_LIBS)
