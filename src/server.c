@@ -5,9 +5,10 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <glib.h>
+#include <glib/gthread.h>
 
 #include "config.h"
-#include "forwarder.h"
+#include "lookup.h"
 
 int main(int argc, char** argv)
 {
@@ -31,6 +32,7 @@ int main(int argc, char** argv)
     exit (EXIT_FAILURE);
   }  
 
+  g_thread_init(NULL);
   
   mainloop = g_main_loop_new(NULL, FALSE);  
   if (mainloop == NULL) {
@@ -38,11 +40,14 @@ int main(int argc, char** argv)
     exit(EXIT_FAILURE);
   }
   
-
-  // g_timeout_add((scan_freq * 1000), (GSourceFunc)findDevices, (gpointer)bobj->dbusObject);
+  /* Run a thread to start the server */
+  if( g_thread_create( (GThreadFunc) start_server, NULL, FALSE, &error) == NULL ) {
+    g_printerr("option parsing failed 2: %s\n", error->message);
+    exit (EXIT_FAILURE);
+  }
 
   g_main_loop_run(mainloop);
-  
+
+  /* We should never reach here unless something goes wrong! */
   return EXIT_FAILURE;  
-  
 }

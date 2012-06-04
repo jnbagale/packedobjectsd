@@ -10,7 +10,7 @@ broker_DATA =
 
 brokerdir = /var/lib/misc
 
-server_SOURCES = config.h server.c
+server_SOURCES = config.h server.c lookup.c lookup.h
 
 server_LDADD = $(GLIB_LIBS) $(GTHREAD_LIBS) $(LIBZMQ_LIBS)
 

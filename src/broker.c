@@ -5,21 +5,17 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <glib.h>
-#include <uuid/uuid.h>
+#include <glib/gthread.h>
 
 #include "config.h"
 #include "forwarder.h"
 
 int main(int argc, char** argv)
 {
-
-  uuid_t buf;
-  gchar id[36];
-  gchar *user_hash;
-  gchar *group_hash;
   gchar *group = DEFAULT_GROUP;
   gchar *host = DEFAULT_HOST;
-  gint port = DEFAULT_PORT;
+  gint sub_port = DEFAULT_SUB_PORT;
+  gint pub_port = DEFAULT_PUB_PORT;
   gboolean verbose = FALSE;
   GError *error = NULL;
   GOptionContext *context;
@@ -31,7 +27,8 @@ int main(int argc, char** argv)
     { "verbose", 'v', 0, G_OPTION_ARG_NONE, &verbose, "Verbose output", NULL },
     { "group", 'g', 0, G_OPTION_ARG_STRING, &group, "zeromq group", NULL },
     { "host", 'h', 0, G_OPTION_ARG_STRING, &host, "zeromq host", NULL },
-    { "port", 'p', 0, G_OPTION_ARG_INT, &port, "zeromq port", "N" },
+    { "sub_port", 's', 0, G_OPTION_ARG_INT, &sub_port, "zeromq broker's outbound port", "N" },
+    { "pub_port", 'p', 0, G_OPTION_ARG_INT, &pub_port, "zeromq broker's inbound port", "N" },
     { NULL }
   };
 
@@ -43,18 +40,24 @@ int main(int argc, char** argv)
     g_printerr("option parsing failed: %s\n", error->message);
     exit (EXIT_FAILURE);
   }  
-
+  g_thread_init(NULL);
+  
   broker_obj = make_broker_object();
+  broker_obj->sub_port = sub_port;
+  broker_obj->pub_port = pub_port;
   broker_obj->host =  g_strdup_printf("%s",host);
-  broker_obj->port = port;
+  broker_obj->group =  g_strdup_printf("%s",group);
 
-   mainloop = g_main_loop_new(NULL, FALSE);  
+  mainloop = g_main_loop_new(NULL, FALSE);  
   if (mainloop == NULL) {
     g_printerr("Couldn't create GMainLoop\n");
     exit(EXIT_FAILURE);
   }
-
-    /* Run a thread to start the forwarder */
+  
+  // networking code to connect to server and
+  // send hash of schema and network address will come here
+  
+  /* Run a thread to start the broker */
   if( g_thread_create( (GThreadFunc) start_forwarder, (gpointer) broker_obj, FALSE, &error) == NULL ) {
        g_printerr("option parsing failed 2: %s\n", error->message);
    exit (EXIT_FAILURE);
