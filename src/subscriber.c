@@ -61,14 +61,13 @@ void receive_data(subObject *sub_obj)
 {
   while(1)
     {
-      /* Receive data from forwarder using magical s_recv fn from z_helpers.h */
       gchar *string = z_receive (sub_obj->subscriber);
       char message[50];
       char user_hash[75];
       char group_hash[75];
    
       sscanf (string, "%s %s %s",  group_hash, user_hash, message);
-      g_print("Received from group %s ,user %s: Covariance %s\n", group_hash, user_hash, message);
+      g_print("Received message %s from user %s of group %s\n", message, user_hash, group_hash);
       
       g_free (string);
       g_usleep(10);

@@ -29,7 +29,7 @@ brokerObject *make_broker_object(void)
 void start_forwarder(brokerObject *broker_obj)
 {
   // To subscribe to all the publishers
-  gchar *frontend_endpoint = g_strdup_printf("tcp://*:%s",broker_obj->pub_port);//"tcp://*:5556";
+  gchar *frontend_endpoint = g_strdup_printf("tcp://*:%d",broker_obj->pub_port);
   
   // To publish to all the potential subscribers
   gchar *backend_endpoint =  g_strdup_printf("tcp://%s:%d",broker_obj->host, broker_obj->sub_port);
