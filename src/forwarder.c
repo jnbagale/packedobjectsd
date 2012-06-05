@@ -44,8 +44,8 @@ void start_forwarder(brokerObject *broker_obj)
 
   //  Subscribe for everything
   zmq_setsockopt (broker_obj->frontend, ZMQ_SUBSCRIBE, "", 0); 
-  g_print("\nBroker is receiving at %s\n",frontend_endpoint);
-  g_print("\nBroker is sending from %s\n",backend_endpoint);
+  g_print("\nBroker is listening to publishers at %s\n",frontend_endpoint);
+  g_print("\nBroker is forwarding message to subcribers from %s\n",backend_endpoint);
   //  Start the forwarder device
   zmq_device (ZMQ_FORWARDER, broker_obj->frontend, broker_obj->backend);
 }

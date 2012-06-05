@@ -34,7 +34,7 @@ subObject *subscribe_forwarder(subObject *sub_obj)
   /* Subscribe to default group: world */
   gchar *filter =   g_strdup_printf("%s", sub_obj->group_hash);
   zmq_setsockopt (sub_obj->subscriber, ZMQ_SUBSCRIBE, filter  , strlen(filter));
-  g_print("Receiving data from forwarder %s for group %s \n",forwarder_address, filter);
+  g_print("Subscriber: Receiving data from broker %s for group %s \n",forwarder_address, filter);
 
   g_free(filter);
   g_free(forwarder_address);
