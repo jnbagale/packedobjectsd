@@ -25,7 +25,7 @@ pubObject *publish_forwarder(pubObject *pub_obj)
   /* Prepare our context and publisher */
   pub_obj->context = zmq_init (1);
   pub_obj->publisher = zmq_socket (pub_obj->context, ZMQ_PUB);
-  zmq_bind (pub_obj->publisher, forwarder_address);
+  zmq_connect (pub_obj->publisher, forwarder_address);
   g_print("Publisher: Sending data to broker at %s\n",forwarder_address);
   g_free(forwarder_address);
   return pub_obj;
@@ -44,15 +44,17 @@ static gint z_send(void *socket ,gchar *string)
 
 void send_data(pubObject *pub_obj)
 {
+  gint counter = 0;
   while(1)
     {
       // Send message to all subscribers of group: world
       char *update;
-      update = g_strdup_printf("%s %s %s",pub_obj->group_hash, pub_obj->user_hash, "007");
+      update = g_strdup_printf("%s %s %d",pub_obj->group_hash, pub_obj->user_hash, counter);
       z_send (pub_obj->publisher, update); 
       //g_print("Sent :%s\n",update);
       g_free(update);
       g_usleep(1000000); // 1 message per second
+      counter++;
     }
 }
 

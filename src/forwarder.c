@@ -39,7 +39,7 @@ void start_forwarder(brokerObject *broker_obj)
   broker_obj->frontend  = zmq_socket (broker_obj->context, ZMQ_SUB);
   broker_obj->backend = zmq_socket (broker_obj->context, ZMQ_PUB);
 
-  zmq_connect (broker_obj->frontend,  frontend_endpoint);
+  zmq_bind (broker_obj->frontend,  frontend_endpoint);
   zmq_bind (broker_obj->backend, backend_endpoint);
 
   //  Subscribe for everything
