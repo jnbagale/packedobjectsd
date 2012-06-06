@@ -40,6 +40,8 @@ int main(int argc, char** argv)
     g_printerr("option parsing failed: %s\n", error->message);
     exit (EXIT_FAILURE);
   }  
+
+  /* Initialising thread */
   g_thread_init(NULL);
   
   broker_obj = make_broker_object();
@@ -48,6 +50,7 @@ int main(int argc, char** argv)
   broker_obj->host =  g_strdup_printf("%s",host);
   broker_obj->group =  g_strdup_printf("%s",group);
 
+  /* Initialising mainloop */
   mainloop = g_main_loop_new(NULL, FALSE);  
   if (mainloop == NULL) {
     g_printerr("Couldn't create GMainLoop\n");

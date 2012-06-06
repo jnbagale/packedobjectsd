@@ -1,4 +1,4 @@
-INCLUDES = -Wall $(GLIB_CFLAGS) $(GTHREAD_CFLAGS) $(LIBZMQ_CFLAGS)
+INCLUDES = -Wall $(GLIB_CFLAGS) $(GTHREAD_CFLAGS) $(LIBZMQ_CFLAGS) $(UUID_CFLAGS)
 
 bin_PROGRAMS = server broker node
 
@@ -16,4 +16,4 @@ server_LDADD = $(GLIB_LIBS) $(GTHREAD_LIBS) $(LIBZMQ_LIBS)
 
 node_SOURCES = config.h node.c subscriber.c subscriber.h publisher.c publisher.h
 
-node_LDADD = $(GLIB_LIBS) $(GTHREAD_LIBS) $(LIBZMQ_LIBS)
+node_LDADD = $(GLIB_LIBS) $(GTHREAD_LIBS) $(LIBZMQ_LIBS) $(UUID_LIBS)

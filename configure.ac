@@ -6,7 +6,7 @@ AM_CONFIG_HEADER([src/config.h])
 AC_DEFINE([PROGNAME],["packedobjectsd"],["light-weight secure messaging framework"])
 
 AC_DEFINE([DEFAULT_HOST],["127.0.0.1"],["the default zeromq server"])
-AC_DEFINE([DEFAULT_SUB_PORT],[8001],["the default zeromq broker outbound port"])
+AC_DEFINE([DEFAULT_SUB_PORT],[8100],["the default zeromq broker outbound port"])
 AC_DEFINE([DEFAULT_PUB_PORT],[5556],["the default zeromq broker inbound port"])
 AC_DEFINE([DEFAULT_GROUP],["world"],["the group everyone can join"])
 AC_DEFINE([DEFAULT_TYPE],["both"],["the default client type to run"])
@@ -44,6 +44,8 @@ PKG_CHECK_MODULES(GLIB, [glib-2.0])
 # check for zeromq
 PKG_CHECK_MODULES(LIBZMQ, [libzmq])
 
+# check for uuid
+PKG_CHECK_MODULES(UUID, [uuid])
 
 AC_CONFIG_FILES([Makefile src/Makefile])
 
