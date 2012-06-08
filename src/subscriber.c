@@ -71,7 +71,7 @@ void receive_data(subObject *sub_obj)
       g_print("Received message %s from user %s of group %s\n", message, user_hash, group_hash);
       
       g_free (string);
-      g_usleep(10000000);//reads 1 message per second
+      g_usleep(1000000);//reads 1 message per second
     }
 }
 

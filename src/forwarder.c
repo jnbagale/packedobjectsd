@@ -6,9 +6,10 @@
 /* Binds PUB socket to tcp://\*:5556 */
 /* Binds SUB socket to given host address */
 
-#include <glib.h>
-#include <stdlib.h>
 #include <zmq.h>
+#include <glib.h>
+#include <assert.h> /* for assert() */
+#include <stdlib.h> /* for exit()   */
 
 #include "config.h"
 #include "forwarder.h"
@@ -28,6 +29,8 @@ brokerObject *make_broker_object(void)
 
 void start_forwarder(brokerObject *broker_obj)
 {
+  gint rc_sub, rc_pub; 
+  gint limit = 5;
   // To subscribe to all the publishers
   gchar *frontend_endpoint = g_strdup_printf("tcp://*:%d",broker_obj->pub_port);
   
@@ -38,16 +41,20 @@ void start_forwarder(brokerObject *broker_obj)
   broker_obj->context  = zmq_init (1);
   broker_obj->frontend  = zmq_socket (broker_obj->context, ZMQ_SUB);
   broker_obj->backend = zmq_socket (broker_obj->context, ZMQ_PUB);
-
-  gint limit = 5;
   zmq_setsockopt (broker_obj->backend, ZMQ_HWM, &limit, (sizeof limit));
-  zmq_bind (broker_obj->frontend,  frontend_endpoint);
-  zmq_bind (broker_obj->backend, backend_endpoint);
+
+  rc_sub = zmq_bind (broker_obj->frontend,  frontend_endpoint);
+  assert(rc_sub == 0);
+  g_print("Broker: Successfully binded to SUB socket\n");
+
+  rc_pub = zmq_bind (broker_obj->backend, backend_endpoint);
+  assert(rc_pub == 0);
+  g_print("Broker: Successfully binded to PUB socket\n");
 
   //  Subscribe for everything
   zmq_setsockopt (broker_obj->frontend, ZMQ_SUBSCRIBE, "", 0); 
-  g_print("\nBroker is receiving messages from publishers at %s\n",frontend_endpoint);
-  g_print("\nBroker is forwarding messages to subcribers from %s\n",backend_endpoint);
+  g_print("Broker: Receiving messages from publishers at %s\n",frontend_endpoint);
+  g_print("Broker: Forwarding messages to subcribers from %s\n",backend_endpoint);
   //  Start the forwarder device
   zmq_device (ZMQ_FORWARDER, broker_obj->frontend, broker_obj->backend);
 }
