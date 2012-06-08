@@ -49,8 +49,8 @@ static char * z_receive(void *socket)
   zmq_msg_init (&message);
   if (zmq_recv (socket, &message, 0))
     return (NULL);
-  int size = zmq_msg_size (&message);
-  char *string = malloc (size + 1);
+  gint size = zmq_msg_size (&message);
+  gchar *string = malloc (size + 1);
   memcpy (string, zmq_msg_data (&message), size);
   zmq_msg_close (&message);
   string [size] = 0;
@@ -63,9 +63,9 @@ void receive_data(subObject *sub_obj)
   while(1)
     {
       gchar *string = z_receive (sub_obj->subscriber);
-      char message[50];
-      char user_hash[75];
-      char group_hash[75];
+      gchar message[50];
+      gchar user_hash[75];
+      gchar group_hash[75];
    
       sscanf (string, "%s %s %s",  group_hash, user_hash, message);
       g_print("Received message %s from user %s of group %s\n", message, user_hash, group_hash);

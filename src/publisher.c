@@ -41,7 +41,7 @@ pubObject *publish_forwarder(pubObject *pub_obj)
 
 static gint z_send(void *socket ,gchar *string)
 {
-  int rc;
+  gint rc;
   zmq_msg_t message;
   zmq_msg_init_size (&message, strlen (string));
   memcpy (zmq_msg_data (&message), string, strlen (string));
@@ -56,7 +56,7 @@ void send_data(pubObject *pub_obj)
   while(1)
     {
       // Send message to all subscribers of group: world
-      char *update;
+      gchar *update;
       update = g_strdup_printf("%s %s %d",pub_obj->group_hash, pub_obj->user_hash, counter);
       z_send (pub_obj->publisher, update); 
       g_print("Sent :%s\n",update);
