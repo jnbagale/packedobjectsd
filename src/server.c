@@ -2,9 +2,8 @@
 // Copyright 2012 The Clashing Rocks
 // team@theclashingrocks.org
 
-#include <unistd.h>
-#include <stdlib.h>
 #include <glib.h>
+#include <stdlib.h>  /* for exit()   */
 #include <glib/gthread.h>
 
 #include "config.h"

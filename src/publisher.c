@@ -1,7 +1,9 @@
-#include <glib.h>
-#include <stdlib.h>
-#include <string.h>
+
 #include <zmq.h>
+#include <glib.h>
+#include <assert.h> /* for assert() */
+#include <string.h> /* for strlen() */
+#include <stdlib.h> /* for exit()   */
 
 #include "config.h"
 #include "publisher.h"
@@ -21,11 +23,17 @@ pubObject *make_pub_object(void)
 
 pubObject *publish_forwarder(pubObject *pub_obj)
 {
+  gint rc; 
+  gint limit = 5;
   gchar *forwarder_address =  g_strdup_printf("tcp://%s:%d",pub_obj->host, pub_obj->port);
+
   /* Prepare our context and publisher */
   pub_obj->context = zmq_init (1);
-  pub_obj->publisher = zmq_socket (pub_obj->context, ZMQ_PUB);
-  zmq_connect (pub_obj->publisher, forwarder_address);
+  pub_obj->publisher = zmq_socket (pub_obj->context, ZMQ_PUB); 
+  zmq_setsockopt (pub_obj->publisher, ZMQ_HWM, &limit, (sizeof limit));
+  rc = zmq_connect (pub_obj->publisher, forwarder_address);
+  assert(rc == 0);
+  g_print("Publisher: Successfully connected to PUB socket\n");
   g_print("Publisher: Sending data to broker at %s\n",forwarder_address);
   g_free(forwarder_address);
   return pub_obj;
@@ -51,7 +59,7 @@ void send_data(pubObject *pub_obj)
       char *update;
       update = g_strdup_printf("%s %s %d",pub_obj->group_hash, pub_obj->user_hash, counter);
       z_send (pub_obj->publisher, update); 
-      //g_print("Sent :%s\n",update);
+      g_print("Sent :%s\n",update);
       g_free(update);
       g_usleep(1000000); // 1 message per second
       counter++;

@@ -39,13 +39,15 @@ void start_forwarder(brokerObject *broker_obj)
   broker_obj->frontend  = zmq_socket (broker_obj->context, ZMQ_SUB);
   broker_obj->backend = zmq_socket (broker_obj->context, ZMQ_PUB);
 
+  gint limit = 5;
+  zmq_setsockopt (broker_obj->backend, ZMQ_HWM, &limit, (sizeof limit));
   zmq_bind (broker_obj->frontend,  frontend_endpoint);
   zmq_bind (broker_obj->backend, backend_endpoint);
 
   //  Subscribe for everything
   zmq_setsockopt (broker_obj->frontend, ZMQ_SUBSCRIBE, "", 0); 
-  g_print("\nBroker is listening to publishers at %s\n",frontend_endpoint);
-  g_print("\nBroker is forwarding message to subcribers from %s\n",backend_endpoint);
+  g_print("\nBroker is receiving messages from publishers at %s\n",frontend_endpoint);
+  g_print("\nBroker is forwarding messages to subcribers from %s\n",backend_endpoint);
   //  Start the forwarder device
   zmq_device (ZMQ_FORWARDER, broker_obj->frontend, broker_obj->backend);
 }

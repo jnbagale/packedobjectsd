@@ -1,9 +1,10 @@
 
-#include <glib.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #include <zmq.h>
+#include <glib.h>
+#include <assert.h> /* for assert() */
+#include <stdio.h>  /* for sscanf() */
+#include <string.h> /* for strlen() */
+#include <stdlib.h> /* for exit()   */
 
 #include "config.h"
 #include "subscriber.h"
@@ -23,14 +24,15 @@ subObject *make_sub_object(void)
 
 subObject *subscribe_forwarder(subObject *sub_obj)
 {
-  sub_obj->context = zmq_init (1);
-
+  gint rc;
   gchar *forwarder_address =  g_strdup_printf("tcp://%s:%d",sub_obj->host, sub_obj->port);
+  sub_obj->context = zmq_init (1);
 
    /* Socket to subscribe to forwarder */
   sub_obj->subscriber = zmq_socket (sub_obj->context, ZMQ_SUB);
-  zmq_connect (sub_obj->subscriber, forwarder_address);
-
+  rc = zmq_connect (sub_obj->subscriber, forwarder_address);
+  assert(rc == 0);
+  g_print("Subscriber: Successfully connected to SUB socket\n");
   /* Subscribe to default group: world */
   gchar *filter =   g_strdup_printf("%s", sub_obj->group_hash);
   zmq_setsockopt (sub_obj->subscriber, ZMQ_SUBSCRIBE, filter  , strlen(filter));
@@ -54,7 +56,6 @@ static char * z_receive(void *socket)
   string [size] = 0;
 
   return (string);
-
 }
 
 void receive_data(subObject *sub_obj)
@@ -70,7 +71,7 @@ void receive_data(subObject *sub_obj)
       g_print("Received message %s from user %s of group %s\n", message, user_hash, group_hash);
       
       g_free (string);
-      g_usleep(10);
+      g_usleep(10000000);//reads 1 message per second
     }
 }
 

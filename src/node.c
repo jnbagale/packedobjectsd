@@ -3,17 +3,16 @@
 /* Connects PUB socket to broker's in socket address */
 
 #include <zmq.h>
-#include <stdio.h>
-#include <time.h>
-#include <stdlib.h>
-#include <string.h>
 #include <glib.h>
-#include <glib/gthread.h>
+#include <string.h>  /* for strlen() */
+#include <stdlib.h>  /* for exit()   */
 #include <uuid/uuid.h>
+#include <glib/gthread.h>
 
 #include "config.h"
-#include "subscriber.h"
 #include "publisher.h"
+#include "subscriber.h"
+
 
 
 int main (int argc, char *argv [])
@@ -91,6 +90,7 @@ int main (int argc, char *argv [])
   }
 
   if( (g_strcmp0(type,"both") == 0) || (g_strcmp0(type,"sub") == 0) ) {
+    /* Connects to SUB socket, program quits if connect fails */
     sub_obj = subscribe_forwarder(sub_obj);
     if( g_thread_create( (GThreadFunc) receive_data, (gpointer) sub_obj, FALSE, &error) == NULL) {
       g_printerr("option parsing failed1: %s\n", error->message);
@@ -99,6 +99,7 @@ int main (int argc, char *argv [])
   }
 
   if( (g_strcmp0(type,"both") == 0) || (g_strcmp0(type,"pub") == 0) ) {
+    /* Connects to PUB socket, program quits if connect fails * */
     pub_obj = publish_forwarder(pub_obj);
     if( g_thread_create( (GThreadFunc) send_data, (gpointer) pub_obj, FALSE, &error) == NULL ) {
       g_printerr("option parsing failed 2: %s\n", error->message);
