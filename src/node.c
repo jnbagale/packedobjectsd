@@ -4,16 +4,14 @@
 
 #include <zmq.h>
 #include <glib.h>
+#include <stdio.h>   /* for sscanf() */
 #include <string.h>  /* for strlen() */
 #include <stdlib.h>  /* for exit()   */
 #include <uuid/uuid.h>
-#include <glib/gthread.h>
 
 #include "config.h"
 #include "publisher.h"
 #include "subscriber.h"
-
-
 
 int main (int argc, char *argv [])
 {
@@ -21,7 +19,7 @@ int main (int argc, char *argv [])
   GError *error;
   uuid_t buf;
   gchar id[36];
-  gchar *user_hash;
+  gchar *sender_hash;
   gchar *group_hash;
   gchar *group = DEFAULT_GROUP;
   gchar *host = DEFAULT_HOST;
@@ -30,10 +28,7 @@ int main (int argc, char *argv [])
   gint pub_port = DEFAULT_PUB_PORT;
   gboolean verbose = FALSE;
   GOptionContext *context;
-  subObject *sub_obj = NULL;  
-  pubObject *pub_obj = NULL;
-
-
+  
   GOptionEntry entries[] = 
   {
     { "verbose", 'v', 0, G_OPTION_ARG_NONE, &verbose, "Verbose output", NULL },
@@ -45,7 +40,6 @@ int main (int argc, char *argv [])
     { NULL }
   };
  
-
   context = g_option_context_new ("- node");
   g_option_context_add_main_entries (context, entries, PACKAGE_NAME);
   
@@ -54,33 +48,14 @@ int main (int argc, char *argv [])
     exit (EXIT_FAILURE);
   }
 
-  sub_obj = make_sub_object();
-  pub_obj = make_pub_object();
-
-  sub_obj->port = sub_port;
-  pub_obj->port = pub_port;
-  sub_obj->host =  g_strdup_printf("%s",host);
-  pub_obj->host =  g_strdup_printf("%s",host);
-
-  /* Initialising thread */
-  g_thread_init(NULL);
-  
   uuid_generate_random(buf);
   uuid_unparse(buf, id);
   /* generate a hash of a unique id */
-  user_hash = g_compute_checksum_for_string(G_CHECKSUM_MD5, id, strlen(id));
+  sender_hash = g_compute_checksum_for_string(G_CHECKSUM_MD5, id, strlen(id));
 
   /* generate a hash of the group name */
   group_hash = g_compute_checksum_for_string(G_CHECKSUM_MD5, group, strlen(group));
    
-  sub_obj->group_hash = g_strdup_printf("%s", group_hash);
-  sub_obj->user_hash =  g_strdup_printf("%s", user_hash);
-  pub_obj->group_hash = g_strdup_printf("%s", group_hash);
-  pub_obj->user_hash =  g_strdup_printf("%s", user_hash);
-
-  g_free(user_hash);
-  g_free(group_hash);
-  
   /* Initialise mainloop */
   mainloop = g_main_loop_new(NULL, FALSE);
 
@@ -89,26 +64,31 @@ int main (int argc, char *argv [])
     exit(EXIT_FAILURE);
   }
 
-  if( (g_strcmp0(type,"both") == 0) || (g_strcmp0(type,"sub") == 0) ) {
-    /* Connects to SUB socket, program quits if connect fails */
-    sub_obj = subscribe_forwarder(sub_obj);
-    if( g_thread_create( (GThreadFunc) receive_data, (gpointer) sub_obj, FALSE, &error) == NULL) {
-      g_printerr("option parsing failed1: %s\n", error->message);
-      exit (EXIT_FAILURE);
-    }
-  }
-
   if( (g_strcmp0(type,"both") == 0) || (g_strcmp0(type,"pub") == 0) ) {
     /* Connects to PUB socket, program quits if connect fails * */
-    pub_obj = publish_forwarder(pub_obj);
-    if( g_thread_create( (GThreadFunc) send_data, (gpointer) pub_obj, FALSE, &error) == NULL ) {
-      g_printerr("option parsing failed 2: %s\n", error->message);
-      exit (EXIT_FAILURE);
-    }
+    gchar *message = g_strdup_printf("%s", "test message");
+    void *publisher = publish_to_broker(host, pub_port);
+    gint rc = send_data(publisher, group_hash, sender_hash, message); 
+    if(rc !=0) g_print("Publsiher failed to send data to broker");
+    g_free(message);
+  }
+
+  if( (g_strcmp0(type,"both") == 0) || (g_strcmp0(type,"sub") == 0) ) {
+    /* Connects to SUB socket, program quits if connect fails */
+    gchar group[32] ;
+    gchar sender[32];
+    gchar message[100];
+    void *subscriber = subscribe_to_broker(host, sub_port, group_hash);
+    gchar *data = receive_data(subscriber);
+    sscanf (data, "%s %s %s", group, sender, message);
+    g_print("Received message %s from sender %s of group %s\n", message, sender, group);
+    g_free(data);
   }
 
   g_main_loop_run(mainloop);
   
   /* We should never reach here unless something goes wrong! */
+  g_free(sender_hash);
+  g_free(group_hash);
   return EXIT_FAILURE;
 }
