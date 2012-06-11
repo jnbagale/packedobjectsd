@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<gtodo>
+  <category title="Personal" place="0">
+    <item>
+      <attribute id="1339421452" priority="3" done="0" start_date="734665" enddate="734671" notify="1" endtime="1260" last_edited="1339421452"/>
+      <summary>Remove group hash</summary>
+      <comment></comment>
+    </item>
+    <item>
+      <attribute id="1339421480" priority="3" done="0" start_date="734665" enddate="734671" notify="1" endtime="1260" last_edited="1339421480"/>
+      <summary>Add schema option to broker command line</summary>
+      <comment></comment>
+    </item>
+    <item>
+      <attribute id="1339421521" priority="2" done="0" start_date="734665" enddate="99999999" notify="0" endtime="-60" last_edited="1339421521"/>
+      <summary>Check z_send options for binary data, string lenght issue</summary>
+      <comment></comment>
+    </item>
+  </category>
+  <category title="Business" place="1"/>
+  <category title="Unfiled" place="2"/>
+</gtodo>
