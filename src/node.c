@@ -13,6 +13,27 @@
 #include "publisher.h"
 #include "subscriber.h"
 
+static gboolean publish_data(void *publisher)
+{
+  gchar *message = g_strdup_printf("%s", "test message");
+  gint rc = send_data(publisher, message, strlen(message)); 
+ 
+  if(rc !=0)
+    {
+      g_print("Publsiher failed to send data to broker");
+    }
+  g_free(message);
+  return TRUE;  
+}
+
+static gboolean subscribe_data(void *subscriber)
+{
+  gchar *message = receive_data(subscriber);
+  g_print("Message received: %s \n", message);
+  g_free(message);
+  return TRUE;  
+}
+
 int main (int argc, char *argv [])
 {
   GMainLoop *mainloop;
@@ -66,23 +87,16 @@ int main (int argc, char *argv [])
 
   if( (g_strcmp0(type,"both") == 0) || (g_strcmp0(type,"pub") == 0) ) {
     /* Connects to PUB socket, program quits if connect fails * */
-    gchar *message = g_strdup_printf("%s", "test message");
+   
     void *publisher = publish_to_broker(host, pub_port);
-    gint rc = send_data(publisher, group_hash, sender_hash, message); 
-    if(rc !=0) g_print("Publsiher failed to send data to broker");
-    g_free(message);
+    g_timeout_add(1000, (GSourceFunc)publish_data, (gpointer)publisher);
   }
 
   if( (g_strcmp0(type,"both") == 0) || (g_strcmp0(type,"sub") == 0) ) {
     /* Connects to SUB socket, program quits if connect fails */
-    gchar group[32] ;
-    gchar sender[32];
-    gchar message[100];
+ 
     void *subscriber = subscribe_to_broker(host, sub_port, group_hash);
-    gchar *data = receive_data(subscriber);
-    sscanf (data, "%s %s %s", group, sender, message);
-    g_print("Received message %s from sender %s of group %s\n", message, sender, group);
-    g_free(data);
+    g_timeout_add(1000, (GSourceFunc)subscribe_data, (gpointer)subscriber);
   }
 
   g_main_loop_run(mainloop);

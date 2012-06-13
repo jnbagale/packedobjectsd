@@ -20,7 +20,8 @@ void *subscribe_to_broker(gchar *broker_address, gint broker_sub_port, gchar *gr
   g_print("Subscriber: Successfully connected to SUB socket\n");
 
   /* Subscribe to group by filtering the received data*/
-  zmq_setsockopt (subscriber, ZMQ_SUBSCRIBE, filter  , strlen(filter));
+  //zmq_setsockopt (subscriber, ZMQ_SUBSCRIBE, filter  , strlen(filter));
+  zmq_setsockopt (subscriber, ZMQ_SUBSCRIBE, "", 0);
   g_print("Subscriber: Ready to receive data from broker %s for group %s \n",forwarder_address, filter);
 
   g_free(filter);
@@ -28,11 +29,11 @@ void *subscribe_to_broker(gchar *broker_address, gint broker_sub_port, gchar *gr
   return subscriber;
 }
 
-static char * z_receive(void *socket)
+gchar *receive_data(void *subscriber)
 {
   zmq_msg_t message;
   zmq_msg_init (&message);
-  if (zmq_recv (socket, &message, 0))
+  if (zmq_recv (subscriber, &message, 0))
     return (NULL);
   gint size = zmq_msg_size (&message);
   gchar *data = malloc (size + 1);
@@ -40,12 +41,6 @@ static char * z_receive(void *socket)
   zmq_msg_close (&message);
   data [size] = 0;
 
-  return data;
-}
-
-gchar *receive_data(void *subscriber)
-{
-  gchar *data = z_receive (subscriber);
   return data;
 }
 

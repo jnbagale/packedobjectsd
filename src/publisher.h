@@ -23,25 +23,21 @@ void *publish_to_broker(gchar *broker_address, gint broker_pub_port)
   return publisher;
 }
 
-static gint z_send(void *socket, gchar *data)
+gint send_data(void *publisher, gchar *message, gint msglen)
 {
   gint rc;
-  zmq_msg_t message;
-  zmq_msg_init_size (&message, strlen (data));
-  memcpy (zmq_msg_data (&message), data, strlen (data));
-  rc = zmq_send (socket, &message, 0);
-  zmq_msg_close (&message);
-  return rc;
-}
+  zmq_msg_t z_msg;
+  msglen = 1000;
 
-gint send_data(void *publisher, gchar *group_hash, gchar *sender_hash, gchar *message)
-{
-  gint rc;
-  gchar *data = g_strdup_printf("%s %s %s",group_hash, sender_hash, message);
-  // Send message to broker for group 
-  rc = z_send (publisher, data); 
-  g_print("Sent :%s\n",data);
-  g_free(data);
+ // Send message to broker for group 
+  rc = zmq_msg_init_size (&z_msg, msglen);
+  assert(rc ==0);
+  memcpy (zmq_msg_data (&z_msg), message, msglen);
+  rc = zmq_send (publisher, &z_msg, 0);
+  assert(rc == 0);
+
+  g_print("Message sent: %s\n",message);
+  zmq_msg_close (&z_msg);
 
   return rc;
 }
@@ -49,5 +45,5 @@ gint send_data(void *publisher, gchar *group_hash, gchar *sender_hash, gchar *me
 void close_publisher(void *publisher)
 {
   zmq_close (publisher);
-  //zmq_term (pub_obj->context);
+  //zmq_term (context);
 }
