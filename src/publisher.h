@@ -27,8 +27,7 @@ gint send_data(void *publisher, gchar *message, gint msglen)
 {
   gint rc;
   zmq_msg_t z_msg;
-  msglen = 1000;
-
+  
  // Send message to broker for group 
   rc = zmq_msg_init_size (&z_msg, msglen);
   assert(rc ==0);

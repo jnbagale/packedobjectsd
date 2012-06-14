@@ -1,10 +1,10 @@
-INCLUDES = -Wall $(GLIB_CFLAGS) $(GTHREAD_CFLAGS) $(LIBZMQ_CFLAGS) $(UUID_CFLAGS)
+INCLUDES = -Wall $(GLIB_CFLAGS)  $(LIBZMQ_CFLAGS)
 
 bin_PROGRAMS = server broker node
 
 broker_SOURCES = config.h broker.c forwarder.c forwarder.h
 
-broker_LDADD = $(GLIB_LIBS) $(GTHREAD_LIBS) $(LIBZMQ_LIBS)
+broker_LDADD = $(GLIB_LIBS)  $(LIBZMQ_LIBS)
 
 broker_DATA =
 
@@ -12,11 +12,11 @@ brokerdir = /var/lib/misc
 
 server_SOURCES = config.h server.c lookup.c lookup.h
 
-server_LDADD = $(GLIB_LIBS) $(GTHREAD_LIBS) $(LIBZMQ_LIBS)
+server_LDADD = $(GLIB_LIBS)  $(LIBZMQ_LIBS)
 
 node_SOURCES = config.h node.c subscriber.h publisher.h
 
-node_LDADD = $(GLIB_LIBS) $(GTHREAD_LIBS) $(LIBZMQ_LIBS) $(UUID_LIBS)
+node_LDADD = $(GLIB_LIBS)  $(LIBZMQ_LIBS)
 
 node_DATA = subscriber.h publisher.h
 

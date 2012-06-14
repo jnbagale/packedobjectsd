@@ -4,16 +4,15 @@
 
 #include <glib.h>
 #include <stdlib.h>  /* for exit()   */
-#include <glib/gthread.h>
 
 #include "config.h"
 #include "lookup.h"
 
 int main(int argc, char** argv)
 {
-  GMainLoop *mainloop = NULL;
   GError *error = NULL;
   GOptionContext *context;
+  GMainLoop *mainloop = NULL;
   gboolean verbose = FALSE;
   
   GOptionEntry entries[] = 
@@ -31,8 +30,6 @@ int main(int argc, char** argv)
     exit (EXIT_FAILURE);
   }  
 
-  g_thread_init(NULL);
-  
   mainloop = g_main_loop_new(NULL, FALSE);  
   if (mainloop == NULL) {
     g_printerr("Couldn't create GMainLoop\n");
@@ -40,10 +37,7 @@ int main(int argc, char** argv)
   }
   
   /* Run a thread to start the server */
-  if( g_thread_create( (GThreadFunc) start_server, NULL, FALSE, &error) == NULL ) {
-    g_printerr("option parsing failed 2: %s\n", error->message);
-    exit (EXIT_FAILURE);
-  }
+  start_server();
 
   g_main_loop_run(mainloop);
 

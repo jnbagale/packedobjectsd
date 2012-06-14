@@ -1,3 +1,6 @@
+// License: GPLv3
+// Copyright 2012 The Clashing Rocks
+// team@theclashingrocks.org
 
 #include <zmq.h>
 #include <glib.h>
@@ -5,12 +8,11 @@
 #include <string.h> /* for strlen() */
 #include <stdlib.h> /* for exit()   */
 
-void *subscribe_to_broker(gchar *broker_address, gint broker_sub_port, gchar *group_hash)
+void *subscribe_to_broker(gchar *broker_address, gint broker_sub_port)
 {
   gint rc;
   void *subscriber;
   void *context = zmq_init (1);
-  gchar *filter =   g_strdup_printf("%s", group_hash);
   gchar *forwarder_address =  g_strdup_printf("tcp://%s:%d",broker_address, broker_sub_port);
   
    /* Socket to subscribe to broker */
@@ -20,11 +22,9 @@ void *subscribe_to_broker(gchar *broker_address, gint broker_sub_port, gchar *gr
   g_print("Subscriber: Successfully connected to SUB socket\n");
 
   /* Subscribe to group by filtering the received data*/
-  //zmq_setsockopt (subscriber, ZMQ_SUBSCRIBE, filter  , strlen(filter));
   zmq_setsockopt (subscriber, ZMQ_SUBSCRIBE, "", 0);
-  g_print("Subscriber: Ready to receive data from broker %s for group %s \n",forwarder_address, filter);
+  g_print("Subscriber: Ready to receive data from broker %s\n",forwarder_address);
 
-  g_free(filter);
   g_free(forwarder_address);
   return subscriber;
 }

@@ -2,17 +2,19 @@
 // Copyright 2012 The Clashing Rocks
 // team@theclashingrocks.org
 
+/* A ZeroMQ broker which receives messages from multiple publishers and forwards subscribers */
+/* Binds subscribers to outbound socket */
+/* Binds publishers to inbound socket */
+
 #include <glib.h>
 #include <stdlib.h> /* for exit()   */
-#include <glib/gthread.h>
 
 #include "config.h"
 #include "forwarder.h"
 
 int main(int argc, char** argv)
 {
-  gchar *group = DEFAULT_GROUP;
-  gchar *host = DEFAULT_HOST;
+  gchar *broker = DEFAULT_BROKER;
   gint sub_port = DEFAULT_SUB_PORT;
   gint pub_port = DEFAULT_PUB_PORT;
   gboolean verbose = FALSE;
@@ -24,8 +26,7 @@ int main(int argc, char** argv)
   GOptionEntry entries[] = 
   {
     { "verbose", 'v', 0, G_OPTION_ARG_NONE, &verbose, "Verbose output", NULL },
-    { "group", 'g', 0, G_OPTION_ARG_STRING, &group, "zeromq group", NULL },
-    { "host", 'h', 0, G_OPTION_ARG_STRING, &host, "zeromq host", NULL },
+    { "broker", 'h', 0, G_OPTION_ARG_STRING, &broker, "zeromq broker", NULL },
     { "sub_port", 's', 0, G_OPTION_ARG_INT, &sub_port, "zeromq broker's outbound port", "N" },
     { "pub_port", 'p', 0, G_OPTION_ARG_INT, &pub_port, "zeromq broker's inbound port", "N" },
     { NULL }
@@ -40,15 +41,11 @@ int main(int argc, char** argv)
     exit (EXIT_FAILURE);
   }  
 
-  /* Initialising thread */
-  g_thread_init(NULL);
-  
   broker_obj = make_broker_object();
   broker_obj->sub_port = sub_port;
   broker_obj->pub_port = pub_port;
-  broker_obj->host =  g_strdup_printf("%s",host);
-  broker_obj->group =  g_strdup_printf("%s",group);
-
+  broker_obj->broker =  g_strdup_printf("%s",broker);
+ 
   /* Initialising mainloop */
   mainloop = g_main_loop_new(NULL, FALSE);  
   if (mainloop == NULL) {
@@ -59,11 +56,9 @@ int main(int argc, char** argv)
   // networking code to connect to server and
   // send hash of schema and network address will come here
   
-  /* Run a thread to start the broker */
-  if( g_thread_create( (GThreadFunc) start_forwarder, (gpointer) broker_obj, FALSE, &error) == NULL ) {
-       g_printerr("option parsing failed 2: %s\n", error->message);
-   exit (EXIT_FAILURE);
-  }
+  /* Start the broker */
+
+  start_broker(broker_obj);
 
   g_main_loop_run(mainloop);
   

@@ -8,10 +8,9 @@ typedef struct {
   void *backend;
   gint sub_port;
   gint pub_port;
-  gchar *host;
-  gchar *group;
+  gchar *broker;
 } brokerObject;
 
 brokerObject *make_broker_object(void);
 void free_broker_object(brokerObject *broker_obj);
-void start_forwarder(brokerObject *broker_obj);
+void start_broker(brokerObject *broker_obj);

@@ -27,29 +27,29 @@ brokerObject *make_broker_object(void)
 }
 
 
-void start_forwarder(brokerObject *broker_obj)
+void start_broker(brokerObject *broker_obj)
 {
-  gint rc_sub, rc_pub; 
-  gint limit = 5;
+  gint rc_in; 
+  gint rc_out;
+
   // To subscribe to all the publishers
   gchar *frontend_endpoint = g_strdup_printf("tcp://*:%d",broker_obj->pub_port);
-  
+
   // To publish to all the potential subscribers
-  gchar *backend_endpoint =  g_strdup_printf("tcp://%s:%d",broker_obj->host, broker_obj->sub_port);
+  gchar *backend_endpoint =  g_strdup_printf("tcp://%s:%d",broker_obj->broker, broker_obj->sub_port);
 
   //  Prepare context and sockets
   broker_obj->context  = zmq_init (1);
   broker_obj->frontend  = zmq_socket (broker_obj->context, ZMQ_SUB);
   broker_obj->backend = zmq_socket (broker_obj->context, ZMQ_PUB);
-  zmq_setsockopt (broker_obj->backend, ZMQ_HWM, &limit, (sizeof limit));
+  
+  rc_in = zmq_bind (broker_obj->frontend,  frontend_endpoint);
+  assert(rc_in == 0);
+  g_print("Broker: Successfully binded to inbound socket\n");
 
-  rc_sub = zmq_bind (broker_obj->frontend,  frontend_endpoint);
-  assert(rc_sub == 0);
-  g_print("Broker: Successfully binded to SUB socket\n");
-
-  rc_pub = zmq_bind (broker_obj->backend, backend_endpoint);
-  assert(rc_pub == 0);
-  g_print("Broker: Successfully binded to PUB socket\n");
+  rc_out = zmq_bind (broker_obj->backend, backend_endpoint);
+  assert(rc_out == 0);
+  g_print("Broker: Successfully binded to outbound socket\n");
 
   //  Subscribe for everything
   zmq_setsockopt (broker_obj->frontend, ZMQ_SUBSCRIBE, "", 0); 
@@ -62,8 +62,7 @@ void start_forwarder(brokerObject *broker_obj)
 void free_broker_object(brokerObject *broker_obj)
 {
   zmq_term (broker_obj->context);
-  g_free(broker_obj->host);
-  g_free(broker_obj->group);
+  g_free(broker_obj->broker);
   g_free(broker_obj);  
 }
 /* End of forwarder.c */
