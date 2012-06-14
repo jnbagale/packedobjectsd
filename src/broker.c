@@ -32,7 +32,6 @@ int main(int argc, char** argv)
     { NULL }
   };
 
-
   context = g_option_context_new ("- broker");
   g_option_context_add_main_entries (context, entries, PACKAGE_NAME);
   

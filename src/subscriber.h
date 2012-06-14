@@ -22,7 +22,8 @@ void *subscribe_to_broker(gchar *broker_address, gint broker_sub_port)
   g_print("Subscriber: Successfully connected to SUB socket\n");
 
   /* Subscribe to group by filtering the received data*/
-  zmq_setsockopt (subscriber, ZMQ_SUBSCRIBE, "", 0);
+  rc = zmq_setsockopt (subscriber, ZMQ_SUBSCRIBE, "", 0);
+  assert(rc == 0);
   g_print("Subscriber: Ready to receive data from broker %s\n",forwarder_address);
 
   g_free(forwarder_address);

@@ -29,8 +29,7 @@ brokerObject *make_broker_object(void)
 
 void start_broker(brokerObject *broker_obj)
 {
-  gint rc_in; 
-  gint rc_out;
+  gint rc; 
 
   // To subscribe to all the publishers
   gchar *frontend_endpoint = g_strdup_printf("tcp://*:%d",broker_obj->pub_port);
@@ -43,20 +42,23 @@ void start_broker(brokerObject *broker_obj)
   broker_obj->frontend  = zmq_socket (broker_obj->context, ZMQ_SUB);
   broker_obj->backend = zmq_socket (broker_obj->context, ZMQ_PUB);
   
-  rc_in = zmq_bind (broker_obj->frontend,  frontend_endpoint);
-  assert(rc_in == 0);
+  rc = zmq_bind (broker_obj->frontend,  frontend_endpoint);
+  assert(rc == 0);
   g_print("Broker: Successfully binded to inbound socket\n");
 
-  rc_out = zmq_bind (broker_obj->backend, backend_endpoint);
-  assert(rc_out == 0);
+  rc = zmq_bind (broker_obj->backend, backend_endpoint);
+  assert(rc == 0);
   g_print("Broker: Successfully binded to outbound socket\n");
 
   //  Subscribe for everything
-  zmq_setsockopt (broker_obj->frontend, ZMQ_SUBSCRIBE, "", 0); 
+  rc = zmq_setsockopt (broker_obj->frontend, ZMQ_SUBSCRIBE, "", 0); 
+  assert(rc == 0);
   g_print("Broker: Receiving messages from publishers at %s\n",frontend_endpoint);
   g_print("Broker: Forwarding messages to subcribers from %s\n",backend_endpoint);
+
   //  Start the forwarder device
-  zmq_device (ZMQ_FORWARDER, broker_obj->frontend, broker_obj->backend);
+  rc = zmq_device (ZMQ_FORWARDER, broker_obj->frontend, broker_obj->backend);
+  if (rc == -1) free_broker_object(broker_obj);
 }
 
 void free_broker_object(brokerObject *broker_obj)

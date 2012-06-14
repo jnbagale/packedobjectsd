@@ -18,12 +18,9 @@
 static gboolean publish_data(void *publisher)
 {
   gchar *message = g_strdup_printf("%s", "test message");
-  gint rc = send_data(publisher, message, strlen(message)); 
- 
-  if(rc !=0)
-    {
-      g_print("Publsiher failed to send data to broker");
-    }
+  send_data(publisher, message, strlen(message)); 
+  g_print("Message sent: %s\n",message);
+
   g_free(message);
   return TRUE;  
 }
@@ -32,6 +29,7 @@ static gboolean subscribe_data(void *subscriber)
 {
   gchar *message = receive_data(subscriber);
   g_print("Message received: %s \n", message);
+
   g_free(message);
   return TRUE;  
 }
@@ -46,7 +44,6 @@ int main (int argc, char *argv [])
   GError *error = NULL;
   GOptionContext *context;
   GMainLoop *mainloop = NULL;
-  
 
   GOptionEntry entries[] = 
   {
