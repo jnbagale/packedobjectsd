@@ -2,9 +2,9 @@
 // Copyright 2012 The Clashing Rocks
 // team@theclashingrocks.org
 
-/* ZeroMQ Forwarder which receives data from publishers and forwards to subscribers */
-/* Binds PUB socket to tcp://\*:5556 */
-/* Binds SUB socket to given host address */
+/* A ZeroMQ broker which receives messages from multiple publishers and forwards subscribers */
+/* Binds subscribers to outbound socket */
+/* Binds publishers to inbound socket */
 
 #include <zmq.h>
 #include <glib.h>
@@ -33,36 +33,71 @@ void start_broker(brokerObject *broker_obj)
 
   // To subscribe to all the publishers
   gchar *frontend_endpoint = g_strdup_printf("tcp://*:%d",broker_obj->pub_port);
-
+  
   // To publish to all the potential subscribers
   gchar *backend_endpoint =  g_strdup_printf("tcp://%s:%d",broker_obj->broker, broker_obj->sub_port);
 
   //  Prepare context and sockets
   broker_obj->context  = zmq_init (1);
+  if (!broker_obj->context){
+    g_print("Error occurred during zmq_init(): %s\n", zmq_strerror (errno));
+    zmq_term (broker_obj->context);
+    exit(EXIT_FAILURE);
+  }
+
   broker_obj->frontend  = zmq_socket (broker_obj->context, ZMQ_SUB);
+  if (broker_obj->frontend == NULL){
+    g_print("Error occurred during zmq_socket() frontend: %s\n", zmq_strerror (errno));
+    free_broker_object(broker_obj);
+    exit(EXIT_FAILURE);
+  }
+
   broker_obj->backend = zmq_socket (broker_obj->context, ZMQ_PUB);
-  
+  if (broker_obj->backend == NULL){
+    g_print("Error occurred during zmq_socket() backend: %s\n", zmq_strerror (errno));
+    free_broker_object(broker_obj);
+    exit(EXIT_FAILURE);
+  }
+
   rc = zmq_bind (broker_obj->frontend,  frontend_endpoint);
-  assert(rc == 0);
-  g_print("Broker: Successfully binded to inbound socket\n");
+  if (rc == -1){
+    g_print("Error occurred during zmq_bind() frontend: %s\n", zmq_strerror (errno));
+    free_broker_object(broker_obj);
+    exit(EXIT_FAILURE);
+  }
+  else{
+    g_print("Broker: Successfully binded to frontend socket at %s\n", frontend_endpoint);
+    g_free(frontend_endpoint);
+  }
 
   rc = zmq_bind (broker_obj->backend, backend_endpoint);
-  assert(rc == 0);
-  g_print("Broker: Successfully binded to outbound socket\n");
+  if (rc == -1){
+    g_print("Error occurred during zmq_bind() backend: %s\n", zmq_strerror (errno));
+    free_broker_object(broker_obj);
+    exit(EXIT_FAILURE);
+  }
+  else{
+    g_print("Broker: Successfully binded to backend socket at %s\n",backend_endpoint);
+    g_free(backend_endpoint);
+  }
 
   //  Subscribe for everything
   rc = zmq_setsockopt (broker_obj->frontend, ZMQ_SUBSCRIBE, "", 0); 
-  assert(rc == 0);
-  g_print("Broker: Receiving messages from publishers at %s\n",frontend_endpoint);
-  g_print("Broker: Forwarding messages to subcribers from %s\n",backend_endpoint);
+  if (rc == -1){
+    g_print("Error occurred during zmq_setsockopt() backend: %s\n", zmq_strerror (errno));
+    free_broker_object(broker_obj);
+    exit(EXIT_FAILURE);
+  }
 
   //  Start the forwarder device
-  rc = zmq_device (ZMQ_FORWARDER, broker_obj->frontend, broker_obj->backend);
-  if (rc == -1) free_broker_object(broker_obj);
+  zmq_device (ZMQ_FORWARDER, broker_obj->frontend, broker_obj->backend);
+  /* We should never reach here unless something goes wrong! */
 }
 
 void free_broker_object(brokerObject *broker_obj)
 {
+  zmq_close(broker_obj->frontend);
+  zmq_close(broker_obj->backend);
   zmq_term (broker_obj->context);
   g_free(broker_obj->broker);
   g_free(broker_obj);  
