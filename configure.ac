@@ -4,7 +4,7 @@ AC_CONFIG_SRCDIR([src/])
 AM_CONFIG_HEADER([src/config.h])
 
 AC_DEFINE([PROGNAME],["packedobjectsd"],["light-weight secure messaging framework"])
-AC_DEFINE([DEFAULT_BROKER],["127.0.0.1"],["the default zeromq server"])
+AC_DEFINE([DEFAULT_ADDRESS],["127.0.0.1"],["the default zeromq broker address"])
 AC_DEFINE([DEFAULT_OUT_PORT],[8100],["the default zeromq broker outbound port: for subscribers"])
 AC_DEFINE([DEFAULT_IN_PORT],[5556],["the default zeromq broker inbound port: for publishers"])
 AC_DEFINE([DEFAULT_TYPE],["both"],["the default node type: pub, sub or both"])

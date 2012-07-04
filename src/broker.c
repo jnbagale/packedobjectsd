@@ -14,9 +14,10 @@
 
 int main(int argc, char** argv)
 {
-  gchar *broker = DEFAULT_BROKER;
-  gint out_port = DEFAULT_OUT_PORT;
   gint in_port = DEFAULT_IN_PORT;
+  gint out_port = DEFAULT_OUT_PORT;
+  gchar *address = DEFAULT_ADDRESS;
+  gchar *hash_schema = NULL;
   gboolean verbose = FALSE;
   GError *error = NULL;
   GOptionContext *context;
@@ -25,7 +26,7 @@ int main(int argc, char** argv)
   GOptionEntry entries[] = 
   {
     { "verbose", 'v', 0, G_OPTION_ARG_NONE, &verbose, "Verbose output", NULL },
-    { "broker", 'h', 0, G_OPTION_ARG_STRING, &broker, "zeromq broker", NULL },
+    { "address", 'h', 0, G_OPTION_ARG_STRING, &address, "zeromq broker adress", NULL },
     { "out_port", 's', 0, G_OPTION_ARG_INT, &out_port, "zeromq broker's outbound port: where subs connect", "N" },
     { "in_port", 'p', 0, G_OPTION_ARG_INT, &in_port, "zeromq broker's inbound port: where pubs connect", "N" },
     { NULL }
@@ -39,16 +40,12 @@ int main(int argc, char** argv)
     exit (EXIT_FAILURE);
   }  
 
-  broker_obj = make_broker_object();
-  broker_obj->out_port = out_port;
-  broker_obj->in_port = in_port;
-  broker_obj->broker =  g_strdup_printf("%s",broker);
- 
-  // networking code to connect to server and
-  // send hash of schema and network address will come here
-  
-  /* Start the broker */
+  broker_obj = make_broker_object(address, in_port, out_port);
 
+  /* Send Broker details to the server*/
+  connect_to_server(address, in_port, out_port, hash_schema);
+
+  /* Start the broker */
   start_broker(broker_obj);
 
   /* We should never reach here unless something goes wrong! */
