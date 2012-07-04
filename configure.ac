@@ -5,9 +5,11 @@ AM_CONFIG_HEADER([src/config.h])
 
 AC_DEFINE([PROGNAME],["packedobjectsd"],["light-weight secure messaging framework"])
 AC_DEFINE([DEFAULT_BROKER],["127.0.0.1"],["the default zeromq server"])
-AC_DEFINE([DEFAULT_SUB_PORT],[8100],["the default zeromq broker outbound port: for subscribers"])
-AC_DEFINE([DEFAULT_PUB_PORT],[5556],["the default zeromq broker inbound port: for publishers"])
+AC_DEFINE([DEFAULT_OUT_PORT],[8100],["the default zeromq broker outbound port: for subscribers"])
+AC_DEFINE([DEFAULT_IN_PORT],[5556],["the default zeromq broker inbound port: for publishers"])
 AC_DEFINE([DEFAULT_TYPE],["both"],["the default node type: pub, sub or both"])
+AC_DEFINE([DEFAULT_RECV_FREQ],[1000],["the default receiving frequency for subscribers in milliseconds"])
+AC_DEFINE([DEFAULT_SEND_FREQ],[1000],["the default sending frequency for publishers in milliseconds"])
 
 # --enable-debug flag
 AC_ARG_ENABLE(debug,

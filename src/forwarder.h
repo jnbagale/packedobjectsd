@@ -6,8 +6,8 @@ typedef struct {
   void *context;
   void *frontend;
   void *backend;
-  gint sub_port;
-  gint pub_port;
+  gint out_port;
+  gint in_port;
   gchar *broker;
 } brokerObject;
 

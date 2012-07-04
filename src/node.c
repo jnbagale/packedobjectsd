@@ -15,11 +15,13 @@
 #include "publisher.h"
 #include "subscriber.h"
 
+static gint global_send_counter = 0;
+
 static gboolean publish_data(void *publisher)
 {
-  gchar *message = g_strdup_printf("%s", "test message");
+  gchar *message = g_strdup_printf("%s#%d", "test message",global_send_counter++);
   send_data(publisher, message, strlen(message)); 
-  g_print("Message sent: %s\n",message);
+  g_print("Message sent: %s\n", message);
 
   g_free(message);
   return TRUE;  
@@ -38,8 +40,10 @@ int main (int argc, char *argv [])
 {
   gchar *type = DEFAULT_TYPE;
   gchar *broker = DEFAULT_BROKER;
-  gint sub_port = DEFAULT_SUB_PORT;
-  gint pub_port = DEFAULT_PUB_PORT;
+  gint out_port = DEFAULT_OUT_PORT;
+  gint in_port = DEFAULT_IN_PORT;
+  gint recv_freq = DEFAULT_RECV_FREQ;
+  gint send_freq = DEFAULT_SEND_FREQ;
   gboolean verbose = FALSE;
   GError *error = NULL;
   GOptionContext *context;
@@ -49,9 +53,11 @@ int main (int argc, char *argv [])
   {
     { "verbose", 'v', 0, G_OPTION_ARG_NONE, &verbose, "Verbose output", NULL },
     { "broker", 'h', 0, G_OPTION_ARG_STRING, &broker, "zeromq broker", NULL },
-    { "sub_port", 's', 0, G_OPTION_ARG_INT, &sub_port, "broker's outbound port", "N" },
-    { "pub_port", 'p', 0, G_OPTION_ARG_INT, &pub_port, "broker's inbound port", "N" },
     { "type",'t', 0, G_OPTION_ARG_STRING, &type, "node type:pub or sub or both", NULL },
+    { "out_port", 'i', 0, G_OPTION_ARG_INT, &out_port, "broker's outbound port: where subs connect", "N" },
+    { "in_port", 'o', 0, G_OPTION_ARG_INT, &in_port, "broker's inbound port: where pubs connect", "N" },
+    { "recv_freq", 'r', 0, G_OPTION_ARG_INT, &recv_freq, "Receiving frequency for subscriber", "N" },
+    { "send_freq", 's', 0, G_OPTION_ARG_INT, &send_freq, "Sending frequency for publisher", "N" },
     { NULL }
   };
  
@@ -73,15 +79,15 @@ int main (int argc, char *argv [])
   if( (g_strcmp0(type,"both") == 0) || (g_strcmp0(type,"pub") == 0) ) {
     /* Connects to PUB socket, program quits if connect fails * */
    
-    void *publisher = publish_to_broker(broker, pub_port);
-    g_timeout_add(1000, (GSourceFunc)publish_data, (gpointer)publisher);
+    void *publisher = publish_to_broker(broker, in_port);
+    g_timeout_add(send_freq, (GSourceFunc)publish_data, (gpointer)publisher);
   }
 
   if( (g_strcmp0(type,"both") == 0) || (g_strcmp0(type,"sub") == 0) ) {
     /* Connects to SUB socket, program quits if connect fails */
  
-    void *subscriber = subscribe_to_broker(broker, sub_port);
-    g_timeout_add(1000, (GSourceFunc)subscribe_data, (gpointer)subscriber);
+    void *subscriber = subscribe_to_broker(broker, out_port);
+    g_timeout_add(recv_freq, (GSourceFunc)subscribe_data, (gpointer)subscriber);
   }
 
   g_main_loop_run(mainloop);

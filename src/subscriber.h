@@ -13,16 +13,20 @@ void *subscribe_to_broker(gchar *broker_address, gint broker_sub_port)
   gint rc;
   void *subscriber;
   void *context = zmq_init (1);
+  uint64_t hwm = 100;
   gchar *forwarder_address =  g_strdup_printf("tcp://%s:%d",broker_address, broker_sub_port);
   
    /* Socket to subscribe to broker */
   subscriber = zmq_socket (context, ZMQ_SUB);
+  rc = zmq_setsockopt (subscriber, ZMQ_HWM, &hwm, sizeof (hwm));
+  assert(rc == 0);
   rc = zmq_connect (subscriber, forwarder_address);
   assert(rc == 0);
   g_print("Subscriber: Successfully connected to SUB socket\n");
 
   /* Subscribe to group by filtering the received data*/
   rc = zmq_setsockopt (subscriber, ZMQ_SUBSCRIBE, "", 0);
+
   assert(rc == 0);
   g_print("Subscriber: Ready to receive data from broker %s\n",forwarder_address);
 

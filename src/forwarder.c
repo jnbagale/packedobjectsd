@@ -10,6 +10,7 @@
 #include <glib.h>
 #include <assert.h> /* for assert() */
 #include <stdlib.h> /* for exit()   */
+#include <inttypes.h> /* for uint64_t */
 
 #include "config.h"
 #include "forwarder.h"
@@ -23,6 +24,9 @@ brokerObject *make_broker_object(void)
     exit(EXIT_FAILURE);
   }
 
+  broker_obj->frontend = NULL;
+  broker_obj->backend = NULL;
+  broker_obj->context = NULL;
   return broker_obj;
 }
 
@@ -30,18 +34,18 @@ brokerObject *make_broker_object(void)
 void start_broker(brokerObject *broker_obj)
 {
   gint rc; 
-
+  uint64_t hwm = 100;
   // To subscribe to all the publishers
-  gchar *frontend_endpoint = g_strdup_printf("tcp://*:%d",broker_obj->pub_port);
+  gchar *frontend_endpoint = g_strdup_printf("tcp://%s:%d",broker_obj->broker, broker_obj->in_port);
   
   // To publish to all the potential subscribers
-  gchar *backend_endpoint =  g_strdup_printf("tcp://%s:%d",broker_obj->broker, broker_obj->sub_port);
+  gchar *backend_endpoint =  g_strdup_printf("tcp://%s:%d",broker_obj->broker, broker_obj->out_port);
 
   //  Prepare context and sockets
   broker_obj->context  = zmq_init (1);
   if (!broker_obj->context){
     g_print("Error occurred during zmq_init(): %s\n", zmq_strerror (errno));
-    zmq_term (broker_obj->context);
+    free_broker_object(broker_obj);
     exit(EXIT_FAILURE);
   }
 
@@ -68,6 +72,13 @@ void start_broker(brokerObject *broker_obj)
   else{
     g_print("Broker: Successfully binded to frontend socket at %s\n", frontend_endpoint);
     g_free(frontend_endpoint);
+  }
+
+  rc = zmq_setsockopt (broker_obj->backend, ZMQ_HWM, &hwm, sizeof (hwm));
+  if (rc == -1){
+    g_print("Error occurred during zmq_setsockopt() backend: %s\n", zmq_strerror (errno));
+    free_broker_object(broker_obj);
+    exit(EXIT_FAILURE);
   }
 
   rc = zmq_bind (broker_obj->backend, backend_endpoint);

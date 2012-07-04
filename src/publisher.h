@@ -4,16 +4,20 @@
 #include <assert.h> /* for assert() */
 #include <string.h> /* for strlen() */
 #include <stdlib.h> /* for exit()   */
+#include <inttypes.h> /* for uint64_t */
 
 void *publish_to_broker(gchar *broker_address, gint broker_pub_port)
 {
   gint rc; 
   void *publisher;
+  uint64_t hwm = 100;
   void *context = zmq_init (1);
   gchar *forwarder_address =  g_strdup_printf("tcp://%s:%d",broker_address, broker_pub_port);
 
   /* Prepare our context and publisher */
   publisher = zmq_socket (context, ZMQ_PUB); 
+  rc = zmq_setsockopt (publisher, ZMQ_HWM, &hwm, sizeof (hwm));
+  assert(rc == 0);
   rc = zmq_connect (publisher, forwarder_address);
   assert(rc == 0);
   g_print("Publisher: Successfully connected to PUB socket\n");
@@ -33,7 +37,6 @@ gint send_data(void *publisher, gchar *message, gint msglen)
   memcpy (zmq_msg_data (&z_msg), message, msglen);
   rc = zmq_send (publisher, &z_msg, 0);
   assert(rc == 0);
-
   zmq_msg_close (&z_msg);
 
   return rc;
