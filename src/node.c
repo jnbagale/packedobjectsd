@@ -27,9 +27,9 @@ static gboolean publish_data(pubObject *pub_obj)
   return TRUE;  
 }
 
-static gboolean subscribe_data(void *subscriber)
+static gboolean subscribe_data(subObject *sub_obj)
 {
-  gchar *message = receive_data(subscriber);
+  gchar *message = receive_data(sub_obj);
   g_print("Message received: %s \n", message);
 
   g_free(message);
@@ -49,7 +49,7 @@ int main (int argc, char *argv [])
   GOptionContext *context;
   GMainLoop *mainloop = NULL;
   pubObject *pub_obj = NULL;
-
+  subObject *sub_obj= NULL;
   GOptionEntry entries[] = 
   {
     { "verbose", 'v', 0, G_OPTION_ARG_NONE, &verbose, "Verbose output", NULL },
@@ -76,21 +76,28 @@ int main (int argc, char *argv [])
     g_printerr("Couldn't create GMainLoop\n");
     exit(EXIT_FAILURE);
   }
-
+  /* Initialise objects & variables */
   pub_obj = make_pub_object();  
+  sub_obj = make_sub_object();
+
+  pub_obj->in_port = in_port;
+  pub_obj->address = g_strdup_printf("%s",address);
+  sub_obj->out_port = out_port;
+  sub_obj->address = g_strdup_printf("%s",address);
   
   if( (g_strcmp0(type,"both") == 0) || (g_strcmp0(type,"pub") == 0) ) {
     /* Connects to PUB socket, program quits if connect fails * */
    
-    pub_obj = publish_to_broker(pub_obj, address, in_port);
+    pub_obj = publish_to_broker(pub_obj);
+ 
     g_timeout_add(send_freq, (GSourceFunc)publish_data, (gpointer)pub_obj);
   }
 
   if( (g_strcmp0(type,"both") == 0) || (g_strcmp0(type,"sub") == 0) ) {
     /* Connects to SUB socket, program quits if connect fails */
  
-    void *subscriber = subscribe_to_broker(address, out_port);
-    g_timeout_add(recv_freq, (GSourceFunc)subscribe_data, (gpointer)subscriber);
+    sub_obj = subscribe_to_broker(sub_obj);
+    g_timeout_add(recv_freq, (GSourceFunc)subscribe_data, (gpointer)sub_obj);
   }
 
   g_main_loop_run(mainloop);

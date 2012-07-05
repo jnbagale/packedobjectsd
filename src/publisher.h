@@ -9,7 +9,7 @@
 typedef struct {
   void *context;
   void *publisher;
-  gint out_port;
+  gint in_port;
   gchar *address;
   gchar *pub_endpoint;
 } pubObject;
@@ -26,13 +26,13 @@ pubObject *make_pub_object()
   return pub_obj;
 }
 
-pubObject *publish_to_broker(pubObject *pub_obj, gchar *address, gint out_port)
+pubObject *publish_to_broker(pubObject *pub_obj)
 {
   gint rc; 
   uint64_t hwm = 100;
-  pub_obj->pub_endpoint =  g_strdup_printf("tcp://%s:%d",address, out_port);
+  pub_obj->pub_endpoint =  g_strdup_printf("tcp://%s:%d",pub_obj->address, pub_obj->in_port);
 
-  /* Prepare the context and publisher */
+  /* Prepare the context and publisher socket */
   pub_obj->context = zmq_init (1);
   pub_obj->publisher = zmq_socket (pub_obj->context, ZMQ_PUB); 
   rc = zmq_setsockopt (pub_obj->publisher, ZMQ_HWM, &hwm, sizeof (hwm));
@@ -65,4 +65,11 @@ void unpublish_to_broker(pubObject *pub_obj)
 {
   zmq_close (pub_obj->publisher);
   zmq_term (pub_obj->context);
+}
+
+void free_pub_object(pubObject *pub_obj)
+{
+  free(pub_obj->address);
+  free(pub_obj->pub_endpoint);
+  free(pub_obj);
 }
