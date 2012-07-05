@@ -6,27 +6,46 @@
 #include <stdlib.h> /* for exit()   */
 #include <inttypes.h> /* for uint64_t */
 
-void *publish_to_broker(gchar *broker_address, gint broker_pub_port)
-{
-  gint rc; 
+typedef struct {
+  void *context;
   void *publisher;
-  uint64_t hwm = 100;
-  void *context = zmq_init (1);
-  gchar *forwarder_address =  g_strdup_printf("tcp://%s:%d",broker_address, broker_pub_port);
+  gint out_port;
+  gchar *address;
+  gchar *pub_endpoint;
+} pubObject;
 
-  /* Prepare our context and publisher */
-  publisher = zmq_socket (context, ZMQ_PUB); 
-  rc = zmq_setsockopt (publisher, ZMQ_HWM, &hwm, sizeof (hwm));
-  assert(rc == 0);
-  rc = zmq_connect (publisher, forwarder_address);
-  assert(rc == 0);
-  g_print("Publisher: Successfully connected to PUB socket\n");
-  g_print("Publisher: Ready to send data to broker at %s\n",forwarder_address);
-  g_free(forwarder_address);
-  return publisher;
+pubObject *make_pub_object()
+{
+  pubObject *pub_obj;
+
+  if ((pub_obj = (pubObject *)g_malloc(sizeof(pubObject))) == NULL) {
+    //g_printerr("failed to malloc pubObject!");
+    exit(EXIT_FAILURE);
+  }
+
+  return pub_obj;
 }
 
-gint send_data(void *publisher, gchar *message, gint msglen)
+pubObject *publish_to_broker(pubObject *pub_obj, gchar *address, gint out_port)
+{
+  gint rc; 
+  uint64_t hwm = 100;
+  pub_obj->pub_endpoint =  g_strdup_printf("tcp://%s:%d",address, out_port);
+
+  /* Prepare the context and publisher */
+  pub_obj->context = zmq_init (1);
+  pub_obj->publisher = zmq_socket (pub_obj->context, ZMQ_PUB); 
+  rc = zmq_setsockopt (pub_obj->publisher, ZMQ_HWM, &hwm, sizeof (hwm));
+  assert(rc == 0);
+  rc = zmq_connect (pub_obj->publisher, pub_obj->pub_endpoint);
+  assert(rc == 0);
+  g_print("Publisher: Successfully connected to PUB socket\n");
+  g_print("Publisher: Ready to send data to broker at %s\n",pub_obj->pub_endpoint);
+
+  return pub_obj;
+}
+
+gint send_data(pubObject *pub_obj, gchar *message, gint msglen)
 {
   gint rc;
   zmq_msg_t z_msg;
@@ -35,15 +54,15 @@ gint send_data(void *publisher, gchar *message, gint msglen)
   rc = zmq_msg_init_size (&z_msg, msglen);
   assert(rc ==0);
   memcpy (zmq_msg_data (&z_msg), message, msglen);
-  rc = zmq_send (publisher, &z_msg, 0);
+  rc = zmq_send (pub_obj->publisher, &z_msg, 0);
   assert(rc == 0);
   zmq_msg_close (&z_msg);
 
   return rc;
 }
 
-void close_publisher(void *publisher)
+void unpublish_to_broker(pubObject *pub_obj)
 {
-  zmq_close (publisher);
-  //zmq_term (context);
+  zmq_close (pub_obj->publisher);
+  zmq_term (pub_obj->context);
 }

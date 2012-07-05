@@ -17,10 +17,10 @@
 
 static gint global_send_counter = 0;
 
-static gboolean publish_data(void *publisher)
+static gboolean publish_data(pubObject *pub_obj)
 {
   gchar *message = g_strdup_printf("%s#%d", "test message",global_send_counter++);
-  send_data(publisher, message, strlen(message)); 
+  send_data(pub_obj, message, strlen(message)); 
   g_print("Message sent: %s\n", message);
 
   g_free(message);
@@ -48,6 +48,7 @@ int main (int argc, char *argv [])
   GError *error = NULL;
   GOptionContext *context;
   GMainLoop *mainloop = NULL;
+  pubObject *pub_obj = NULL;
 
   GOptionEntry entries[] = 
   {
@@ -76,11 +77,13 @@ int main (int argc, char *argv [])
     exit(EXIT_FAILURE);
   }
 
+  pub_obj = make_pub_object();  
+  
   if( (g_strcmp0(type,"both") == 0) || (g_strcmp0(type,"pub") == 0) ) {
     /* Connects to PUB socket, program quits if connect fails * */
    
-    void *publisher = publish_to_broker(address, in_port);
-    g_timeout_add(send_freq, (GSourceFunc)publish_data, (gpointer)publisher);
+    pub_obj = publish_to_broker(pub_obj, address, in_port);
+    g_timeout_add(send_freq, (GSourceFunc)publish_data, (gpointer)pub_obj);
   }
 
   if( (g_strcmp0(type,"both") == 0) || (g_strcmp0(type,"sub") == 0) ) {

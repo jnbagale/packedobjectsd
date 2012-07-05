@@ -9,11 +9,12 @@ typedef struct {
   gint out_port;
   gint in_port;
   gchar *address;
-  gchar *front_address;
-  gchar *back_address;
+  gchar *front_endpoint;
+  gchar *back_endpoint;
 } brokerObject;
 
-brokerObject *make_broker_object(gchar *address, gint in_port, gint out_port);
-void free_broker_object(brokerObject *broker_obj);
+brokerObject *make_broker_object();
+brokerObject *init_broker(brokerObject *broker_obj, gchar *address, gint in_port, gint out_port);
 void start_broker(brokerObject *broker_obj);
-void connect_to_server(gchar *address, gint in_port, gint out_port, gchar *hash_schema);
+void connect_to_server(brokerObject *broker_obj, gchar *hash_schema);
+void free_broker_object(brokerObject *broker_obj);

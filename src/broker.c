@@ -39,11 +39,12 @@ int main(int argc, char** argv)
     g_printerr("option parsing failed: %s\n", error->message);
     exit (EXIT_FAILURE);
   }  
-
-  broker_obj = make_broker_object(address, in_port, out_port);
+  /* Initialisation of broker object & variables */
+  broker_obj = make_broker_object();
+  broker_obj = init_broker( broker_obj, address, in_port, out_port);
 
   /* Send Broker details to the server*/
-  connect_to_server(address, in_port, out_port, hash_schema);
+  connect_to_server(broker_obj, hash_schema);
 
   /* Start the broker */
   start_broker(broker_obj);
