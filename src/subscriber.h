@@ -1,9 +1,19 @@
-// License: GPLv3
-// Copyright 2012 The Clashing Rocks
-// team@theclashingrocks.org
+
+/* Copyright (C) 2009-2011 The Clashing Rocks Team */
+
+/* This program is free software: you can redistribute it and/or modify */
+/* it under the terms of the GNU General Public License as published by */
+/* the Free Software Foundation, either version 3 of the License, or */
+/* (at your option) any later version. */
+
+/* This program is distributed in the hope that it will be useful, */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the */
+/* GNU General Public License for more details. */
+
 
 #include <zmq.h>
-#include <glib.h>
+#include <stdio.h>
 #include <assert.h> /* for assert() */
 #include <string.h> /* for strlen() */
 #include <stdlib.h> /* for exit()   */
@@ -11,9 +21,10 @@
 typedef struct {
   void *context;
   void *subscriber;
-  gint out_port;
-  gchar *address;
-  gchar *sub_endpoint;
+  int out_port;
+  char *address;
+  char *sub_endpoint;
+  char *schema_hash;
 } subObject;
 
 subObject *make_sub_object()
@@ -28,9 +39,17 @@ subObject *make_sub_object()
   return sub_obj;
 }
 
+void get_broker_sub_address(subObject *sub_obj)
+{
+  /* Send schema hash to look up server and get broker sub address and port */
+  /* Temporary hack to supply port and address of broker */
+  sub_obj->out_port = DEFAULT_OUT_PORT;
+  sub_obj->address = g_strdup_printf("%s",DEFAULT_ADDRESS);
+}
+
 void *subscribe_to_broker(subObject *sub_obj)
 {
-  gint rc;
+  int rc;
   uint64_t hwm = 100;
   sub_obj->sub_endpoint =  g_strdup_printf("tcp://%s:%d",sub_obj->address, sub_obj->out_port);
 
@@ -55,14 +74,14 @@ void *subscribe_to_broker(subObject *sub_obj)
   return sub_obj;
 }
 
-gchar *receive_data(subObject *sub_obj)
+char *receive_data(subObject *sub_obj)
 {
   zmq_msg_t message;
   zmq_msg_init (&message);
   if (zmq_recv (sub_obj->subscriber, &message, 0))
     return (NULL);
-  gint size = zmq_msg_size (&message);
-  gchar *data = malloc (size + 1);
+  int size = zmq_msg_size (&message);
+  char *data = malloc (size + 1);
   memcpy (data, zmq_msg_data (&message), size);
   zmq_msg_close (&message);
   data [size] = 0;

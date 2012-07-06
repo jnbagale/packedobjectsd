@@ -1,6 +1,14 @@
-// License: GPLv3
-// Copyright 2012 The Clashing Rocks
-// team@theclashingrocks.org
+/* Copyright (C) 2009-2011 The Clashing Rocks Team */
+
+/* This program is free software: you can redistribute it and/or modify */
+/* it under the terms of the GNU General Public License as published by */
+/* the Free Software Foundation, either version 3 of the License, or */
+/* (at your option) any later version. */
+
+/* This program is distributed in the hope that it will be useful, */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the */
+/* GNU General Public License for more details. */
 
 /* A sample ZeroMQ node which can act as both publisher and subscriber */
 /* Subscriber connects to broker's outbound socket */
@@ -10,17 +18,20 @@
 #include <glib.h>
 #include <string.h>  /* for strlen() */
 #include <stdlib.h>  /* for exit()   */
+#include <unistd.h>  /* for read */
+#include <fcntl.h>   /* for open() */
 
 #include "config.h"
 #include "publisher.h"
 #include "subscriber.h"
+#include "xmlschema.h"
 
-static gint global_send_counter = 0;
+static int global_send_counter = 0;
 
 static gboolean publish_data(pubObject *pub_obj)
 {
   gchar *message = g_strdup_printf("%s#%d", "test message",global_send_counter++);
-  send_data(pub_obj, message, strlen(message)); 
+  send_data(pub_obj, message, strlen(message), 1); 
   g_print("Message sent: %s\n", message);
 
   g_free(message);
@@ -38,12 +49,12 @@ static gboolean subscribe_data(subObject *sub_obj)
 
 int main (int argc, char *argv [])
 {
-  gchar *type = DEFAULT_TYPE;
-  gchar *address = DEFAULT_ADDRESS;
-  gint out_port = DEFAULT_OUT_PORT;
-  gint in_port = DEFAULT_IN_PORT;
-  gint recv_freq = DEFAULT_RECV_FREQ;
-  gint send_freq = DEFAULT_SEND_FREQ;
+  char *type = DEFAULT_TYPE;
+  char *address = DEFAULT_ADDRESS;
+  int out_port = DEFAULT_OUT_PORT;
+  int in_port = DEFAULT_IN_PORT;
+  int recv_freq = DEFAULT_RECV_FREQ;
+  int send_freq = DEFAULT_SEND_FREQ;
   gboolean verbose = FALSE;
   GError *error = NULL;
   GOptionContext *context;
@@ -69,21 +80,27 @@ int main (int argc, char *argv [])
     g_printerr("option parsing failed: %s\n", error->message);
     exit (EXIT_FAILURE);
   }
-   
+
   /* Initialise mainloop */
   mainloop = g_main_loop_new(NULL, FALSE);
   if (mainloop == NULL) {
     g_printerr("Couldn't create GMainLoop\n");
     exit(EXIT_FAILURE);
   }
+
+  
   /* Initialise objects & variables */
   pub_obj = make_pub_object();  
   sub_obj = make_sub_object();
+  
+  sub_obj->schema_hash = create_schema_hash("/home/jivs/workspace/packedobjects/examples/c-xml/schema.xsd");
+  get_broker_sub_address(sub_obj);
+  get_broker_pub_address(pub_obj);
 
-  pub_obj->in_port = in_port;
-  pub_obj->address = g_strdup_printf("%s",address);
-  sub_obj->out_port = out_port;
-  sub_obj->address = g_strdup_printf("%s",address);
+  /* pub_obj->in_port = in_port; */
+  /* pub_obj->address = g_strdup_printf("%s",address); */
+  /* sub_obj->out_port = out_port; */
+  /* sub_obj->address = g_strdup_printf("%s",address); */
   
   if( (g_strcmp0(type,"both") == 0) || (g_strcmp0(type,"pub") == 0) ) {
     /* Connects to PUB socket, program quits if connect fails * */

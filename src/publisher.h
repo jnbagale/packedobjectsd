@@ -1,6 +1,18 @@
 
+/* Copyright (C) 2009-2011 The Clashing Rocks Team */
+
+/* This program is free software: you can redistribute it and/or modify */
+/* it under the terms of the GNU General Public License as published by */
+/* the Free Software Foundation, either version 3 of the License, or */
+/* (at your option) any later version. */
+
+/* This program is distributed in the hope that it will be useful, */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the */
+/* GNU General Public License for more details. */
+
 #include <zmq.h>
-#include <glib.h>
+#include <stdio.h>
 #include <assert.h> /* for assert() */
 #include <string.h> /* for strlen() */
 #include <stdlib.h> /* for exit()   */
@@ -9,9 +21,10 @@
 typedef struct {
   void *context;
   void *publisher;
-  gint in_port;
-  gchar *address;
-  gchar *pub_endpoint;
+  int in_port;
+  char *address;
+  char *pub_endpoint;
+  char *schema_hash;
 } pubObject;
 
 pubObject *make_pub_object()
@@ -26,9 +39,18 @@ pubObject *make_pub_object()
   return pub_obj;
 }
 
+void get_broker_pub_address(pubObject *pub_obj)
+{
+  /* Send schema hash to look up server and get broker pub address and port */
+
+  /* Temporary hack to supply port and address of broker */
+  pub_obj->in_port = DEFAULT_IN_PORT;
+  pub_obj->address = g_strdup_printf("%s",DEFAULT_ADDRESS);
+}
+
 pubObject *publish_to_broker(pubObject *pub_obj)
 {
-  gint rc; 
+  int rc; 
   uint64_t hwm = 100;
   pub_obj->pub_endpoint =  g_strdup_printf("tcp://%s:%d",pub_obj->address, pub_obj->in_port);
 
@@ -45,11 +67,15 @@ pubObject *publish_to_broker(pubObject *pub_obj)
   return pub_obj;
 }
 
-gint send_data(pubObject *pub_obj, gchar *message, gint msglen)
+int send_data(pubObject *pub_obj, char *message, int msglen, int encode)
 {
-  gint rc;
+  int rc;
   zmq_msg_t z_msg;
-  
+  zmq_msg_t z_encode;
+
+  rc = zmq_msg_init_size (&z_encode, 1);
+  assert(rc ==0);
+  memcpy (zmq_msg_data (&z_encode), encode, 1);
   // Send message to broker for group 
   rc = zmq_msg_init_size (&z_msg, msglen);
   assert(rc ==0);
@@ -66,6 +92,7 @@ void unpublish_to_broker(pubObject *pub_obj)
   zmq_close (pub_obj->publisher);
   zmq_term (pub_obj->context);
 }
+
 
 void free_pub_object(pubObject *pub_obj)
 {
