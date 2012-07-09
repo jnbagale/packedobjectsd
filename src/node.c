@@ -24,14 +24,13 @@
 #include "config.h"
 #include "publisher.h"
 #include "subscriber.h"
-#include "xmlschema.h"
 
 static int global_send_counter = 0;
 
 static gboolean publish_data(pubObject *pub_obj)
 {
   gchar *message = g_strdup_printf("%s#%d", "test message",global_send_counter++);
-  send_data(pub_obj, message, strlen(message), 1); 
+  send_data(pub_obj, message, strlen(message), "1"); 
   g_print("Message sent: %s\n", message);
 
   g_free(message);
@@ -93,14 +92,10 @@ int main (int argc, char *argv [])
   pub_obj = make_pub_object();  
   sub_obj = make_sub_object();
   
-  sub_obj->schema_hash = create_schema_hash("/home/jivs/workspace/packedobjects/examples/c-xml/schema.xsd");
-  get_broker_sub_address(sub_obj);
-  get_broker_pub_address(pub_obj);
-
-  /* pub_obj->in_port = in_port; */
-  /* pub_obj->address = g_strdup_printf("%s",address); */
-  /* sub_obj->out_port = out_port; */
-  /* sub_obj->address = g_strdup_printf("%s",address); */
+  pub_obj->in_port = in_port;
+  pub_obj->address = g_strdup_printf("%s",address);
+  sub_obj->out_port = out_port;
+  sub_obj->address = g_strdup_printf("%s",address);
   
   if( (g_strcmp0(type,"both") == 0) || (g_strcmp0(type,"pub") == 0) ) {
     /* Connects to PUB socket, program quits if connect fails * */

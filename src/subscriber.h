@@ -39,14 +39,6 @@ subObject *make_sub_object()
   return sub_obj;
 }
 
-void get_broker_sub_address(subObject *sub_obj)
-{
-  /* Send schema hash to look up server and get broker sub address and port */
-  /* Temporary hack to supply port and address of broker */
-  sub_obj->out_port = DEFAULT_OUT_PORT;
-  sub_obj->address = g_strdup_printf("%s",DEFAULT_ADDRESS);
-}
-
 void *subscribe_to_broker(subObject *sub_obj)
 {
   int rc;
@@ -76,6 +68,7 @@ void *subscribe_to_broker(subObject *sub_obj)
 
 char *receive_data(subObject *sub_obj)
 {
+  /* Reading first part of the message */
   zmq_msg_t message;
   zmq_msg_init (&message);
   if (zmq_recv (sub_obj->subscriber, &message, 0))
@@ -85,6 +78,24 @@ char *receive_data(subObject *sub_obj)
   memcpy (data, zmq_msg_data (&message), size);
   zmq_msg_close (&message);
   data [size] = 0;
+  printf("1st part: %s\n",data);
+
+  /* Reading second part of the message if any */
+  int64_t more;
+  size_t more_size = sizeof (more);
+  zmq_getsockopt (sub_obj->subscriber, ZMQ_RCVMORE, &more, &more_size);
+  if (more) {
+    zmq_msg_t message;
+    zmq_msg_init (&message);
+    if (zmq_recv (sub_obj->subscriber, &message, 0))
+      return (NULL);
+    int size = zmq_msg_size (&message);
+    char *data = malloc (size + 1);
+    memcpy (data, zmq_msg_data (&message), size);
+    zmq_msg_close (&message);
+    data [size] = 0;
+    printf("2nd part: %s\n",data);
+  }
 
   return data;
 }

@@ -14,10 +14,10 @@ server_SOURCES = config.h server.c lookup.c lookup.h
 
 server_LDADD = $(GLIB_LIBS)  $(LIBZMQ_LIBS)
 
-node_SOURCES = config.h node.c subscriber.h publisher.h xmlschema.h
+node_SOURCES = config.h node.c subscriber.h publisher.h 
 
 node_LDADD = $(GLIB_LIBS) $(LIBZMQ_LIBS)
 
-node_DATA = subscriber.h publisher.h xmlschema.h
+node_DATA = subscriber.h publisher.h 
 
 nodedir = /usr/local/include/

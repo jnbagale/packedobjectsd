@@ -39,15 +39,6 @@ pubObject *make_pub_object()
   return pub_obj;
 }
 
-void get_broker_pub_address(pubObject *pub_obj)
-{
-  /* Send schema hash to look up server and get broker pub address and port */
-
-  /* Temporary hack to supply port and address of broker */
-  pub_obj->in_port = DEFAULT_IN_PORT;
-  pub_obj->address = g_strdup_printf("%s",DEFAULT_ADDRESS);
-}
-
 pubObject *publish_to_broker(pubObject *pub_obj)
 {
   int rc; 
@@ -67,19 +58,29 @@ pubObject *publish_to_broker(pubObject *pub_obj)
   return pub_obj;
 }
 
-int send_data(pubObject *pub_obj, char *message, int msglen, int encode)
+int send_data(pubObject *pub_obj, char *message, int msglen, char *encode)
 {
   int rc;
-  zmq_msg_t z_msg;
-  zmq_msg_t z_encode;
 
+ 
+  /* Prepare first part of the message */
+  zmq_msg_t z_encode;
   rc = zmq_msg_init_size (&z_encode, 1);
   assert(rc ==0);
   memcpy (zmq_msg_data (&z_encode), encode, 1);
-  // Send message to broker for group 
+
+  /* Send first part of the message */
+  rc = zmq_send (pub_obj->publisher, &z_encode, ZMQ_SNDMORE);
+  assert(rc ==0);
+  zmq_msg_close (&z_encode);
+
+  /* Prepare second part of the message */
+  zmq_msg_t z_msg;
   rc = zmq_msg_init_size (&z_msg, msglen);
   assert(rc ==0);
   memcpy (zmq_msg_data (&z_msg), message, msglen);
+
+  /* Send second part of the message */
   rc = zmq_send (pub_obj->publisher, &z_msg, 0);
   assert(rc == 0);
   zmq_msg_close (&z_msg);
