@@ -32,7 +32,7 @@ pubObject *make_pub_object()
   pubObject *pub_obj;
 
   if ((pub_obj = (pubObject *)g_malloc(sizeof(pubObject))) == NULL) {
-    //g_printerr("failed to malloc pubObject!");
+    //printf("failed to malloc pubObject!\n");
     exit(EXIT_FAILURE);
   }
 
@@ -62,7 +62,6 @@ int send_data(pubObject *pub_obj, char *message, int msglen, char *encode)
 {
   int rc;
 
- 
   /* Prepare first part of the message */
   zmq_msg_t z_encode;
   rc = zmq_msg_init_size (&z_encode, 1);
@@ -73,7 +72,7 @@ int send_data(pubObject *pub_obj, char *message, int msglen, char *encode)
   rc = zmq_send (pub_obj->publisher, &z_encode, ZMQ_SNDMORE);
   assert(rc ==0);
   zmq_msg_close (&z_encode);
-
+ 
   /* Prepare second part of the message */
   zmq_msg_t z_msg;
   rc = zmq_msg_init_size (&z_msg, msglen);

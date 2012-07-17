@@ -14,6 +14,7 @@
 
 #include <zmq.h>
 #include <stdio.h>
+#include <glib.h>
 #include <assert.h> /* for assert() */
 #include <string.h> /* for strlen() */
 #include <stdlib.h> /* for exit()   */
@@ -22,9 +23,10 @@ typedef struct {
   void *context;
   void *subscriber;
   int out_port;
+  char *encode;
+  char *message;
   char *address;
   char *sub_endpoint;
-  char *schema_hash;
 } subObject;
 
 subObject *make_sub_object()
@@ -32,7 +34,7 @@ subObject *make_sub_object()
   subObject *sub_obj;
 
   if ((sub_obj = (subObject *)g_malloc(sizeof(subObject))) == NULL) {
-    //g_printerr("failed to malloc subObject!");
+    //printf("failed to malloc subObject!\n");
     exit(EXIT_FAILURE);
   }
 
@@ -66,7 +68,7 @@ void *subscribe_to_broker(subObject *sub_obj)
   return sub_obj;
 }
 
-char *receive_data(subObject *sub_obj)
+subObject *receive_data(subObject *sub_obj)
 {
   /* Reading first part of the message */
   zmq_msg_t message;
@@ -78,7 +80,8 @@ char *receive_data(subObject *sub_obj)
   memcpy (data, zmq_msg_data (&message), size);
   zmq_msg_close (&message);
   data [size] = 0;
-  printf("1st part: %s\n",data);
+  sub_obj->encode = g_strdup_printf("%s",data);
+  free(data);
 
   /* Reading second part of the message if any */
   int64_t more;
@@ -94,10 +97,11 @@ char *receive_data(subObject *sub_obj)
     memcpy (data, zmq_msg_data (&message), size);
     zmq_msg_close (&message);
     data [size] = 0;
-    printf("2nd part: %s\n",data);
+    sub_obj->message = g_strdup_printf("%s",data);
+    free(data);
   }
 
-  return data;
+  return sub_obj;
 }
 
 void unsubscribe_to_broker(subObject *sub_obj)

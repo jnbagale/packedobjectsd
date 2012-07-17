@@ -17,9 +17,9 @@
 #include <zmq.h>
 #include <glib.h>
 #include <string.h>  /* for strlen() */
-#include <stdlib.h>  /* for exit()   */
-#include <unistd.h>  /* for read */
-#include <fcntl.h>   /* for open() */
+#include <stdlib.h>  /* for exit()  */
+#include <unistd.h>  /* for read() */
+#include <fcntl.h>   /* for open()*/
 
 #include "config.h"
 #include "publisher.h"
@@ -30,7 +30,7 @@ static int global_send_counter = 0;
 static gboolean publish_data(pubObject *pub_obj)
 {
   gchar *message = g_strdup_printf("%s#%d", "test message",global_send_counter++);
-  send_data(pub_obj, message, strlen(message), "1"); 
+  send_data(pub_obj, message, strlen(message), "T"); 
   g_print("Message sent: %s\n", message);
 
   g_free(message);
@@ -39,10 +39,18 @@ static gboolean publish_data(pubObject *pub_obj)
 
 static gboolean subscribe_data(subObject *sub_obj)
 {
-  gchar *message = receive_data(sub_obj);
-  g_print("Message received: %s \n", message);
+  sub_obj = receive_data(sub_obj);
+  if(strcmp (sub_obj->encode,"T") == 0) {
+    g_print("Message received with encoding: %s \n",sub_obj->message);
+  } else if(strcmp (sub_obj->encode,"F") == 0) {
+    g_print("Message received without encoding: %s \n",sub_obj->message);
+  }
+  else {
+    g_print("Message received but encoding status is invalid: %s \n",sub_obj->message);
+  }
+  g_free(sub_obj->encode);
+  g_free(sub_obj->message);
 
-  g_free(message);
   return TRUE;  
 }
 
