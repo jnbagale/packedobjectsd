@@ -10,9 +10,13 @@ broker_DATA =
 
 brokerdir = /var/lib/misc
 
-server_SOURCES = config.h server.c lookup.c lookup.h
+server_SOURCES = config.h server.c lookup.c lookup.h #packedobjectsd.db
 
 server_LDADD = $(GLIB_LIBS)  $(LIBZMQ_LIBS)
+
+server_DATA = #packedobjectsd.db
+
+serverdir = /var/lib/misc
 
 node_SOURCES = config.h node.c subscriber.h publisher.h 
 

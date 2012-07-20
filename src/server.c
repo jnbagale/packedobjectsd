@@ -4,6 +4,7 @@
 
 #include <glib.h>
 #include <stdlib.h>  /* for exit()   */
+#include <db.h>
 
 #include "config.h"
 #include "lookup.h"
@@ -35,9 +36,15 @@ int main(int argc, char** argv)
     g_printerr("Couldn't create GMainLoop\n");
     exit(EXIT_FAILURE);
   }
+
+  /* Initialise the database */
+  DB *db_ptr = NULL;
+  db_ptr = init_bdb(db_ptr);
+  db_ptr = write_db(db_ptr);
+  read_db(db_ptr);
   
   /* Run a thread to start the server */
-  start_server();
+  //start_server();
 
   g_main_loop_run(mainloop);
 

@@ -35,6 +35,11 @@ AC_TYPE_SIZE_T
 # Checks for library functions.
 AC_FUNC_MALLOC
 
+# Check for berkeley db library and header
+#AC_SEARCH_LIBS([db_create], [db], [have_libdb=yes])
+AC_CHECK_LIB(db, db_create, , AC_MSG_ERROR(*** berkeley db not found))
+AC_CHECK_HEADERS(db.h)
+
 # check for glib
 PKG_CHECK_MODULES(GLIB, [glib-2.0])
 
