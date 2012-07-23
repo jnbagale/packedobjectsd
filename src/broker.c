@@ -27,7 +27,6 @@ int main(int argc, char** argv)
   int in_port = DEFAULT_IN_PORT;
   int out_port = DEFAULT_OUT_PORT;
   char *address = DEFAULT_ADDRESS;
-  char *hash_schema = NULL;
   gboolean verbose = FALSE;
   GError *error = NULL;
   GOptionContext *context;
@@ -54,7 +53,7 @@ int main(int argc, char** argv)
   broker_obj = init_broker( broker_obj, address, in_port, out_port);
 
   /* Send Broker details to the server*/
-  connect_to_server(broker_obj, hash_schema);
+  connect_to_server(broker_obj, "./schema.xsd");
 
   /* Start the broker */
   start_broker(broker_obj);

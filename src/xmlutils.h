@@ -11,17 +11,36 @@
 /* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the */
 /* GNU General Public License for more details. */
 
-#include <db.h>
- 
-typedef struct {
+#include <libxml/xmlschemas.h>
+#include <libxml/xmlschemastypes.h>
+
+xmlChar *xmldoc2string(xmlDoc *doc, int *size)
+{
+  xmlChar *xmlbuff;
+
+  xmlDocDumpFormatMemory(doc, &xmlbuff, size, 0);
   
-  DB *db_ptr;
+  return xmlbuff;
 
-}serverObject;
+}
 
-DB *init_bdb();
-DB *write_db(DB *db_ptr);
-void read_db(DB *db_ptr);
-void close_bdb(DB *db_ptr);
-serverObject *start_server(serverObject *server_obj);
+xmlDoc *xmlstring2doc(char *xmlstr, int size)
+{
+  return xmlParseMemory(xmlstr, size);
 
+}
+
+xmlDoc *init_xmlutils(char *file)
+{
+  xmlDoc *doc = NULL;
+
+  xmlKeepBlanksDefault(0);
+  doc = xmlReadFile(file, NULL, 0);
+  
+  if (doc == NULL) {
+    printf("error: could not parse file %s\n", file);
+  }
+
+  return doc;
+ 
+}

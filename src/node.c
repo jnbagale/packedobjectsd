@@ -21,7 +21,9 @@
 #include <unistd.h>  /* for read() */
 #include <fcntl.h>   /* for open()*/
 
+
 #include "config.h"
+#include "xmlutils.h"
 #include "publisher.h"
 #include "subscriber.h"
 
@@ -29,10 +31,11 @@ static int global_send_counter = 0;
 
 static gboolean publish_data(pubObject *pub_obj)
 {
+  char msg[20] = "test message";
   char *message;
 
-  message = malloc (sizeof(int) + 13 + 1);
-  sprintf(message, "%s#%d", "test message",global_send_counter++);
+  message = malloc (sizeof(int) + strlen(msg) + 1);
+  sprintf(message, "%s#%d", msg ,global_send_counter++);
   send_data(pub_obj, message, strlen(message), "T"); 
   printf("Message sent: %s\n", message);
 
@@ -51,6 +54,7 @@ static gboolean subscribe_data(subObject *sub_obj)
   else {
     printf("Message received but encoding status is invalid: %s \n",sub_obj->message);
   }
+
   free(sub_obj->encode);
   free(sub_obj->message);
 
@@ -65,6 +69,9 @@ int main (int argc, char *argv [])
   int in_port = DEFAULT_IN_PORT;
   int recv_freq = DEFAULT_RECV_FREQ;
   int send_freq = DEFAULT_SEND_FREQ;
+  int size;
+  char *char_schema, *hash_schema;
+  xmlDoc *doc_schema = NULL;
   gboolean verbose = FALSE;
   GError *error = NULL;
   GOptionContext *context;
@@ -98,7 +105,16 @@ int main (int argc, char *argv [])
     exit(EXIT_FAILURE);
   }
 
-  
+  doc_schema = init_xmlutils("./schema.xsd");
+  char_schema = (char *)xmldoc2string(doc_schema, &size);
+  hash_schema = g_compute_checksum_for_string(G_CHECKSUM_MD5, char_schema, strlen(char_schema));
+  printf("MD5 hash of schema: %s =\n %s\n",char_schema, hash_schema);
+
+  free(char_schema);
+  free(hash_schema);
+  xmlFreeDoc(doc_schema);
+  exit(0);
+
   /* Initialise objects & variables */
   pub_obj = make_pub_object();  
   sub_obj = make_sub_object();

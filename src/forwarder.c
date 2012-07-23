@@ -17,12 +17,14 @@
 
 #include <zmq.h>
 #include <stdio.h>
+#include <glib.h>
 #include <string.h> /* for strncat() */
 #include <assert.h> /* for assert() */
 #include <stdlib.h> /* for exit()   */
 #include <inttypes.h> /* for uint64_t */
 
 #include "config.h"
+#include "xmlutils.h"
 #include "forwarder.h"
 
 brokerObject *make_broker_object()
@@ -56,13 +58,44 @@ brokerObject *init_broker(brokerObject *broker_obj, char *address, int in_port, 
   return broker_obj;
 }
 
-void connect_to_server(brokerObject *broker_obj, char *hash_schema)
+void connect_to_server(brokerObject *broker_obj, char *path_schema)
 {
- 
+  int size;
+  char *data;
+  char *char_schema, *hash_schema;
+  xmlDoc *doc_schema = NULL;
+
+  /* Creating MD5 hash of the xml schema*/
+  doc_schema = init_xmlutils(path_schema);
+  char_schema = (char *)xmldoc2string(doc_schema, &size);
+  hash_schema = g_compute_checksum_for_string(G_CHECKSUM_MD5, char_schema, strlen(char_schema));
+
   printf("Connecting to the server....\n \n");
-  /* networking code to connect to server and */
-  /* send hash of schema and network address will come here */
-  printf("Sent broker details to the server\n");
+  void *context = zmq_init (1);
+
+  // Socket to talk to server
+  void *requester = zmq_socket (context, ZMQ_REQ);
+  zmq_connect (requester, "tcp://127.0.0.1:5555");
+
+  zmq_msg_t request;
+  zmq_msg_init_size (&request, strlen(hash_schema));
+  memcpy (zmq_msg_data (&request), hash_schema, strlen(hash_schema));
+  printf ("Sending schema hash to the server: %s\n",hash_schema);
+  zmq_send (requester, &request, 0);
+  zmq_msg_close (&request);
+
+  zmq_msg_t reply;
+  zmq_msg_init (&reply);
+  zmq_recv (requester, &reply, 0);
+
+  size = zmq_msg_size (&reply);
+  data = malloc(size + 1);
+  memcpy ( data, zmq_msg_data (&reply), size);
+  data[size] = 0;
+
+  printf ("Received broker address: %s\n",data);
+  zmq_msg_close (&reply);
+
 }
 
 void start_broker(brokerObject *broker_obj)

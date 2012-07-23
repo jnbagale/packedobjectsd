@@ -1,10 +1,10 @@
-INCLUDES = -Wall $(GLIB_CFLAGS)  $(LIBZMQ_CFLAGS)
+INCLUDES = -Wall $(GLIB_CFLAGS)  $(LIBZMQ_CFLAGS) $(LIBXML2_CFLAGS)
 
 bin_PROGRAMS = server broker node
 
-broker_SOURCES = config.h broker.c forwarder.c forwarder.h
+broker_SOURCES = config.h broker.c forwarder.c forwarder.h xmlutils.h
 
-broker_LDADD = $(GLIB_LIBS)  $(LIBZMQ_LIBS)
+broker_LDADD = $(GLIB_LIBS)  $(LIBZMQ_LIBS)  $(LIBXML2_LIBS)
 
 broker_DATA =
 
@@ -18,9 +18,9 @@ server_DATA = #packedobjectsd.db
 
 serverdir = /var/lib/misc
 
-node_SOURCES = config.h node.c subscriber.h publisher.h 
+node_SOURCES = config.h node.c subscriber.h publisher.h xmlutils.h
 
-node_LDADD = $(GLIB_LIBS) $(LIBZMQ_LIBS)
+node_LDADD = $(GLIB_LIBS) $(LIBZMQ_LIBS) $(LIBXML2_LIBS)
 
 node_DATA = subscriber.h publisher.h 
 
