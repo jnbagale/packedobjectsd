@@ -29,11 +29,14 @@ static int global_send_counter = 0;
 
 static gboolean publish_data(pubObject *pub_obj)
 {
-  gchar *message = g_strdup_printf("%s#%d", "test message",global_send_counter++);
-  send_data(pub_obj, message, strlen(message), "T"); 
-  g_print("Message sent: %s\n", message);
+  char *message;
 
-  g_free(message);
+  message = malloc (sizeof(int) + 13 + 1);
+  sprintf(message, "%s#%d", "test message",global_send_counter++);
+  send_data(pub_obj, message, strlen(message), "T"); 
+  printf("Message sent: %s\n", message);
+
+  free(message);
   return TRUE;  
 }
 
@@ -41,15 +44,15 @@ static gboolean subscribe_data(subObject *sub_obj)
 {
   sub_obj = receive_data(sub_obj);
   if(strcmp (sub_obj->encode,"T") == 0) {
-    g_print("Message received with encoding: %s \n",sub_obj->message);
+    printf("Message received with encoding: %s \n",sub_obj->message);
   } else if(strcmp (sub_obj->encode,"F") == 0) {
-    g_print("Message received without encoding: %s \n",sub_obj->message);
+    printf("Message received without encoding: %s \n",sub_obj->message);
   }
   else {
-    g_print("Message received but encoding status is invalid: %s \n",sub_obj->message);
+    printf("Message received but encoding status is invalid: %s \n",sub_obj->message);
   }
-  g_free(sub_obj->encode);
-  g_free(sub_obj->message);
+  free(sub_obj->encode);
+  free(sub_obj->message);
 
   return TRUE;  
 }
@@ -84,14 +87,14 @@ int main (int argc, char *argv [])
   g_option_context_add_main_entries (context, entries, PACKAGE_NAME);
   
   if (!g_option_context_parse (context, &argc, &argv, &error)) {
-    g_printerr("option parsing failed: %s\n", error->message);
+    printf("option parsing failed: %s\n", error->message);
     exit (EXIT_FAILURE);
   }
 
   /* Initialise mainloop */
   mainloop = g_main_loop_new(NULL, FALSE);
   if (mainloop == NULL) {
-    g_printerr("Couldn't create GMainLoop\n");
+    printf("Couldn't create GMainLoop\n");
     exit(EXIT_FAILURE);
   }
 
@@ -101,11 +104,14 @@ int main (int argc, char *argv [])
   sub_obj = make_sub_object();
   
   pub_obj->in_port = in_port;
-  pub_obj->address = g_strdup_printf("%s",address);
+  pub_obj->address = malloc (strlen(address) + 1);
+  sprintf(pub_obj->address, "%s",address);
+
+  sub_obj->address = malloc (strlen(address) + 1);
   sub_obj->out_port = out_port;
-  sub_obj->address = g_strdup_printf("%s",address);
+  sprintf(sub_obj->address, "%s",address);
   
-  if( (g_strcmp0(type,"both") == 0) || (g_strcmp0(type,"pub") == 0) ) {
+  if( (strcmp(type,"both") == 0) || (strcmp(type,"pub") == 0) ) {
     /* Connects to PUB socket, program quits if connect fails * */
    
     pub_obj = publish_to_broker(pub_obj);
@@ -113,7 +119,7 @@ int main (int argc, char *argv [])
     g_timeout_add(send_freq, (GSourceFunc)publish_data, (gpointer)pub_obj);
   }
 
-  if( (g_strcmp0(type,"both") == 0) || (g_strcmp0(type,"sub") == 0) ) {
+  if( (strcmp(type,"both") == 0) || (strcmp(type,"sub") == 0) ) {
     /* Connects to SUB socket, program quits if connect fails */
  
     sub_obj = subscribe_to_broker(sub_obj);

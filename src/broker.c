@@ -16,6 +16,7 @@
 /* Binds publishers to inbound socket */
 
 #include <glib.h>
+#include <stdio.h>
 #include <stdlib.h> /* for exit()   */
 
 #include "config.h"
@@ -23,10 +24,10 @@
 
 int main(int argc, char** argv)
 {
-  gint in_port = DEFAULT_IN_PORT;
-  gint out_port = DEFAULT_OUT_PORT;
-  gchar *address = DEFAULT_ADDRESS;
-  gchar *hash_schema = NULL;
+  int in_port = DEFAULT_IN_PORT;
+  int out_port = DEFAULT_OUT_PORT;
+  char *address = DEFAULT_ADDRESS;
+  char *hash_schema = NULL;
   gboolean verbose = FALSE;
   GError *error = NULL;
   GOptionContext *context;
@@ -45,7 +46,7 @@ int main(int argc, char** argv)
   g_option_context_add_main_entries (context, entries, PACKAGE_NAME);
   
   if (!g_option_context_parse (context, &argc, &argv, &error)) {
-    g_printerr("option parsing failed: %s\n", error->message);
+    printf("option parsing failed: %s\n", error->message);
     exit (EXIT_FAILURE);
   }  
   /* Initialisation of broker object & variables */

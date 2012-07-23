@@ -14,7 +14,6 @@
 
 #include <zmq.h>
 #include <stdio.h>
-#include <glib.h>
 #include <assert.h> /* for assert() */
 #include <string.h> /* for strlen() */
 #include <stdlib.h> /* for exit()   */
@@ -33,7 +32,7 @@ subObject *make_sub_object()
 {
   subObject *sub_obj;
 
-  if ((sub_obj = (subObject *)g_malloc(sizeof(subObject))) == NULL) {
+  if ((sub_obj = (subObject *)malloc(sizeof(subObject))) == NULL) {
     //printf("failed to malloc subObject!\n");
     exit(EXIT_FAILURE);
   }
@@ -45,7 +44,10 @@ void *subscribe_to_broker(subObject *sub_obj)
 {
   int rc;
   uint64_t hwm = 100;
-  sub_obj->sub_endpoint =  g_strdup_printf("tcp://%s:%d",sub_obj->address, sub_obj->out_port);
+  int size = strlen(sub_obj->address);
+
+  sub_obj->sub_endpoint = malloc(size + sizeof (int) + 7 + 1); /* 7 bytes for 'tcp://' and ':' */
+  sprintf(sub_obj->sub_endpoint, "tcp://%s:%d",sub_obj->address, sub_obj->out_port);
 
   /* Prepare the context and subscriber socket */
   sub_obj->context = zmq_init (1);
@@ -57,14 +59,14 @@ void *subscribe_to_broker(subObject *sub_obj)
 
   rc = zmq_connect (sub_obj->subscriber, sub_obj->sub_endpoint);
   assert(rc == 0);
-  g_print("Sub_Obj->Subscriber: Successfully connected to SUB socket\n");
+  printf("Sub_Obj->Subscriber: Successfully connected to SUB socket\n");
 
   /* Subscribe to group by filtering the received data*/
   rc = zmq_setsockopt (sub_obj->subscriber, ZMQ_SUBSCRIBE, "", 0);
   assert(rc == 0);
-  g_print("Sub_Obj->Subscriber: Ready to receive data from broker %s\n",sub_obj->sub_endpoint);
+  printf("Sub_Obj->Subscriber: Ready to receive data from broker %s\n",sub_obj->sub_endpoint);
 
-  g_free(sub_obj->sub_endpoint);
+  free(sub_obj->sub_endpoint);
   return sub_obj;
 }
 
@@ -76,13 +78,12 @@ subObject *receive_data(subObject *sub_obj)
   if (zmq_recv (sub_obj->subscriber, &message, 0))
     return (NULL);
   int size = zmq_msg_size (&message);
-  char *data = malloc (size + 1);
-  memcpy (data, zmq_msg_data (&message), size);
+  
+  sub_obj->encode = malloc(size + 1);
+  memcpy ( sub_obj->encode, zmq_msg_data (&message), size);
   zmq_msg_close (&message);
-  data [size] = 0;
-  sub_obj->encode = g_strdup_printf("%s",data);
-  free(data);
-
+  sub_obj->encode [size] = 0;
+ 
   /* Reading second part of the message if any */
   int64_t more;
   size_t more_size = sizeof (more);
@@ -93,12 +94,11 @@ subObject *receive_data(subObject *sub_obj)
     if (zmq_recv (sub_obj->subscriber, &message, 0))
       return (NULL);
     int size = zmq_msg_size (&message);
-    char *data = malloc (size + 1);
-    memcpy (data, zmq_msg_data (&message), size);
+
+    sub_obj->message = malloc (size + 1);
+    memcpy (sub_obj->message, zmq_msg_data (&message), size);
     zmq_msg_close (&message);
-    data [size] = 0;
-    sub_obj->message = g_strdup_printf("%s",data);
-    free(data);
+    sub_obj->message [size] = 0;
   }
 
   return sub_obj;

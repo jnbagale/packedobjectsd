@@ -26,8 +26,8 @@ serverObject *make_server_object()
 {
   serverObject *server_obj;
 
-  if ((server_obj = (serverObject *)g_malloc(sizeof(serverObject))) == NULL) {
-    //g_printerr("failed to malloc serverObject!");
+  if ((server_obj = (serverObject *)malloc(sizeof(serverObject))) == NULL) {
+    //printf("failed to malloc serverObject!");
     exit(EXIT_FAILURE);
   }
 
@@ -52,10 +52,10 @@ DB *init_bdb(DB *db_ptr)
   }
 
   /* Database open flags */
-  flags = DB_CREATE;    /* If the database does not exist, create it.*/
+  flags = 0; //DB_CREATE;    /* If the database does not exist, create it.*/
 
   /* open the database */
-  ret = db_ptr->open(db_ptr, NULL, DATABASE, NULL, DB_HASH, flags,  0);
+  ret = db_ptr->open(db_ptr, NULL, DATABASE, NULL, DB_HASH, flags, 0);
 
   if (ret != 0) {
     printf("Error opening database!\n");
@@ -65,8 +65,10 @@ DB *init_bdb(DB *db_ptr)
   else {
     printf("Database is opened and ready for use\n");
   }
+
   return db_ptr;
 }
+
 DB *write_db(DB *db_ptr)
 {
   int ret;
@@ -91,7 +93,7 @@ DB *write_db(DB *db_ptr)
     db_ptr->err(db_ptr, ret, "Put failed because key %s already exists", schema_hash);
   }
  else
-   printf("The key:- %s &\n data:- %s \nis inserted to database successfully\n", schema_hash, address);
+   printf("The key:- %s and data:- %s \nis inserted to database successfully\n", schema_hash, address);
   return db_ptr;
 }
 
@@ -121,22 +123,22 @@ void read_db(DB *db_ptr)
     db_ptr->err(db_ptr, ret, "The key:- %s: doesn't exist in database\n", schema_hash1);
   }
   else
-    printf("The address of the broker for the given schema is:\n %s\n", address1);
+    printf("The address of the broker for the given schema: %s is:\n %s\n", schema_hash1, address1);
 }
 
 void start_server(void)
 {
   // dummy function 
-  //g_print("I do nothing at the moment. I am just a dummy function\n");
+  //printf("I do nothing at the moment. I am just a dummy function\n");
 }
 
-gint store_address(gchar *schema_hash, gchar *address)
+int store_address(char *schema_hash, char *address)
 {
   //dummy function to retrieve and store store schema and address of broker
   return 1;
 }
 
-gchar *lookup_address(gchar *schema_hash)
+char *lookup_address(char *schema_hash)
 {
   //dummy function to listen to look up request from nodes and return address of broker
   return "127.0.0.1";

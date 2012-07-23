@@ -11,22 +11,20 @@
 /* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the */
 /* GNU General Public License for more details. */
 
-#include <glib.h>
-
 typedef struct {
 
   void *context;
   void *frontend;
   void *backend;
-  gint out_port;
-  gint in_port;
-  gchar *address;
-  gchar *front_endpoint;
-  gchar *back_endpoint;
+  int out_port;
+  int in_port;
+  char *address;
+  char *front_endpoint;
+  char *back_endpoint;
 } brokerObject;
 
 brokerObject *make_broker_object();
-brokerObject *init_broker(brokerObject *broker_obj, gchar *address, gint in_port, gint out_port);
+brokerObject *init_broker(brokerObject *broker_obj, char *address, int in_port, int out_port);
 void start_broker(brokerObject *broker_obj);
-void connect_to_server(brokerObject *broker_obj, gchar *hash_schema);
+void connect_to_server(brokerObject *broker_obj, char *hash_schema);
 void free_broker_object(brokerObject *broker_obj);

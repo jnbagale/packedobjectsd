@@ -11,7 +11,6 @@
 /* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the */
 /* GNU General Public License for more details. */
 
-#include <glib.h>
 #include <db.h>
  
 typedef struct {
@@ -26,5 +25,5 @@ DB *write_db(DB *db_ptr);
 void read_db(DB *db_ptr);
 void close_bdb(DB *db_ptr);
 void start_server(void);
-gint store_address(gchar *schema_hash, gchar *address);
-gchar *lookup_address(gchar *schema_hash);
+int store_address(char *schema_hash, char *address);
+char *lookup_address(char *schema_hash);

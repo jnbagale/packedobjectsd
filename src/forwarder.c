@@ -16,8 +16,8 @@
 /* Binds publishers to inbound socket */
 
 #include <zmq.h>
-#include <glib.h>
 #include <stdio.h>
+#include <string.h> /* for strncat() */
 #include <assert.h> /* for assert() */
 #include <stdlib.h> /* for exit()   */
 #include <inttypes.h> /* for uint64_t */
@@ -29,29 +29,34 @@ brokerObject *make_broker_object()
 {
   brokerObject *broker_obj;
 
-  if ((broker_obj = (brokerObject *)g_malloc(sizeof(brokerObject))) == NULL) {
-    //g_printerr("failed to malloc brokerObject!");
+  if ((broker_obj = (brokerObject *)malloc(sizeof(brokerObject))) == NULL) {
+    //printferr("failed to malloc brokerObject!");
     exit(EXIT_FAILURE);
   }
 
   return broker_obj;
 }
 
-brokerObject *init_broker(brokerObject *broker_obj, gchar *address, gint in_port, gint out_port)
+brokerObject *init_broker(brokerObject *broker_obj, char *address, int in_port, int out_port)
 {
+  int size = strlen(address);
   broker_obj->in_port = in_port;
   broker_obj->out_port = out_port;
-  broker_obj->address =  g_strdup_printf("%s",address);
-  
+
+  broker_obj->address = malloc(size + 1);
+  memcpy(broker_obj->address, address, size);
+
   /* To subscribe to all the publishers */
-  broker_obj->front_endpoint = g_strdup_printf("tcp://%s:%d",broker_obj->address, broker_obj->in_port);
-  
+  broker_obj->front_endpoint = malloc(size + sizeof (int) + 7 + 1); /* 7 bytes for 'tcp://' and ':' */
+  sprintf(broker_obj->front_endpoint, "tcp://%s:%d",broker_obj->address, broker_obj->in_port);
+
   /* To publish to all the subscribers */
-  broker_obj->back_endpoint =  g_strdup_printf("tcp://%s:%d",broker_obj->address, broker_obj->out_port);
+  broker_obj->back_endpoint = malloc(size + sizeof (int) + 7 + 1); /* 7 bytes for 'tcp://' and ':' */
+  sprintf( broker_obj->back_endpoint, "tcp://%s:%d",broker_obj->address, broker_obj->out_port);
   return broker_obj;
 }
 
-void connect_to_server(brokerObject *broker_obj, gchar *hash_schema)
+void connect_to_server(brokerObject *broker_obj, char *hash_schema)
 {
  
   printf("Connecting to the server....\n \n");
@@ -62,13 +67,13 @@ void connect_to_server(brokerObject *broker_obj, gchar *hash_schema)
 
 void start_broker(brokerObject *broker_obj)
 {
-  gint rc; 
+  int rc; 
   uint64_t hwm = 100; 
 
   /* Prepare the context */
   broker_obj->context  = zmq_init (1);
   if (!broker_obj->context){
-    g_print("Error occurred during zmq_init(): %s\n", zmq_strerror (errno));
+    printf("Error occurred during zmq_init(): %s\n", zmq_strerror (errno));
     free_broker_object(broker_obj);
     exit(EXIT_FAILURE);
   }
@@ -76,7 +81,7 @@ void start_broker(brokerObject *broker_obj)
   /* Prepare the frontend socket */
   broker_obj->frontend  = zmq_socket (broker_obj->context, ZMQ_SUB);
   if (broker_obj->frontend == NULL){
-    g_print("Error occurred during zmq_socket() frontend: %s\n", zmq_strerror (errno));
+    printf("Error occurred during zmq_socket() frontend: %s\n", zmq_strerror (errno));
     free_broker_object(broker_obj);
     exit(EXIT_FAILURE);
   }
@@ -84,7 +89,7 @@ void start_broker(brokerObject *broker_obj)
   /* Prepare the backend socket */
   broker_obj->backend = zmq_socket (broker_obj->context, ZMQ_PUB);
   if (broker_obj->backend == NULL){
-    g_print("Error occurred during zmq_socket() backend: %s\n", zmq_strerror (errno));
+    printf("Error occurred during zmq_socket() backend: %s\n", zmq_strerror (errno));
     free_broker_object(broker_obj);
     exit(EXIT_FAILURE);
   }
@@ -92,19 +97,19 @@ void start_broker(brokerObject *broker_obj)
   /* Bind the frontend socket to subscribe to publishers */
   rc = zmq_bind (broker_obj->frontend,  broker_obj->front_endpoint);
   if (rc == -1){
-    g_print("Error occurred during zmq_bind() frontend: %s\n", zmq_strerror (errno));
+    printf("Error occurred during zmq_bind() frontend: %s\n", zmq_strerror (errno));
     free_broker_object(broker_obj);
     exit(EXIT_FAILURE);
   }
   else{
-    g_print("Broker: Successfully binded to frontend socket at %s\n",  broker_obj->front_endpoint);
-    g_free( broker_obj->front_endpoint);
+    printf("Broker: Successfully binded to frontend socket at %s\n",  broker_obj->front_endpoint);
+    free( broker_obj->front_endpoint);
   }
 
    /* Subscribe for all the messages from publishers */
   rc = zmq_setsockopt (broker_obj->frontend, ZMQ_SUBSCRIBE, "", 0); 
   if (rc == -1){
-    g_print("Error occurred during zmq_setsockopt() backend: %s\n", zmq_strerror (errno));
+    printf("Error occurred during zmq_setsockopt() backend: %s\n", zmq_strerror (errno));
     free_broker_object(broker_obj);
     exit(EXIT_FAILURE);
   }
@@ -112,7 +117,7 @@ void start_broker(brokerObject *broker_obj)
   /* Set high water mark to control number of messages buffered for subscribers */
   rc = zmq_setsockopt (broker_obj->backend, ZMQ_HWM, &hwm, sizeof (hwm));
   if (rc == -1){
-    g_print("Error occurred during zmq_setsockopt() backend: %s\n", zmq_strerror (errno));
+    printf("Error occurred during zmq_setsockopt() backend: %s\n", zmq_strerror (errno));
     free_broker_object(broker_obj);
     exit(EXIT_FAILURE);
   }
@@ -120,13 +125,13 @@ void start_broker(brokerObject *broker_obj)
   /* Bind the backend socket to publish to subscribers */
   rc = zmq_bind (broker_obj->backend,  broker_obj->back_endpoint);
   if (rc == -1){
-    g_print("Error occurred during zmq_bind() backend: %s\n", zmq_strerror (errno));
+    printf("Error occurred during zmq_bind() backend: %s\n", zmq_strerror (errno));
     free_broker_object(broker_obj);
     exit(EXIT_FAILURE);
   }
   else{
-    g_print("Broker: Successfully binded to backend socket at %s\n", broker_obj->back_endpoint);
-    g_free(broker_obj->back_endpoint);
+    printf("Broker: Successfully binded to backend socket at %s\n", broker_obj->back_endpoint);
+    free(broker_obj->back_endpoint);
   }
 
   /* Start the forwarder device */
@@ -139,7 +144,7 @@ void free_broker_object(brokerObject *broker_obj)
   zmq_close(broker_obj->frontend);
   zmq_close(broker_obj->backend);
   zmq_term (broker_obj->context);
-  g_free(broker_obj->address);
-  g_free(broker_obj);  
+  free(broker_obj->address);
+  free(broker_obj);  
 }
 /* End of forwarder.c */

@@ -43,8 +43,11 @@ pubObject *publish_to_broker(pubObject *pub_obj)
 {
   int rc; 
   uint64_t hwm = 100;
-  pub_obj->pub_endpoint =  g_strdup_printf("tcp://%s:%d",pub_obj->address, pub_obj->in_port);
+  int size = strlen(pub_obj->address);
 
+  pub_obj->pub_endpoint = malloc(size + sizeof (int) + 7 + 1); /* 7 bytes for 'tcp://' and ':' */
+  sprintf(pub_obj->pub_endpoint, "tcp://%s:%d", pub_obj->address, pub_obj->in_port);
+ 
   /* Prepare the context and publisher socket */
   pub_obj->context = zmq_init (1);
   pub_obj->publisher = zmq_socket (pub_obj->context, ZMQ_PUB); 
@@ -52,8 +55,8 @@ pubObject *publish_to_broker(pubObject *pub_obj)
   assert(rc == 0);
   rc = zmq_connect (pub_obj->publisher, pub_obj->pub_endpoint);
   assert(rc == 0);
-  g_print("Publisher: Successfully connected to PUB socket\n");
-  g_print("Publisher: Ready to send data to broker at %s\n",pub_obj->pub_endpoint);
+  printf("Publisher: Successfully connected to PUB socket\n");
+  printf("Publisher: Ready to send data to broker at %s\n",pub_obj->pub_endpoint);
 
   return pub_obj;
 }
