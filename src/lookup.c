@@ -15,7 +15,7 @@
 #include <stdlib.h> 
 #include <string.h>
 #include <zmq.h> /* ZeroMQ request reply connection */
-#include <db.h> /* Berkeley db hash table */
+#include <db.h>  /* Berkeley db hash table */
 
 #include "config.h"
 #include "lookup.h"
@@ -23,19 +23,19 @@
 #define DATABASE "packedobjectsd.db"
 #define ADDRESS_SIZE 99
 
-serverObject *make_server_object()
+serverObject *make_server_object(void)
 {
   serverObject *server_obj;
 
   if ((server_obj = (serverObject *)malloc(sizeof(serverObject))) == NULL) {
-    //printf("failed to malloc serverObject!");
+    printf("failed to malloc serverObject!");
     exit(EXIT_FAILURE);
   }
 
   return server_obj;
 }
 
-DB *init_bdb(DB *db_ptr)
+serverObject *init_bdb(serverObject *server_obj)
 {
 
   /* DB structure handle */
@@ -43,7 +43,7 @@ DB *init_bdb(DB *db_ptr)
   int ret;           /* function return value */
 
   /* Initialize the structure */
-  ret = db_create(&db_ptr, NULL, 0);
+  ret = db_create(&server_obj->db_ptr, NULL, 0);
   if (ret != 0) {
     printf("Error creating database!\n");
     /* Error handling goes here */
@@ -51,10 +51,10 @@ DB *init_bdb(DB *db_ptr)
   }
 
   /* Database open flags */
-  flags = 0; //DB_CREATE   /* If the database does not exist, create it.*/
+  flags = 0; //DB_CREATE;   /* If the database does not exist, create it.*/
 
   /* open the database */
-  ret = db_ptr->open(db_ptr, NULL, DATABASE, NULL, DB_HASH, flags, 0);
+  ret = server_obj->db_ptr->open(server_obj->db_ptr, NULL, DATABASE, NULL, DB_HASH, flags, 0);
 
   if (ret != 0) {
     printf("Error opening database!\n");
@@ -65,15 +65,14 @@ DB *init_bdb(DB *db_ptr)
     printf("Database is opened and ready for use\n");
   }
 
-  return db_ptr;
+  return server_obj;
 }
 
-DB *write_db(DB *db_ptr)
+serverObject *write_db(serverObject *server_obj, char *schema_hash)
 {
   int ret;
   DBT key, data;
   
-  char *schema_hash = "schema-hash"; /* key */
   char *address = "127.0.0.1"; /* data */
   
   /* Initialize the DBTs */
@@ -81,95 +80,138 @@ DB *write_db(DB *db_ptr)
   memset(&data, 0, sizeof(DBT));
   
   key.data = schema_hash ;
-  key.size = sizeof(schema_hash);
+  key.size = strlen(schema_hash);
   
   data.data = address;
   data.size = strlen(address) + 1;
 
   /* Inserting data to the database */
-  ret = db_ptr->put(db_ptr, NULL, &key, &data, DB_NOOVERWRITE);
+  ret = server_obj->db_ptr->put(server_obj->db_ptr, NULL, &key, &data, DB_NOOVERWRITE);
   if (ret == DB_KEYEXIST) {
-    db_ptr->err(db_ptr, ret, "Put failed because key %s already exists", schema_hash);
+    server_obj->db_ptr->err(server_obj->db_ptr, ret, "Put failed because key %s already exists", schema_hash);
   }
  else
    printf("The key:- %s and data:- %s \nis inserted to database successfully\n", schema_hash, address);
-  return db_ptr;
-}
-
-void read_db(DB *db_ptr)
-{
-  /* Accessing data from the database */
-
-  int ret;
-  DBT key1, data1;
-  char address1[ADDRESS_SIZE + 1]; /* data */
-  char *schema_hash1 = "schema-hash"; /* key */
-   
- /* Initialize the DBTs */
-  memset(&key1, 0, sizeof(DBT));
-  memset(&data1, 0, sizeof(DBT));
-
-  key1.data = schema_hash1;
-  key1.size = sizeof(schema_hash1);
-
-  data1.data = address1;
-  data1.ulen = ADDRESS_SIZE + 1;
-  data1.flags = DB_DBT_USERMEM;
-
-  /* Retrieving data from the database */
-  ret =  db_ptr->get(db_ptr, NULL, &key1, &data1, 0);
-  if (ret == DB_NOTFOUND) {
-    db_ptr->err(db_ptr, ret, "The key:- %s: doesn't exist in database\n", schema_hash1);
-  }
-  else
-    printf("The address of the broker for the given schema: %s is:\n %s\n", schema_hash1, address1);
-}
-
-serverObject *start_server(serverObject *server_obj)
-{
-  void *context = zmq_init (1);
-
-  // Socket to talk to clients
-  void *responder = zmq_socket (context, ZMQ_REP);
-  zmq_bind (responder, "tcp://127.0.0.1:5555");
-
-  while (1) {
-    printf ("\nWaiting for request...\n");
-    // Wait for next request from client
-    int size;
-    char *data;
-    zmq_msg_t request;
-
-    zmq_msg_init (&request);
-    zmq_recv (responder, &request, 0);
-    size = zmq_msg_size (&request);
-    data = malloc(size + 1);
-    memcpy ( data, zmq_msg_data (&request), size);
-    data[size] = 0;
-    printf ("Received schema hash: %s\n",data);
-    zmq_msg_close (&request);
-    free(data);
-    // Do some 'work'
-    sleep (1);
-
-    // Send reply back to client
-    zmq_msg_t reply;
-    zmq_msg_init_size (&reply, 9);
-    memcpy (zmq_msg_data (&reply), "127.0.0.1", 9);
-    zmq_send (responder, &reply, 0);
-    printf ("Sent back broker adderss\n");
-    zmq_msg_close (&reply);
-  }
-  zmq_close (responder);
-  zmq_term (context);
 
   return server_obj;
 }
 
-void close_bdb(DB *db_ptr)
+char *read_db(serverObject *server_obj, char *schema_hash)
 {
-/* If the database is not NULL, close it. */
-  if (db_ptr != NULL) {
-    db_ptr->close(db_ptr, 0); 
+  /* Accessing data from the database */
+
+  int ret;
+  DBT key, data;
+  char address[ADDRESS_SIZE + 1]; /* data */
+  char *broker_address = NULL;
+    
+ /* Initialize the DBTs */
+  memset(&key, 0, sizeof(DBT));
+  memset(&data, 0, sizeof(DBT));
+
+  key.data = schema_hash;
+  key.size = strlen(schema_hash);
+
+  data.data = address;
+  data.ulen = ADDRESS_SIZE + 1;
+  data.flags = DB_DBT_USERMEM;
+
+  /* Retrieving data from the database */
+  ret =  server_obj->db_ptr->get(server_obj->db_ptr, NULL, &key, &data, 0);
+  if (ret == DB_NOTFOUND) {
+    server_obj->db_ptr->err(server_obj->db_ptr, ret, "The key:- %s: doesn't exist in database\n", schema_hash);
+
+    /* Start a new broker and return the new broker details */
+    server_obj = write_db(server_obj, schema_hash);
+    return read_db(server_obj, schema_hash);
+  }
+  else {  
+    printf("The address of the broker for the given schema: %s is:\n %s\n", schema_hash, address);
+    broker_address = malloc(strlen(address) +1 );
+    sprintf(broker_address, "%s",address); 
+    return broker_address;
+  }
+ 
+}
+
+void *start_server(void *server_obj)
+{
+  int rc;
+  int size;
+  char *rep_endpoint;
+  serverObject *server_object;
+  server_object =  (serverObject *) server_obj;
+
+  /* Initialise the berkeley database */
+  server_object = init_bdb(server_object);
+
+  server_object->context = zmq_init (1);
+
+  /* Socket to talk to clients */
+  server_object->responder = zmq_socket (server_object->context, ZMQ_REP);
+  if (server_object->responder == NULL){
+      printf("Error occurred during zmq_socket(): %s\n", zmq_strerror (errno));
+      exit(EXIT_FAILURE);
+    }
+
+  size = strlen(server_object->address);
+  rep_endpoint = malloc(size + sizeof (int) + 7 + 1); /* 7 bytes for 'tcp://' and ':' */
+  sprintf(rep_endpoint, "tcp://%s:%d", server_object->address, 5555);
+
+  rc = zmq_bind (server_object->responder, rep_endpoint);
+  if (rc == -1){
+      printf("Error occurred during zmq_bind(): %s\n", zmq_strerror (errno));
+      exit(EXIT_FAILURE);
+    }
+
+  while (1) {
+  
+    /* Wait for next request from client */
+    printf ("\nWaiting for request...\n");
+    char *data, *address;
+    zmq_msg_t request;
+    zmq_msg_init (&request);
+
+    rc = zmq_recv (server_object->responder, &request, 0);
+    if (rc == -1){
+      printf("Error occurred during zmq_recv(): %s\n", zmq_strerror (errno));
+    }
+
+    size = zmq_msg_size (&request);
+    data = malloc(size + 1);
+    memcpy ( data, zmq_msg_data (&request), size);
+    data[size] = 0;
+ 
+    /* check for the schema hash on the berkeley database */
+    address = read_db(server_obj, data);
+
+    zmq_msg_close (&request);
+    free(data);
+
+    /* Send reply back to client */
+    size = strlen(address);
+    zmq_msg_t reply;
+    zmq_msg_init_size (&reply, size);
+    memcpy (zmq_msg_data (&reply), address, size);
+
+    rc = zmq_send (server_object->responder, &reply, 0);
+    if (rc == -1){
+      printf("Error occurred during zmq_send(): %s\n", zmq_strerror (errno));
+    }
+    zmq_msg_close (&reply);
+    sleep(1);
+  }
+  /* We should never reach here unless something goes wrong!  */
+  close_bdb(server_obj);
+  zmq_close (server_object->responder);
+  zmq_term (server_object->context);
+
+}
+
+void close_bdb(serverObject *server_obj)
+{
+  /* If the database is not NULL, close it. */
+  if (server_obj->db_ptr != NULL) {
+    server_obj->db_ptr->close(server_obj->db_ptr, 0); 
   }
 }

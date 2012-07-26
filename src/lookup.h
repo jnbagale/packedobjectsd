@@ -14,14 +14,17 @@
 #include <db.h>
  
 typedef struct {
-  
   DB *db_ptr;
-
+  void *context;
+  void *responder;
+  void *requester;
+  char *address;
 }serverObject;
 
-DB *init_bdb();
-DB *write_db(DB *db_ptr);
-void read_db(DB *db_ptr);
-void close_bdb(DB *db_ptr);
-serverObject *start_server(serverObject *server_obj);
+serverObject *make_server_object(void);
+serverObject *init_bdb(serverObject *server_obj);
+serverObject *write_db(serverObject *server_obj, char *schema_hash);
+char *read_db(serverObject *server_obj, char *schema_hash);
+void close_bdb(serverObject *server_obj);
+void *start_server(void *server_obj);
 

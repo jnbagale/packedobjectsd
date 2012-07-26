@@ -13,10 +13,14 @@
 
 #include <zmq.h>
 #include <stdio.h>
+#include <glib.h>
+
 #include <assert.h> /* for assert() */
 #include <string.h> /* for strlen() */
 #include <stdlib.h> /* for exit()   */
 #include <inttypes.h> /* for uint64_t */
+
+#include "xmlutils.h"
 
 typedef struct {
   void *context;
@@ -39,8 +43,58 @@ pubObject *make_pub_object()
   return pub_obj;
 }
 
-pubObject *publish_to_broker(pubObject *pub_obj)
+pubObject *lookup_broker_pub(pubObject *pub_obj, char *path_schema)
 {
+  int size;
+  char *data, *req_endpoint;
+  char *char_schema, *hash_schema;
+  xmlDoc *doc_schema = NULL;
+
+  /* Creating MD5 hash of the xml schema*/
+  doc_schema = init_xmlutils(path_schema);
+  char_schema = (char *)xmldoc2string(doc_schema, &size);
+  hash_schema = g_compute_checksum_for_string(G_CHECKSUM_MD5, char_schema, strlen(char_schema));
+
+  printf("Connecting to the server....\n \n");
+  void *context = zmq_init (1);
+
+  req_endpoint = malloc(size + sizeof (int) + 7 + 1); /* 7 bytes for 'tcp://' and ':' */
+  sprintf(req_endpoint, "tcp://%s:%d", pub_obj->address, 5555);
+
+  // Socket to talk to server
+  void *requester = zmq_socket (context, ZMQ_REQ);
+  zmq_connect (requester, req_endpoint);
+
+  zmq_msg_t request;
+  zmq_msg_init_size (&request, strlen(hash_schema));
+  memcpy (zmq_msg_data (&request), hash_schema, strlen(hash_schema));
+  printf ("Sending schema hash to the server: %s\n",hash_schema);
+  zmq_send (requester, &request, 0);
+  zmq_msg_close (&request);
+
+  zmq_msg_t reply;
+  zmq_msg_init (&reply);
+  zmq_recv (requester, &reply, 0);
+
+  size = zmq_msg_size (&reply);
+  data = malloc(size + 1);
+  memcpy ( data, zmq_msg_data (&reply), size);
+  data[size] = 0;
+
+  printf ("Received broker address: %s\n",data);
+  
+  zmq_msg_close (&reply);
+  free(req_endpoint);
+
+  return pub_obj;
+}
+
+pubObject *publish_to_broker(pubObject *pub_obj, char *path_schema)
+{
+  /* Retrieve broker's address details from lookup server using the schema */
+  lookup_broker_pub(pub_obj, path_schema);
+
+  /* Establish Publish connection to the broker using the schema */
   int rc; 
   uint64_t hwm = 100;
   int size = strlen(pub_obj->address);

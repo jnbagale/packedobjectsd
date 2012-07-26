@@ -11,15 +11,19 @@
 /* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the */
 /* GNU General Public License for more details. */
 
-#include <glib.h>
-#include <stdlib.h>  /* for exit()   */
 #include <db.h>
+#include <glib.h>
+#include <pthread.h> /* for threads */
+#include <stdlib.h>  /* for exit()   */
+
 
 #include "config.h"
 #include "lookup.h"
 
 int main(int argc, char** argv)
 {
+  char *address = DEFAULT_ADDRESS;
+  pthread_t thread_server;
   GError *error = NULL;
   GOptionContext *context;
   GMainLoop *mainloop = NULL;
@@ -28,6 +32,7 @@ int main(int argc, char** argv)
   GOptionEntry entries[] = 
   {
     { "verbose", 'v', 0, G_OPTION_ARG_NONE, &verbose, "Verbose output", NULL },
+    { "address", 'h', 0, G_OPTION_ARG_STRING, &address, "Lookup server address", NULL },
     { NULL }
   };
 
@@ -46,18 +51,26 @@ int main(int argc, char** argv)
     exit(EXIT_FAILURE);
   }
 
+  /* Create new server object */
   server_obj = make_server_object();
-  start_server(server_obj);
+  /* Allocate memory for address pointer */
+  server_obj->address = malloc(strlen(address) + 1);
+  sprintf(server_obj->address, "%s",address);
 
-  /* Initialise the database */
-  DB *db_ptr = NULL;
-  db_ptr = init_bdb(db_ptr);
-  db_ptr = write_db(db_ptr);
-  read_db(db_ptr);
-  close_bdb(db_ptr);
-  /* Run a thread to start the server */
-  //start_server();
+  /* Create thread which will execute start_server() function */
+  if (pthread_create( &thread_server, NULL, start_server,(void *) server_obj)) {
+    fprintf(stderr, "Error creating thread \n");
+    exit(EXIT_FAILURE);
+  }
 
+  /* Join the thread to start the server */
+  if(pthread_join( thread_server, NULL)) {
+    fprintf(stderr, "Error joining thread \n");
+    exit(EXIT_FAILURE);
+  }
+
+
+ 
   g_main_loop_run(mainloop);
 
   /* We should never reach here unless something goes wrong! */

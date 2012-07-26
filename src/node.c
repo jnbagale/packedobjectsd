@@ -23,7 +23,6 @@
 
 
 #include "config.h"
-#include "xmlutils.h"
 #include "publisher.h"
 #include "subscriber.h"
 
@@ -69,9 +68,6 @@ int main (int argc, char *argv [])
   int in_port = DEFAULT_IN_PORT;
   int recv_freq = DEFAULT_RECV_FREQ;
   int send_freq = DEFAULT_SEND_FREQ;
-  int size;
-  char *char_schema, *hash_schema;
-  xmlDoc *doc_schema = NULL;
   gboolean verbose = FALSE;
   GError *error = NULL;
   GOptionContext *context;
@@ -105,16 +101,6 @@ int main (int argc, char *argv [])
     exit(EXIT_FAILURE);
   }
 
-  doc_schema = init_xmlutils("./schema.xsd");
-  char_schema = (char *)xmldoc2string(doc_schema, &size);
-  hash_schema = g_compute_checksum_for_string(G_CHECKSUM_MD5, char_schema, strlen(char_schema));
-  printf("MD5 hash of schema: %s =\n %s\n",char_schema, hash_schema);
-
-  free(char_schema);
-  free(hash_schema);
-  xmlFreeDoc(doc_schema);
-  exit(0);
-
   /* Initialise objects & variables */
   pub_obj = make_pub_object();  
   sub_obj = make_sub_object();
@@ -129,8 +115,8 @@ int main (int argc, char *argv [])
   
   if( (strcmp(type,"both") == 0) || (strcmp(type,"pub") == 0) ) {
     /* Connects to PUB socket, program quits if connect fails * */
-   
-    pub_obj = publish_to_broker(pub_obj);
+
+    pub_obj = publish_to_broker(pub_obj,"./schema.xsd");
  
     g_timeout_add(send_freq, (GSourceFunc)publish_data, (gpointer)pub_obj);
   }
@@ -138,7 +124,7 @@ int main (int argc, char *argv [])
   if( (strcmp(type,"both") == 0) || (strcmp(type,"sub") == 0) ) {
     /* Connects to SUB socket, program quits if connect fails */
  
-    sub_obj = subscribe_to_broker(sub_obj);
+    sub_obj = subscribe_to_broker(sub_obj, "./schema.xsd");
     g_timeout_add(recv_freq, (GSourceFunc)subscribe_data, (gpointer)sub_obj);
   }
 
