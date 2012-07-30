@@ -37,8 +37,13 @@ AC_FUNC_MALLOC
 
 # Check for berkeley db library and header
 #AC_SEARCH_LIBS([db_create], [db], [have_libdb=yes])
-AC_CHECK_LIB(db, db_create, , AC_MSG_ERROR(*** berkeley db not found))
+AC_CHECK_LIB(db, db_create, , AC_MSG_ERROR(*** berkeley db library not found))
 AC_CHECK_HEADERS(db.h)
+
+
+# required libraries pthreads
+AC_CHECK_LIB(pthread, pthread_create, , AC_MSG_ERROR(*** pthread library not found))
+AC_CHECK_HEADERS(pthread.h,, [AC_MSG_ERROR([pthread.h required])])
 
 # check for glib
 PKG_CHECK_MODULES(GLIB, [glib-2.0])
@@ -48,6 +53,8 @@ PKG_CHECK_MODULES(LIBZMQ, [libzmq])
 
 # check for libxml2
 PKG_CHECK_MODULES(LIBXML2, [libxml-2.0])
+
+
 
 AC_CONFIG_FILES([Makefile src/Makefile])
 

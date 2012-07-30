@@ -174,10 +174,15 @@ void start_broker(brokerObject *broker_obj)
 
 void free_broker_object(brokerObject *broker_obj)
 {
+  if(broker_obj != NULL) {
   zmq_close(broker_obj->frontend);
   zmq_close(broker_obj->backend);
   zmq_term (broker_obj->context);
   free(broker_obj->address);
   free(broker_obj);  
+  }
+  else {
+    printf("The broker_obj struct pointer is NULL\n");
+  }
 }
 /* End of forwarder.c */

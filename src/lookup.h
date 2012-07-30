@@ -25,6 +25,8 @@ serverObject *make_server_object(void);
 serverObject *init_bdb(serverObject *server_obj);
 serverObject *write_db(serverObject *server_obj, char *schema_hash);
 char *read_db(serverObject *server_obj, char *schema_hash);
-void close_bdb(serverObject *server_obj);
+serverObject *remove_db(serverObject *server_obj, char *schema_hash);
+serverObject *close_bdb(serverObject *server_obj);
 void *start_server(void *server_obj);
-
+void free_server_object(serverObject *server_obj);
+/* End of lookup.h */

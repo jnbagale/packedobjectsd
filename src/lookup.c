@@ -90,8 +90,12 @@ serverObject *write_db(serverObject *server_obj, char *schema_hash)
   if (ret == DB_KEYEXIST) {
     server_obj->db_ptr->err(server_obj->db_ptr, ret, "Put failed because key %s already exists", schema_hash);
   }
- else
-   printf("The key:- %s and data:- %s \nis inserted to database successfully\n", schema_hash, address);
+  else {
+    printf("The key:- %s and data:- %s \nis inserted to database successfully\n", schema_hash, address);
+  }
+
+  server_obj = close_bdb(server_obj);
+  server_obj = init_bdb(server_obj);
 
   return server_obj;
 }
@@ -130,8 +134,44 @@ char *read_db(serverObject *server_obj, char *schema_hash)
     broker_address = malloc(strlen(address) +1 );
     sprintf(broker_address, "%s",address); 
     return broker_address;
+
   }
  
+}
+
+serverObject *remove_db(serverObject *server_obj, char *schema_hash)
+{
+  int ret;
+  DBT key;
+  
+  /* Initialize the DBTs */
+  memset(&key, 0, sizeof(DBT));
+  key.data = schema_hash;
+  key.size = strlen(schema_hash);
+
+  ret = server_obj->db_ptr->del(server_obj->db_ptr, NULL, &key, 0);  
+  if(ret != 0) {
+    if (ret == DB_NOTFOUND) {
+      server_obj->db_ptr->err(server_obj->db_ptr, ret, "The key:- %s: doesn't exist in database\n", schema_hash);
+    }
+  }
+  else {
+    printf("The key:- %s is removed from the database successfully",schema_hash);
+    server_obj = close_bdb(server_obj);
+    server_obj = init_bdb(server_obj);
+  }
+
+  return server_obj;
+
+}
+
+serverObject *close_bdb(serverObject *server_obj)
+{
+  /* If the database is not NULL, close it. */
+  if (server_obj->db_ptr != NULL) {
+    server_obj->db_ptr->close(server_obj->db_ptr, 0); 
+  }
+  return server_obj;
 }
 
 void *start_server(void *server_obj)
@@ -140,7 +180,7 @@ void *start_server(void *server_obj)
   int size;
   char *rep_endpoint;
   serverObject *server_object;
-  server_object =  (serverObject *) server_obj;
+  server_object =  (serverObject *) server_obj; /* Casting void * pointer back to serverObject pointer */
 
   /* Initialise the berkeley database */
   server_object = init_bdb(server_object);
@@ -201,17 +241,26 @@ void *start_server(void *server_obj)
     zmq_msg_close (&reply);
     sleep(1);
   }
+
   /* We should never reach here unless something goes wrong!  */
-  close_bdb(server_obj);
-  zmq_close (server_object->responder);
-  zmq_term (server_object->context);
-
+  return server_object;
 }
 
-void close_bdb(serverObject *server_obj)
+void free_server_object(serverObject *server_obj)
 {
-  /* If the database is not NULL, close it. */
-  if (server_obj->db_ptr != NULL) {
-    server_obj->db_ptr->close(server_obj->db_ptr, 0); 
+  /* Freeing up memory and closing objects */
+  printf("Freeing up memory and quitting the program now...\n");
+  if(server_obj != NULL) {
+  close_bdb(server_obj);
+  zmq_close(server_obj->responder);
+  zmq_close(server_obj->requester);
+  zmq_term (server_obj->context);
+  free(server_obj->address);
+  free(server_obj);  
   }
+  else {
+    printf("The server_obj struct pointer is NULL\n");
+   }
+ 
 }
+/* End of lookup.c */

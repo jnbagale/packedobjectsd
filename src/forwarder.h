@@ -28,3 +28,4 @@ brokerObject *init_broker(brokerObject *broker_obj, char *address, int in_port, 
 void start_broker(brokerObject *broker_obj);
 void connect_to_server(brokerObject *broker_obj, char *hash_schema);
 void free_broker_object(brokerObject *broker_obj);
+/* End of forwarder.h */

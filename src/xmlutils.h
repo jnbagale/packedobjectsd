@@ -11,6 +11,9 @@
 /* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the */
 /* GNU General Public License for more details. */
 
+#ifndef XMLUTILS_H_
+#define XMLUTILS_H_
+
 #include <libxml/xmlschemas.h>
 #include <libxml/xmlschemastypes.h>
 
@@ -44,3 +47,6 @@ xmlDoc *init_xmlutils(char *file)
   return doc;
  
 }
+
+#endif
+/* End of xmlutils.h */

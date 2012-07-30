@@ -11,16 +11,17 @@
 /* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the */
 /* GNU General Public License for more details. */
 
+#ifndef PUBLISHER_H_
+#define PUBLISHER_H_
+
 #include <zmq.h>
 #include <stdio.h>
-#include <glib.h>
-
 #include <assert.h> /* for assert() */
 #include <string.h> /* for strlen() */
 #include <stdlib.h> /* for exit()   */
-#include <inttypes.h> /* for uint64_t */
 
 #include "xmlutils.h"
+#include "packedobjectsd.h"
 
 typedef struct {
   void *context;
@@ -28,63 +29,16 @@ typedef struct {
   int in_port;
   char *address;
   char *pub_endpoint;
-  char *schema_hash;
-} pubObject;
+ } pubObject;
 
 pubObject *make_pub_object()
 {
   pubObject *pub_obj;
 
-  if ((pub_obj = (pubObject *)g_malloc(sizeof(pubObject))) == NULL) {
-    //printf("failed to malloc pubObject!\n");
+  if ((pub_obj = (pubObject *) malloc(sizeof(pubObject))) == NULL) {
+    printf("failed to malloc pubObject!\n");
     exit(EXIT_FAILURE);
   }
-
-  return pub_obj;
-}
-
-pubObject *lookup_broker_pub(pubObject *pub_obj, char *path_schema)
-{
-  int size;
-  char *data, *req_endpoint;
-  char *char_schema, *hash_schema;
-  xmlDoc *doc_schema = NULL;
-
-  /* Creating MD5 hash of the xml schema*/
-  doc_schema = init_xmlutils(path_schema);
-  char_schema = (char *)xmldoc2string(doc_schema, &size);
-  hash_schema = g_compute_checksum_for_string(G_CHECKSUM_MD5, char_schema, strlen(char_schema));
-
-  printf("Connecting to the server....\n \n");
-  void *context = zmq_init (1);
-
-  req_endpoint = malloc(size + sizeof (int) + 7 + 1); /* 7 bytes for 'tcp://' and ':' */
-  sprintf(req_endpoint, "tcp://%s:%d", pub_obj->address, 5555);
-
-  // Socket to talk to server
-  void *requester = zmq_socket (context, ZMQ_REQ);
-  zmq_connect (requester, req_endpoint);
-
-  zmq_msg_t request;
-  zmq_msg_init_size (&request, strlen(hash_schema));
-  memcpy (zmq_msg_data (&request), hash_schema, strlen(hash_schema));
-  printf ("Sending schema hash to the server: %s\n",hash_schema);
-  zmq_send (requester, &request, 0);
-  zmq_msg_close (&request);
-
-  zmq_msg_t reply;
-  zmq_msg_init (&reply);
-  zmq_recv (requester, &reply, 0);
-
-  size = zmq_msg_size (&reply);
-  data = malloc(size + 1);
-  memcpy ( data, zmq_msg_data (&reply), size);
-  data[size] = 0;
-
-  printf ("Received broker address: %s\n",data);
-  
-  zmq_msg_close (&reply);
-  free(req_endpoint);
 
   return pub_obj;
 }
@@ -92,7 +46,7 @@ pubObject *lookup_broker_pub(pubObject *pub_obj, char *path_schema)
 pubObject *publish_to_broker(pubObject *pub_obj, char *path_schema)
 {
   /* Retrieve broker's address details from lookup server using the schema */
-  lookup_broker_pub(pub_obj, path_schema);
+  get_broker_detail(PUBLISHER, pub_obj->address, path_schema);
 
   /* Establish Publish connection to the broker using the schema */
   int rc; 
@@ -105,42 +59,48 @@ pubObject *publish_to_broker(pubObject *pub_obj, char *path_schema)
   /* Prepare the context and publisher socket */
   pub_obj->context = zmq_init (1);
   pub_obj->publisher = zmq_socket (pub_obj->context, ZMQ_PUB); 
-  rc = zmq_setsockopt (pub_obj->publisher, ZMQ_HWM, &hwm, sizeof (hwm));
-  assert(rc == 0);
-  rc = zmq_connect (pub_obj->publisher, pub_obj->pub_endpoint);
-  assert(rc == 0);
-  printf("Publisher: Successfully connected to PUB socket\n");
-  printf("Publisher: Ready to send data to broker at %s\n",pub_obj->pub_endpoint);
+  if (pub_obj->publisher == NULL){
+    printf("Error occurred during zmq_socket(): %s\n", zmq_strerror (errno));
+  }
 
+  rc = zmq_setsockopt (pub_obj->publisher, ZMQ_HWM, &hwm, sizeof (hwm));
+  if (rc == -1){
+      printf("Error occurred during zmq_setsockopt(): %s\n", zmq_strerror (errno));
+    }
+  
+  rc = zmq_connect (pub_obj->publisher, pub_obj->pub_endpoint);
+  if (rc == -1){
+    printf("Error occurred during zmq_connect(): %s\n", zmq_strerror (errno));
+  }
+
+  printf("PUBLISHER: Successfully connected to PUB socket\n");
+  printf("PUBLISHER: Ready to send data to broker at %s\n\n",pub_obj->pub_endpoint);
+ 
   return pub_obj;
 }
 
-int send_data(pubObject *pub_obj, char *message, int msglen, char *encode)
+int send_data(pubObject *pub_obj, char *message, int message_length, int encode_type)
 {
   int rc;
+  int size;
+  char encode[3];
+  
+  sprintf(encode,"%d", encode_type);
+  size = strlen(encode);
 
-  /* Prepare first part of the message */
-  zmq_msg_t z_encode;
-  rc = zmq_msg_init_size (&z_encode, 1);
-  assert(rc ==0);
-  memcpy (zmq_msg_data (&z_encode), encode, 1);
+  /* Send ENCODE_TYPE as first part of the message */
+  rc = send_message_more (pub_obj->publisher, encode, size); 
+  if (rc == -1){
+    printf("Error occurred while sending encode type: %s\n", zmq_strerror (errno));
+    return rc;
+  }
 
-  /* Send first part of the message */
-  rc = zmq_send (pub_obj->publisher, &z_encode, ZMQ_SNDMORE);
-  assert(rc ==0);
-  zmq_msg_close (&z_encode);
+  /* Send actual data as second part of the message */
+  rc = send_message(pub_obj->publisher, message, message_length);
+  if (rc == -1){
+    printf("Error occurred while sending the message(): %s\n", zmq_strerror (errno));
+  }
  
-  /* Prepare second part of the message */
-  zmq_msg_t z_msg;
-  rc = zmq_msg_init_size (&z_msg, msglen);
-  assert(rc ==0);
-  memcpy (zmq_msg_data (&z_msg), message, msglen);
-
-  /* Send second part of the message */
-  rc = zmq_send (pub_obj->publisher, &z_msg, 0);
-  assert(rc == 0);
-  zmq_msg_close (&z_msg);
-
   return rc;
 }
 
@@ -153,7 +113,15 @@ void unpublish_to_broker(pubObject *pub_obj)
 
 void free_pub_object(pubObject *pub_obj)
 {
-  free(pub_obj->address);
-  free(pub_obj->pub_endpoint);
-  free(pub_obj);
+  if(pub_obj != NULL) {
+    free(pub_obj->address);
+    free(pub_obj->pub_endpoint);
+    free(pub_obj);
+  }
+  else {
+    printf("The pub_obj struct pointer is NULL\n");
+  }
 }
+
+#endif
+/* End of publisher.h */

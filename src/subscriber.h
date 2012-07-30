@@ -11,6 +11,8 @@
 /* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the */
 /* GNU General Public License for more details. */
 
+#ifndef SUBSCRIBER_H_
+#define SUBSCRIBER_H_
 
 #include <zmq.h>
 #include <stdio.h>
@@ -18,11 +20,15 @@
 #include <string.h> /* for strlen() */
 #include <stdlib.h> /* for exit()   */
 
+
+#include "xmlutils.h"
+#include "packedobjectsd.h"
+
 typedef struct {
   void *context;
   void *subscriber;
   int out_port;
-  char *encode;
+  int encode_type;
   char *message;
   char *address;
   char *sub_endpoint;
@@ -32,56 +38,10 @@ subObject *make_sub_object()
 {
   subObject *sub_obj;
 
-  if ((sub_obj = (subObject *)malloc(sizeof(subObject))) == NULL) {
-    //printf("failed to malloc subObject!\n");
+  if ((sub_obj = (subObject *) malloc(sizeof(subObject))) == NULL) {
+    printf("failed to malloc subObject!\n");
     exit(EXIT_FAILURE);
   }
-
-  return sub_obj;
-}
-
-subObject *lookup_broker_sub(subObject *sub_obj, char *path_schema)
-{
-  int size;
-  char *data, *req_endpoint;
-  char *char_schema, *hash_schema;
-  xmlDoc *doc_schema = NULL;
-
-  /* Creating MD5 hash of the xml schema*/
-  doc_schema = init_xmlutils(path_schema);
-  char_schema = (char *)xmldoc2string(doc_schema, &size);
-  hash_schema = g_compute_checksum_for_string(G_CHECKSUM_MD5, char_schema, strlen(char_schema));
-
-  printf("Connecting to the server....\n \n");
-  void *context = zmq_init (1);
-
-  req_endpoint = malloc(size + sizeof (int) + 7 + 1); /* 7 bytes for 'tcp://' and ':' */
-  sprintf(req_endpoint, "tcp://%s:%d", sub_obj->address, 5555);
-
-  // Socket to talk to server
-  void *requester = zmq_socket (context, ZMQ_REQ);
-  zmq_connect (requester, req_endpoint);
-
-  zmq_msg_t request;
-  zmq_msg_init_size (&request, strlen(hash_schema));
-  memcpy (zmq_msg_data (&request), hash_schema, strlen(hash_schema));
-  printf ("Sending schema hash to the server: %s\n",hash_schema);
-  zmq_send (requester, &request, 0);
-  zmq_msg_close (&request);
-
-  zmq_msg_t reply;
-  zmq_msg_init (&reply);
-  zmq_recv (requester, &reply, 0);
-
-  size = zmq_msg_size (&reply);
-  data = malloc(size + 1);
-  memcpy ( data, zmq_msg_data (&reply), size);
-  data[size] = 0;
-
-  printf ("Received broker address: %s\n",data);
-  
-  zmq_msg_close (&reply);
-  free(req_endpoint);
 
   return sub_obj;
 }
@@ -90,7 +50,7 @@ void *subscribe_to_broker(subObject *sub_obj, char *path_schema)
 {
 
   /* Retrieve broker's address details from lookup server using the schema */
-  lookup_broker_sub(sub_obj, path_schema);
+  get_broker_detail(SUBSCRIBER, sub_obj->address, path_schema);
 
   /* Establish Subscribe connection to the broker using the schema */
   int rc;
@@ -103,55 +63,48 @@ void *subscribe_to_broker(subObject *sub_obj, char *path_schema)
   /* Prepare the context and subscriber socket */
   sub_obj->context = zmq_init (1);
   sub_obj->subscriber = zmq_socket (sub_obj->context, ZMQ_SUB);
+  if (sub_obj->subscriber == NULL){
+    printf("Error occurred during zmq_socket(): %s\n", zmq_strerror (errno));
+  }
 
   /* Set high water mark to control number of messages buffered */
   rc = zmq_setsockopt (sub_obj->subscriber, ZMQ_HWM, &hwm, sizeof (hwm));
-  assert(rc == 0);
+  if (rc == -1){
+    printf("Error occurred during zmq_setsockopt(): %s\n", zmq_strerror (errno));
+  }
 
   rc = zmq_connect (sub_obj->subscriber, sub_obj->sub_endpoint);
-  assert(rc == 0);
-  printf("Sub_Obj->Subscriber: Successfully connected to SUB socket\n");
+  if (rc == -1){
+    printf("Error occurred during zmq_connect(): %s\n", zmq_strerror (errno));
+  }
+  else {
+    printf("SUBSCRIBER: Successfully connected to SUB socket\n");
+  }
 
   /* Subscribe to group by filtering the received data*/
   rc = zmq_setsockopt (sub_obj->subscriber, ZMQ_SUBSCRIBE, "", 0);
-  assert(rc == 0);
-  printf("Sub_Obj->Subscriber: Ready to receive data from broker %s\n",sub_obj->sub_endpoint);
-
+  if (rc == -1){
+    printf("Error occurred during zmq_setsockopt(): %s\n", zmq_strerror (errno));
+  }
+  else {
+    printf("SUBSCRIBER: Ready to receive data from broker %s\n\n",sub_obj->sub_endpoint);
+  }
+  /* Free up subscriber address pointer */
   free(sub_obj->sub_endpoint);
   return sub_obj;
 }
 
 subObject *receive_data(subObject *sub_obj)
 {
-  /* Reading first part of the message */
-  zmq_msg_t message;
-  zmq_msg_init (&message);
-  if (zmq_recv (sub_obj->subscriber, &message, 0))
-    return (NULL);
-  int size = zmq_msg_size (&message);
-  
-  sub_obj->encode = malloc(size + 1);
-  memcpy ( sub_obj->encode, zmq_msg_data (&message), size);
-  zmq_msg_close (&message);
-  sub_obj->encode [size] = 0;
- 
-  /* Reading second part of the message if any */
-  int64_t more;
-  size_t more_size = sizeof (more);
-  zmq_getsockopt (sub_obj->subscriber, ZMQ_RCVMORE, &more, &more_size);
-  if (more) {
-    zmq_msg_t message;
-    zmq_msg_init (&message);
-    if (zmq_recv (sub_obj->subscriber, &message, 0))
-      return (NULL);
-    int size = zmq_msg_size (&message);
-
-    sub_obj->message = malloc (size + 1);
-    memcpy (sub_obj->message, zmq_msg_data (&message), size);
-    zmq_msg_close (&message);
-    sub_obj->message [size] = 0;
+   /* Reading first part of the message */
+  char *encode = receive_message(sub_obj->subscriber);
+  if(encode != NULL) {
+    sscanf(encode, "%d", &sub_obj->encode_type);
   }
 
+  /* Reading second part of the message if any */
+  sub_obj->message = receive_message_more(sub_obj->subscriber);
+  
   return sub_obj;
 }
 
@@ -164,7 +117,14 @@ void unsubscribe_to_broker(subObject *sub_obj)
 
 void free_sub_object(subObject *sub_obj)
 {
-  free(sub_obj->address);
-  free(sub_obj->sub_endpoint);
-  free(sub_obj);
+  if (sub_obj != NULL) {
+    free(sub_obj->address);
+    free(sub_obj);
+  }
+  else {
+    printf("The sub_obj struct pointer is NULL\n");
+  }
 }
+
+#endif
+/* End of subscriber.h */

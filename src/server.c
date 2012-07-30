@@ -13,8 +13,9 @@
 
 #include <db.h>
 #include <glib.h>
-#include <pthread.h> /* for threads */
-#include <stdlib.h>  /* for exit()   */
+#include <pthread.h>  /* for threads */
+#include <stdlib.h>  /* for exit()  */
+#include <string.h> /* for strlen()*/
 
 
 #include "config.h"
@@ -22,13 +23,14 @@
 
 int main(int argc, char** argv)
 {
-  char *address = DEFAULT_ADDRESS;
   pthread_t thread_server;
+  gboolean verbose = FALSE;
+  char *address = DEFAULT_ADDRESS;
+  serverObject *server_obj = NULL;
+
+  /* For command line arguments */
   GError *error = NULL;
   GOptionContext *context;
-  GMainLoop *mainloop = NULL;
-  gboolean verbose = FALSE;
-  serverObject *server_obj = NULL;
   GOptionEntry entries[] = 
   {
     { "verbose", 'v', 0, G_OPTION_ARG_NONE, &verbose, "Verbose output", NULL },
@@ -45,34 +47,26 @@ int main(int argc, char** argv)
     exit (EXIT_FAILURE);
   }  
 
-  mainloop = g_main_loop_new(NULL, FALSE);  
-  if (mainloop == NULL) {
-    printf("Couldn't create GMainLoop\n");
-    exit(EXIT_FAILURE);
-  }
-
   /* Create new server object */
   server_obj = make_server_object();
+
   /* Allocate memory for address pointer */
   server_obj->address = malloc(strlen(address) + 1);
   sprintf(server_obj->address, "%s",address);
 
   /* Create thread which will execute start_server() function */
   if (pthread_create( &thread_server, NULL, start_server,(void *) server_obj)) {
-    fprintf(stderr, "Error creating thread \n");
+    fprintf(stderr, "Error creating server thread \n");
     exit(EXIT_FAILURE);
   }
 
   /* Join the thread to start the server */
   if(pthread_join( thread_server, NULL)) {
-    fprintf(stderr, "Error joining thread \n");
+    fprintf(stderr, "Error joining server thread \n");
     exit(EXIT_FAILURE);
   }
 
-
- 
-  g_main_loop_run(mainloop);
-
-  /* We should never reach here unless something goes wrong! */
+   /* We should never reach here unless something goes wrong! */
   return EXIT_FAILURE;  
 }
+/* End of server.c */
