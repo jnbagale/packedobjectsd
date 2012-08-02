@@ -16,18 +16,16 @@
 
 #include <zmq.h>
 #include <stdio.h>
-#include <assert.h> /* for assert() */
 #include <string.h> /* for strlen() */
 #include <stdlib.h> /* for exit()   */
+#include <inttypes.h> /* for int64_t */
 
-
-#include "xmlutils.h"
 #include "packedobjectsd.h"
 
 typedef struct {
   void *context;
   void *subscriber;
-  int out_port;
+  int port_out;
   int encode_type;
   char *message;
   char *address;
@@ -50,15 +48,15 @@ void *subscribe_to_broker(subObject *sub_obj, char *path_schema)
 {
 
   /* Retrieve broker's address details from lookup server using the schema */
-  get_broker_detail(SUBSCRIBER, sub_obj->address, path_schema);
+  get_broker_detail(SUBSCRIBER, sub_obj->address, DEFAULT_SERVER_PORT, path_schema);
 
   /* Establish Subscribe connection to the broker using the schema */
   int rc;
   uint64_t hwm = 100;
-  int size = strlen(sub_obj->address);
+  int size = strlen(sub_obj->address) + sizeof (int) + 7;  /* 7 bytes for 'tcp://' and ':' */
 
-  sub_obj->sub_endpoint = malloc(size + sizeof (int) + 7 + 1); /* 7 bytes for 'tcp://' and ':' */
-  sprintf(sub_obj->sub_endpoint, "tcp://%s:%d",sub_obj->address, sub_obj->out_port);
+  sub_obj->sub_endpoint = malloc(size + 1);
+  sprintf(sub_obj->sub_endpoint, "tcp://%s:%d",sub_obj->address, sub_obj->port_out);
 
   /* Prepare the context and subscriber socket */
   sub_obj->context = zmq_init (1);

@@ -22,7 +22,6 @@
 #include <unistd.h> /* for read()  */
 #include <fcntl.h> /* for open()  */
 
-
 #include "config.h"
 #include "publisher.h"
 #include "subscriber.h"
@@ -33,6 +32,7 @@ static int global_send_counter = 0;
 static void *publish_data(void *pub_obj)
 {
   int ret;
+  int size;
   int encode_type = ENCODED;
   char msg[20] = "test message";
   char *message;
@@ -40,8 +40,9 @@ static void *publish_data(void *pub_obj)
   pub_object =  (pubObject *) pub_obj; /* Casting void * pointer back to pubObject pointer */
 
   while(1) {
-    message = malloc (sizeof(int) + strlen(msg) + 1);
-    sprintf(message, "%s#%d", msg ,global_send_counter++); /* Preparing message */
+    size =  strlen(msg) + sizeof(int);
+    message = malloc (size + 1);
+    sprintf(message, "%s%d", msg ,global_send_counter++); /* Preparing message */
 
     ret = send_data(pub_object, message, strlen(message), encode_type); 
     if(ret  != -1) {
@@ -90,9 +91,9 @@ int main (int argc, char *argv [])
   pthread_t thread_sub;
   gboolean verbose = FALSE;
   char *type = DEFAULT_TYPE;
-  char *address = DEFAULT_ADDRESS;
-  int out_port = DEFAULT_OUT_PORT;
-  int in_port = DEFAULT_IN_PORT;
+  char *address = DEFAULT_SERVER_ADDRESS;
+  int port_out = DEFAULT_PORT_OUT;
+  int port_in = DEFAULT_PORT_IN;
   int recv_freq = DEFAULT_RECV_FREQ;
   int send_freq = DEFAULT_SEND_FREQ;
   pubObject *pub_obj = NULL;
@@ -106,8 +107,8 @@ int main (int argc, char *argv [])
     { "verbose", 'v', 0, G_OPTION_ARG_NONE, &verbose, "Verbose output", NULL },
     { "address", 'h', 0, G_OPTION_ARG_STRING, &address, "zeromq broker address", NULL },
     { "type",'t', 0, G_OPTION_ARG_STRING, &type, "node type:pub or sub or both", NULL },
-    { "out_port", 'i', 0, G_OPTION_ARG_INT, &out_port, "broker's outbound port: where subs connect", "N" },
-    { "in_port", 'o', 0, G_OPTION_ARG_INT, &in_port, "broker's inbound port: where pubs connect", "N" },
+    { "port_out", 'i', 0, G_OPTION_ARG_INT, &port_out, "broker's outbound port: where subs connect", "N" },
+    { "port_in", 'o', 0, G_OPTION_ARG_INT, &port_in, "broker's inbound port: where pubs connect", "N" },
     { "recv_freq", 'r', 0, G_OPTION_ARG_INT, &recv_freq, "Receiving frequency for subscriber", "N" },
     { "send_freq", 's', 0, G_OPTION_ARG_INT, &send_freq, "Sending frequency for publisher", "N" },
     { NULL }
@@ -125,11 +126,11 @@ int main (int argc, char *argv [])
   pub_obj = make_pub_object();  
   sub_obj = make_sub_object();
   
-  pub_obj->in_port = in_port;
+  pub_obj->port_in = port_in;
   pub_obj->address = malloc (strlen(address) + 1);
   sprintf(pub_obj->address, "%s",address);
 
-  sub_obj->out_port = out_port;
+  sub_obj->port_out = port_out;
   sub_obj->address = malloc (strlen(address) + 1);
   sprintf(sub_obj->address, "%s",address);
  

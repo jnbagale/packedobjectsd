@@ -24,20 +24,20 @@
 
 int main(int argc, char** argv)
 {
-  int in_port = DEFAULT_IN_PORT;
-  int out_port = DEFAULT_OUT_PORT;
-  char *address = DEFAULT_ADDRESS;
+  int port_in = DEFAULT_PORT_IN;
+  int port_out = DEFAULT_PORT_OUT;
+  char *address = DEFAULT_SERVER_ADDRESS;
   gboolean verbose = FALSE;
+  brokerObject *broker_obj = NULL; 
+  /* For command line arguments */
   GError *error = NULL;
   GOptionContext *context;
-  brokerObject *broker_obj = NULL; 
-
   GOptionEntry entries[] = 
   {
     { "verbose", 'v', 0, G_OPTION_ARG_NONE, &verbose, "Verbose output", NULL },
-    { "address", 'h', 0, G_OPTION_ARG_STRING, &address, "zeromq broker adress", NULL },
-    { "out_port", 's', 0, G_OPTION_ARG_INT, &out_port, "zeromq broker's outbound port: where subs connect", "N" },
-    { "in_port", 'p', 0, G_OPTION_ARG_INT, &in_port, "zeromq broker's inbound port: where pubs connect", "N" },
+    { "address", 'h', 0, G_OPTION_ARG_STRING, &address, "zeromq broker address", NULL },
+    { "port_out", 'o', 0, G_OPTION_ARG_INT, &port_out, "zeromq broker outbound port: where subs connect", "N" },
+    { "port_in", 'i', 0, G_OPTION_ARG_INT, &port_in, "zeromq broker inbound port: where pubs connect", "N" },
     { NULL }
   };
 
@@ -50,7 +50,7 @@ int main(int argc, char** argv)
   }  
   /* Initialisation of broker object & variables */
   broker_obj = make_broker_object();
-  broker_obj = init_broker( broker_obj, address, in_port, out_port);
+  broker_obj = init_broker( broker_obj, address, port_in, port_out);
 
   /* Send Broker details to the server*/
   connect_to_server(broker_obj, "./schema.xsd");

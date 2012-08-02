@@ -11,22 +11,29 @@
 /* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the */
 /* GNU General Public License for more details. */
 
+#ifndef LOOKUP_H_
+#define LOOKUP_H_
+
 #include <db.h>
+#include "packedobjectsd.h"
  
 typedef struct {
   DB *db_ptr;
   void *context;
   void *responder;
   void *requester;
+  int port;
   char *address;
 }serverObject;
 
-serverObject *make_server_object(void);
+serverObject *make_server_object (void);
 serverObject *init_bdb(serverObject *server_obj);
-serverObject *write_db(serverObject *server_obj, char *schema_hash);
-char *read_db(serverObject *server_obj, char *schema_hash);
-serverObject *remove_db(serverObject *server_obj, char *schema_hash);
+serverObject *write_db(serverObject *server_obj,char *hash_schema);
+int read_db(serverObject *server_obj, char *hash_schema, char *buffer);
+serverObject *remove_db(serverObject *server_obj, char *hash_schema);
 serverObject *close_bdb(serverObject *server_obj);
-void *start_server(void *server_obj);
+void *start_server(void *server_object);
 void free_server_object(serverObject *server_obj);
+
+#endif
 /* End of lookup.h */

@@ -16,17 +16,16 @@
 
 #include <zmq.h>
 #include <stdio.h>
-#include <assert.h> /* for assert() */
 #include <string.h> /* for strlen() */
 #include <stdlib.h> /* for exit()   */
+#include <inttypes.h> /* for int64_t */
 
-#include "xmlutils.h"
 #include "packedobjectsd.h"
 
 typedef struct {
   void *context;
   void *publisher;
-  int in_port;
+  int port_in;
   char *address;
   char *pub_endpoint;
  } pubObject;
@@ -46,15 +45,15 @@ pubObject *make_pub_object()
 pubObject *publish_to_broker(pubObject *pub_obj, char *path_schema)
 {
   /* Retrieve broker's address details from lookup server using the schema */
-  get_broker_detail(PUBLISHER, pub_obj->address, path_schema);
+  get_broker_detail(PUBLISHER, pub_obj->address, DEFAULT_SERVER_PORT, path_schema);
 
   /* Establish Publish connection to the broker using the schema */
   int rc; 
   uint64_t hwm = 100;
-  int size = strlen(pub_obj->address);
+  int size = strlen(pub_obj->address) + sizeof (int) + 7; /* 7 bytes for 'tcp://' and ':' */
 
-  pub_obj->pub_endpoint = malloc(size + sizeof (int) + 7 + 1); /* 7 bytes for 'tcp://' and ':' */
-  sprintf(pub_obj->pub_endpoint, "tcp://%s:%d", pub_obj->address, pub_obj->in_port);
+  pub_obj->pub_endpoint = malloc(size + 1); 
+  sprintf(pub_obj->pub_endpoint, "tcp://%s:%d", pub_obj->address, pub_obj->port_in);
  
   /* Prepare the context and publisher socket */
   pub_obj->context = zmq_init (1);

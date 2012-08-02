@@ -25,9 +25,9 @@ int main(int argc, char** argv)
 {
   pthread_t thread_server;
   gboolean verbose = FALSE;
-  char *address = DEFAULT_ADDRESS;
+  char *address = DEFAULT_SERVER_ADDRESS;
+  int server_port = DEFAULT_SERVER_PORT;
   serverObject *server_obj = NULL;
-
   /* For command line arguments */
   GError *error = NULL;
   GOptionContext *context;
@@ -35,9 +35,9 @@ int main(int argc, char** argv)
   {
     { "verbose", 'v', 0, G_OPTION_ARG_NONE, &verbose, "Verbose output", NULL },
     { "address", 'h', 0, G_OPTION_ARG_STRING, &address, "Lookup server address", NULL },
+    { "port", 'p', 0, G_OPTION_ARG_INT, &server_port, "Lookup server port number", "N" },
     { NULL }
   };
-
 
   context = g_option_context_new ("- server");
   g_option_context_add_main_entries (context, entries, PACKAGE_NAME);
@@ -50,6 +50,7 @@ int main(int argc, char** argv)
   /* Create new server object */
   server_obj = make_server_object();
 
+  server_obj->port = server_port;
   /* Allocate memory for address pointer */
   server_obj->address = malloc(strlen(address) + 1);
   sprintf(server_obj->address, "%s",address);
@@ -66,7 +67,7 @@ int main(int argc, char** argv)
     exit(EXIT_FAILURE);
   }
 
-   /* We should never reach here unless something goes wrong! */
+  /* We should never reach here unless something goes wrong! */
   return EXIT_FAILURE;  
 }
 /* End of server.c */

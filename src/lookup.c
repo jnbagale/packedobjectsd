@@ -11,6 +11,7 @@
 /* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the */
 /* GNU General Public License for more details. */
 
+#include <glib.h>
 #include <stdio.h>
 #include <stdlib.h> 
 #include <string.h>
@@ -19,9 +20,6 @@
 
 #include "config.h"
 #include "lookup.h"
-
-#define DATABASE "packedobjectsd.db"
-#define ADDRESS_SIZE 99
 
 serverObject *make_server_object(void)
 {
@@ -39,124 +37,153 @@ serverObject *init_bdb(serverObject *server_obj)
 {
 
   /* DB structure handle */
-  u_int32_t flags;   /* database open flags */
-  int ret;           /* function return value */
+  u_int32_t flags;   
+  int ret;          
 
   /* Initialize the structure */
   ret = db_create(&server_obj->db_ptr, NULL, 0);
   if (ret != 0) {
     printf("Error creating database!\n");
-    /* Error handling goes here */
     exit(EXIT_FAILURE);
   }
 
   /* Database open flags */
-  flags = 0; //DB_CREATE;   /* If the database does not exist, create it.*/
+  flags = 0; /* Database must be created in advance */
 
   /* open the database */
   ret = server_obj->db_ptr->open(server_obj->db_ptr, NULL, DATABASE, NULL, DB_HASH, flags, 0);
 
   if (ret != 0) {
     printf("Error opening database!\n");
-    /* Error handling goes here */
     exit(EXIT_FAILURE);
   }
-  else {
-    printf("Database is opened and ready for use\n");
-  }
+  /* else { */
+  /*   printf("Database is opened and ready for use\n"); */
+  /* } */
 
   return server_obj;
 }
 
-serverObject *write_db(serverObject *server_obj, char *schema_hash)
+serverObject *write_db(serverObject *server_obj, char *hash_schema)
 {
   int ret;
+  int size;
   DBT key, data;
-  
-  char *address = "127.0.0.1"; /* data */
-  
+  char buffer[MAX_BUFFER];
+
+  /* Start a new broker and return the new broker details */
+  Address *addr;
+  char *address = "127.0.0.1";
+  addr = make_address_object();
+
+  /* if ((addr->address = malloc(MAX_ADDRESS)) == NULL) { */
+  /*   printf("Failed to allocate address!\n"); */
+  /* } */
+
+  addr = create_address(addr, address , 5556, 8100);
+
   /* Initialize the DBTs */
   memset(&key, 0, sizeof(DBT));
   memset(&data, 0, sizeof(DBT));
   
-  key.data = schema_hash ;
-  key.size = strlen(schema_hash);
-  
-  data.data = address;
-  data.size = strlen(address) + 1;
+  key.data = hash_schema ;
+  key.size = strlen(hash_schema);
+
+  size = serialize_address(buffer, addr); /* add checking for error on serialization */
+  data.data = buffer; 
+  data.size = size; 
 
   /* Inserting data to the database */
   ret = server_obj->db_ptr->put(server_obj->db_ptr, NULL, &key, &data, DB_NOOVERWRITE);
   if (ret == DB_KEYEXIST) {
-    server_obj->db_ptr->err(server_obj->db_ptr, ret, "Put failed because key %s already exists", schema_hash);
+    server_obj->db_ptr->err(server_obj->db_ptr, ret, "Put failed because key %s already exists", hash_schema);
   }
   else {
-    printf("The key:- %s and data:- %s \nis inserted to database successfully\n", schema_hash, address);
+    printf("The key:- %s is inserted to database successfully\n", hash_schema);
   }
-
+  
   server_obj = close_bdb(server_obj);
   server_obj = init_bdb(server_obj);
-
+  
   return server_obj;
 }
 
-char *read_db(serverObject *server_obj, char *schema_hash)
+int read_db(serverObject *server_obj, char *hash_schema, char *buffer)
 {
   /* Accessing data from the database */
-
   int ret;
   DBT key, data;
-  char address[ADDRESS_SIZE + 1]; /* data */
-  char *broker_address = NULL;
-    
- /* Initialize the DBTs */
+
+  /* Initialize the DBTs */
   memset(&key, 0, sizeof(DBT));
   memset(&data, 0, sizeof(DBT));
 
-  key.data = schema_hash;
-  key.size = strlen(schema_hash);
+  key.data = hash_schema;
+  key.size = strlen(hash_schema);
 
-  data.data = address;
-  data.ulen = ADDRESS_SIZE + 1;
+  data.data = buffer;
+  data.ulen = MAX_BUFFER; 
   data.flags = DB_DBT_USERMEM;
 
   /* Retrieving data from the database */
   ret =  server_obj->db_ptr->get(server_obj->db_ptr, NULL, &key, &data, 0);
-  if (ret == DB_NOTFOUND) {
-    server_obj->db_ptr->err(server_obj->db_ptr, ret, "The key:- %s: doesn't exist in database\n", schema_hash);
 
-    /* Start a new broker and return the new broker details */
-    server_obj = write_db(server_obj, schema_hash);
-    return read_db(server_obj, schema_hash);
+  if (ret == DB_NOTFOUND) { 
+    server_obj->db_ptr->err(server_obj->db_ptr, ret, "The key:- %s: doesn't exist in database\n", hash_schema);
   }
-  else {  
-    printf("The address of the broker for the given schema: %s is:\n %s\n", schema_hash, address);
-    broker_address = malloc(strlen(address) +1 );
-    sprintf(broker_address, "%s",address); 
-    return broker_address;
 
-  }
- 
+  return ret;
 }
 
-serverObject *remove_db(serverObject *server_obj, char *schema_hash)
+void walkDB(serverObject *server_obj)
+{
+  DBC *cursorp;
+  DBT key, data;
+  int ret;
+ 
+  /* Initialize cursor */
+  server_obj->db_ptr->cursor(server_obj->db_ptr, NULL, &cursorp, 0);
+ 
+  /* Initialize our DBTs. */
+  memset(&key, 0, sizeof(DBT));
+  memset(&data, 0, sizeof(DBT));
+ 
+  /* Iterate over the database, retrieving each record in turn. */
+  /* use DB_NEXT for interating forward
+   * and DB_PREV for backward */
+    while (!(ret=cursorp->c_get(cursorp, &key, &data, DB_NEXT))) 
+      {
+	printf("%s - %s\n", key.data, data.data);
+      }
+    if (ret != DB_NOTFOUND) {
+      fprintf(stderr,"Nothing found in the database.\n");
+      exit(1);
+    }
+ 
+    /* Close cursor before exit */
+    if (cursorp != NULL)
+      cursorp->c_close(cursorp);
+}
+
+
+serverObject *remove_db(serverObject *server_obj, char *hash_schema)
 {
   int ret;
   DBT key;
   
   /* Initialize the DBTs */
   memset(&key, 0, sizeof(DBT));
-  key.data = schema_hash;
-  key.size = strlen(schema_hash);
+  key.data = hash_schema;
+  key.size = strlen(hash_schema);
 
   ret = server_obj->db_ptr->del(server_obj->db_ptr, NULL, &key, 0);  
   if(ret != 0) {
     if (ret == DB_NOTFOUND) {
-      server_obj->db_ptr->err(server_obj->db_ptr, ret, "The key:- %s: doesn't exist in database\n", schema_hash);
+      server_obj->db_ptr->err(server_obj->db_ptr, ret, "The key:- %s: could not be removed because it doesn't exist in database\n", hash_schema);
     }
   }
   else {
-    printf("The key:- %s is removed from the database successfully",schema_hash);
+    printf("The key:- %s is removed from the database successfully\n", hash_schema);
     server_obj = close_bdb(server_obj);
     server_obj = init_bdb(server_obj);
   }
@@ -174,31 +201,33 @@ serverObject *close_bdb(serverObject *server_obj)
   return server_obj;
 }
 
-void *start_server(void *server_obj)
+void *start_server(void *server_object)
 {
   int rc;
   int size;
+  char *request;
   char *rep_endpoint;
-  serverObject *server_object;
-  server_object =  (serverObject *) server_obj; /* Casting void * pointer back to serverObject pointer */
+  char *buffer;
+  serverObject *server_obj;
+  server_obj =  (serverObject *) server_object; /* Casting void * pointer back to serverObject pointer */
 
   /* Initialise the berkeley database */
-  server_object = init_bdb(server_object);
-
-  server_object->context = zmq_init (1);
-
-  /* Socket to talk to clients */
-  server_object->responder = zmq_socket (server_object->context, ZMQ_REP);
-  if (server_object->responder == NULL){
+  server_obj = init_bdb(server_obj);
+  walkDB(server_obj);
+  
+  /* Prepare the context and server socket */
+  server_obj->context = zmq_init (1);
+  server_obj->responder = zmq_socket (server_obj->context, ZMQ_REP);
+  if (server_obj->responder == NULL){
       printf("Error occurred during zmq_socket(): %s\n", zmq_strerror (errno));
       exit(EXIT_FAILURE);
     }
 
-  size = strlen(server_object->address);
-  rep_endpoint = malloc(size + sizeof (int) + 7 + 1); /* 7 bytes for 'tcp://' and ':' */
-  sprintf(rep_endpoint, "tcp://%s:%d", server_object->address, 5555);
+  size = strlen(server_obj->address) + sizeof(int) + 7; /* 7 bytes for 'tcp://' and ':' */
+  rep_endpoint = malloc(size + 1); 
+  sprintf(rep_endpoint, "tcp://%s:%d", server_obj->address, server_obj->port);
 
-  rc = zmq_bind (server_object->responder, rep_endpoint);
+  rc = zmq_bind (server_obj->responder, rep_endpoint);
   if (rc == -1){
       printf("Error occurred during zmq_bind(): %s\n", zmq_strerror (errno));
       exit(EXIT_FAILURE);
@@ -208,48 +237,41 @@ void *start_server(void *server_obj)
   
     /* Wait for next request from client */
     printf ("\nWaiting for request...\n");
-    char *data, *address;
-    zmq_msg_t request;
-    zmq_msg_init (&request);
+    request = receive_message(server_obj->responder);
+    //remove_db(server_obj, "schef826596c9a09633c6ca6a0a51660");
+  
+    if ((  buffer = malloc(MAX_BUFFER)) == NULL) {
+      printf("Failed to allocate buffer!\n");
+    }
+  
+    /* check for the schema hash on the berkeley database and get back Address structure */
+    rc = read_db(server_obj, request, buffer);
 
-    rc = zmq_recv (server_object->responder, &request, 0);
-    if (rc == -1){
-      printf("Error occurred during zmq_recv(): %s\n", zmq_strerror (errno));
+    if(rc != 0) {
+      server_obj = write_db(server_obj, request);
+      rc = read_db(server_obj, request, buffer);
     }
 
-    size = zmq_msg_size (&request);
-    data = malloc(size + 1);
-    memcpy ( data, zmq_msg_data (&request), size);
-    data[size] = 0;
- 
-    /* check for the schema hash on the berkeley database */
-    address = read_db(server_obj, data);
-
-    zmq_msg_close (&request);
-    free(data);
+    Address *addr;
+    addr = make_address_object();
+    size = deserialize_address(buffer, addr);
 
     /* Send reply back to client */
-    size = strlen(address);
-    zmq_msg_t reply;
-    zmq_msg_init_size (&reply, size);
-    memcpy (zmq_msg_data (&reply), address, size);
-
-    rc = zmq_send (server_object->responder, &reply, 0);
+    rc = send_message (server_obj->responder, buffer, size);
     if (rc == -1){
       printf("Error occurred during zmq_send(): %s\n", zmq_strerror (errno));
     }
-    zmq_msg_close (&reply);
+
     sleep(1);
   }
 
   /* We should never reach here unless something goes wrong!  */
-  return server_object;
+  return server_obj;
 }
 
 void free_server_object(serverObject *server_obj)
 {
   /* Freeing up memory and closing objects */
-  printf("Freeing up memory and quitting the program now...\n");
   if(server_obj != NULL) {
   close_bdb(server_obj);
   zmq_close(server_obj->responder);

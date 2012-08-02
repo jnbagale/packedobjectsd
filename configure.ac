@@ -4,12 +4,16 @@ AC_CONFIG_SRCDIR([src/])
 AM_CONFIG_HEADER([src/config.h])
 
 AC_DEFINE([PROGNAME],["packedobjectsd"],["light-weight secure messaging framework"])
-AC_DEFINE([DEFAULT_ADDRESS],["127.0.0.1"],["the default zeromq broker address"])
-AC_DEFINE([DEFAULT_OUT_PORT],[8100],["the default zeromq broker outbound port: for subscribers"])
-AC_DEFINE([DEFAULT_IN_PORT],[5556],["the default zeromq broker inbound port: for publishers"])
+AC_DEFINE([DEFAULT_SERVER_ADDRESS],["127.0.0.1"],["the default lookup server address"])
+AC_DEFINE([DEFAULT_SERVER_PORT],[5555],["the default lookup server port"])
+AC_DEFINE([DEFAULT_PORT_OUT],[8100],["the default zeromq broker outbound port: for subscribers"])
+AC_DEFINE([DEFAULT_PORT_IN],[5556],["the default zeromq broker inbound port: for publishers"])
 AC_DEFINE([DEFAULT_TYPE],["both"],["the default node type: pub, sub or both"])
 AC_DEFINE([DEFAULT_RECV_FREQ],[1000],["the default receiving frequency for subscribers in milliseconds"])
 AC_DEFINE([DEFAULT_SEND_FREQ],[1000],["the default sending frequency for publishers in milliseconds"])
+AC_DEFINE([DATABASE],["packedobjectsd.db"],["the default database for lookup server"])
+AC_DEFINE([MAX_BUFFER],[99],["the maximum size for address buffer"])
+AC_DEFINE([MAX_ADDRESS],[20],["the maximum size for network address"])
 
 # --enable-debug flag
 AC_ARG_ENABLE(debug,

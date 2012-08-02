@@ -18,8 +18,7 @@
 #include <zmq.h>
 #include <stdio.h>
 #include <glib.h>
-#include <string.h> /* for strncat() */
-#include <assert.h> /* for assert() */
+#include <string.h> /* for strncat() & memcpy() */
 #include <stdlib.h> /* for exit()   */
 #include <inttypes.h> /* for uint64_t */
 
