@@ -25,7 +25,7 @@
 typedef struct {
   void *context;
   void *publisher;
-  int port_in;
+  int port;
   char *address;
   char *pub_endpoint;
  } pubObject;
@@ -44,17 +44,17 @@ pubObject *make_pub_object()
 
 pubObject *publish_to_broker(pubObject *pub_obj, char *path_schema)
 {
-  /* Retrieve broker's address details from lookup server using the schema */
-  get_broker_detail(PUBLISHER, pub_obj->address, DEFAULT_SERVER_PORT, path_schema);
-
-  /* Establish Publish connection to the broker using the schema */
   int rc; 
   uint64_t hwm = 100;
-  int size = strlen(pub_obj->address) + sizeof (int) + 7; /* 7 bytes for 'tcp://' and ':' */
 
-  pub_obj->pub_endpoint = malloc(size + 1); 
-  sprintf(pub_obj->pub_endpoint, "tcp://%s:%d", pub_obj->address, pub_obj->port_in);
- 
+  /* Retrieve broker's address details from lookup server using the schema */
+  pub_obj->pub_endpoint = get_broker_detail(PUBLISHER, pub_obj->address, pub_obj->port, path_schema);
+
+  if(pub_obj->pub_endpoint == NULL) {
+    printf("Broker address received is NULL\n");
+    exit(EXIT_FAILURE);
+  }
+
   /* Prepare the context and publisher socket */
   pub_obj->context = zmq_init (1);
   pub_obj->publisher = zmq_socket (pub_obj->context, ZMQ_PUB); 

@@ -49,7 +49,7 @@ void free_address_object(Address *addr)
   free(addr);
 }
 
-int serialize_address(char *buffer, Address *addr)
+int serialize_address(char *buffer, Address *addr) /* Add host to network order code for port numbers */
 {
   size_t offset = 0;
 
@@ -63,7 +63,7 @@ int serialize_address(char *buffer, Address *addr)
   return offset;
 }
 
-int deserialize_address(char *buffer, Address *addr)
+int deserialize_address(char *buffer, Address *addr)  /* Add network to host order code for port numbers */
 {
   size_t offset = 0;
    
@@ -165,7 +165,7 @@ char *receive_message_more(void *socket)
   return message;   
 }
 
-int get_broker_detail(int node_type, char *address, int port, char *path_schema)
+char *get_broker_detail(int node_type, char *address, int port, char *path_schema)
 {
   int rc;
   int size;
@@ -174,6 +174,7 @@ int get_broker_detail(int node_type, char *address, int port, char *path_schema)
   char *endpoint;
   char *char_schema;
   char *hash_schema;
+  char *broker_address = NULL;
   xmlDoc *doc_schema;
   void *context;
   void *requester;
@@ -194,20 +195,20 @@ int get_broker_detail(int node_type, char *address, int port, char *path_schema)
   requester = zmq_socket (context, ZMQ_REQ);
   if (requester == NULL){
     printf("Error occurred during zmq_socket(): %s\n", zmq_strerror (errno));
-    return -1;
+    return broker_address ;
   }
 
   printf("%s: Connecting to the server...\n \n",which_node (node_type));
   rc = zmq_connect (requester, endpoint);
   if (rc == -1){
     printf("Error occurred during zmq_connect(): %s\n", zmq_strerror (errno));
-    return -1;
+    return broker_address;
   }
 
   rc = send_message(requester, hash_schema, strlen(hash_schema)); 
   if (rc == -1){
     printf("Error occurred during zmq_send(): %s\n", zmq_strerror (errno));
-    return -1;
+    return broker_address;
   }
 
   addr = make_address_object();
@@ -217,7 +218,13 @@ int get_broker_detail(int node_type, char *address, int port, char *path_schema)
   if (buffer != NULL) {
     printf ("%s: Received broker address\n",which_node(node_type));
     deserialize_address(buffer, addr);
-    printf("Address %s Port In %d Port Out %d\n", addr->address, addr->port_in, addr->port_out);
+    //printf("Address %s Port In %d Port Out %d\n", addr->address, addr->port_in, addr->port_out);
+    if(node_type ==PUBLISHER) {
+      broker_address = g_strdup_printf("tcp://%s:%d",addr->address, addr->port_in);
+    }
+    else if(node_type == SUBSCRIBER) {
+      broker_address = g_strdup_printf("tcp://%s:%d",addr->address, addr->port_out);
+    }
   }
 
   /* Freeing up context, socket and pointers */
@@ -225,6 +232,6 @@ int get_broker_detail(int node_type, char *address, int port, char *path_schema)
   zmq_term (context);
   free(endpoint);
 
-  return 0;
+  return broker_address;
 }
 

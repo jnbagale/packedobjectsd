@@ -52,9 +52,6 @@ int main(int argc, char** argv)
   broker_obj = make_broker_object();
   broker_obj = init_broker( broker_obj, address, port_in, port_out);
 
-  /* Send Broker details to the server*/
-  connect_to_server(broker_obj, "./schema.xsd");
-
   /* Start the broker */
   start_broker(broker_obj);
 

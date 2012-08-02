@@ -63,6 +63,36 @@ serverObject *init_bdb(serverObject *server_obj)
 
   return server_obj;
 }
+serverObject *create_bdb(serverObject *server_obj)
+{
+
+  /* DB structure handle */
+  u_int32_t flags;   
+  int ret;          
+
+  /* Initialize the structure */
+  ret = db_create(&server_obj->db_ptr, NULL, 0);
+  if (ret != 0) {
+    printf("Error creating database!\n");
+    exit(EXIT_FAILURE);
+  }
+
+  /* Database open flags */
+  flags = DB_CREATE; /* Database will be created if it doesn't exist */
+
+  /* open the database */
+  ret = server_obj->db_ptr->open(server_obj->db_ptr, NULL, DATABASE, NULL, DB_HASH, flags, 0);
+
+  if (ret != 0) {
+    printf("Error opening database!\n");
+    exit(EXIT_FAILURE);
+  }
+  else {
+    printf("Database is created now and is ready for use\n");
+  }
+
+  return server_obj;
+}
 
 serverObject *write_db(serverObject *server_obj, char *hash_schema)
 {
@@ -75,10 +105,6 @@ serverObject *write_db(serverObject *server_obj, char *hash_schema)
   Address *addr;
   char *address = "127.0.0.1";
   addr = make_address_object();
-
-  /* if ((addr->address = malloc(MAX_ADDRESS)) == NULL) { */
-  /*   printf("Failed to allocate address!\n"); */
-  /* } */
 
   addr = create_address(addr, address , 5556, 8100);
 
@@ -131,11 +157,16 @@ int read_db(serverObject *server_obj, char *hash_schema, char *buffer)
   if (ret == DB_NOTFOUND) { 
     server_obj->db_ptr->err(server_obj->db_ptr, ret, "The key:- %s: doesn't exist in database\n", hash_schema);
   }
+  else {
+    Address *addr;
+    addr = make_address_object();
+    ret = deserialize_address(buffer, addr);
+  }
 
   return ret;
 }
 
-void walkDB(serverObject *server_obj)
+void read_all_db(serverObject *server_obj)
 {
   DBC *cursorp;
   DBT key, data;
@@ -149,20 +180,17 @@ void walkDB(serverObject *server_obj)
   memset(&data, 0, sizeof(DBT));
  
   /* Iterate over the database, retrieving each record in turn. */
-  /* use DB_NEXT for interating forward
-   * and DB_PREV for backward */
-    while (!(ret=cursorp->c_get(cursorp, &key, &data, DB_NEXT))) 
-      {
-	printf("%s - %s\n", key.data, data.data);
-      }
-    if (ret != DB_NOTFOUND) {
-      fprintf(stderr,"Nothing found in the database.\n");
-      exit(1);
+  while (!(ret=cursorp->c_get(cursorp, &key, &data, DB_NEXT))) 
+    {
+      printf("%s - %s\n",(char *) key.data, (char *) data.data);
     }
+  if (ret != DB_NOTFOUND) {
+    fprintf(stderr,"Nothing found in the database.\n");
+  }
  
-    /* Close cursor before exit */
-    if (cursorp != NULL)
-      cursorp->c_close(cursorp);
+  /* Close cursor before exit */
+  if (cursorp != NULL)
+    cursorp->c_close(cursorp);
 }
 
 
@@ -179,7 +207,7 @@ serverObject *remove_db(serverObject *server_obj, char *hash_schema)
   ret = server_obj->db_ptr->del(server_obj->db_ptr, NULL, &key, 0);  
   if(ret != 0) {
     if (ret == DB_NOTFOUND) {
-      server_obj->db_ptr->err(server_obj->db_ptr, ret, "The key:- %s: could not be removed because it doesn't exist in database\n", hash_schema);
+      server_obj->db_ptr->err(server_obj->db_ptr, ret, "The key:- %s: could not be removed", hash_schema);
     }
   }
   else {
@@ -189,7 +217,6 @@ serverObject *remove_db(serverObject *server_obj, char *hash_schema)
   }
 
   return server_obj;
-
 }
 
 serverObject *close_bdb(serverObject *server_obj)
@@ -212,9 +239,9 @@ void *start_server(void *server_object)
   server_obj =  (serverObject *) server_object; /* Casting void * pointer back to serverObject pointer */
 
   /* Initialise the berkeley database */
+  //server_obj = create_bdb(server_obj);
   server_obj = init_bdb(server_obj);
-  walkDB(server_obj);
-  
+
   /* Prepare the context and server socket */
   server_obj->context = zmq_init (1);
   server_obj->responder = zmq_socket (server_obj->context, ZMQ_REP);
@@ -238,23 +265,18 @@ void *start_server(void *server_object)
     /* Wait for next request from client */
     printf ("\nWaiting for request...\n");
     request = receive_message(server_obj->responder);
-    //remove_db(server_obj, "schef826596c9a09633c6ca6a0a51660");
   
     if ((  buffer = malloc(MAX_BUFFER)) == NULL) {
       printf("Failed to allocate buffer!\n");
     }
   
     /* check for the schema hash on the berkeley database and get back Address structure */
-    rc = read_db(server_obj, request, buffer);
-
-    if(rc != 0) {
+    size = read_db(server_obj, request, buffer);
+  
+    if(size < 0) {
       server_obj = write_db(server_obj, request);
-      rc = read_db(server_obj, request, buffer);
+      size = read_db(server_obj, request, buffer);
     }
-
-    Address *addr;
-    addr = make_address_object();
-    size = deserialize_address(buffer, addr);
 
     /* Send reply back to client */
     rc = send_message (server_obj->responder, buffer, size);

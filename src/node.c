@@ -92,8 +92,7 @@ int main (int argc, char *argv [])
   gboolean verbose = FALSE;
   char *type = DEFAULT_TYPE;
   char *address = DEFAULT_SERVER_ADDRESS;
-  int port_out = DEFAULT_PORT_OUT;
-  int port_in = DEFAULT_PORT_IN;
+  int port = DEFAULT_SERVER_PORT;
   int recv_freq = DEFAULT_RECV_FREQ;
   int send_freq = DEFAULT_SEND_FREQ;
   pubObject *pub_obj = NULL;
@@ -105,10 +104,9 @@ int main (int argc, char *argv [])
   GOptionEntry entries[] = 
   {
     { "verbose", 'v', 0, G_OPTION_ARG_NONE, &verbose, "Verbose output", NULL },
-    { "address", 'h', 0, G_OPTION_ARG_STRING, &address, "zeromq broker address", NULL },
+    { "address", 'h', 0, G_OPTION_ARG_STRING, &address, "Lookup server address", NULL },
     { "type",'t', 0, G_OPTION_ARG_STRING, &type, "node type:pub or sub or both", NULL },
-    { "port_out", 'i', 0, G_OPTION_ARG_INT, &port_out, "broker's outbound port: where subs connect", "N" },
-    { "port_in", 'o', 0, G_OPTION_ARG_INT, &port_in, "broker's inbound port: where pubs connect", "N" },
+    { "port", 'p', 0, G_OPTION_ARG_INT, &port, "Lookup server port", "N" },
     { "recv_freq", 'r', 0, G_OPTION_ARG_INT, &recv_freq, "Receiving frequency for subscriber", "N" },
     { "send_freq", 's', 0, G_OPTION_ARG_INT, &send_freq, "Sending frequency for publisher", "N" },
     { NULL }
@@ -126,11 +124,11 @@ int main (int argc, char *argv [])
   pub_obj = make_pub_object();  
   sub_obj = make_sub_object();
   
-  pub_obj->port_in = port_in;
+  pub_obj->port = port;
   pub_obj->address = malloc (strlen(address) + 1);
   sprintf(pub_obj->address, "%s",address);
 
-  sub_obj->port_out = port_out;
+  sub_obj->port = port;
   sub_obj->address = malloc (strlen(address) + 1);
   sprintf(sub_obj->address, "%s",address);
  

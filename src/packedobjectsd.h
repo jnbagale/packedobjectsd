@@ -36,7 +36,7 @@ int send_message(void *socket, char *message, int message_length);
 int send_message_more(void *socket, char *message, int message_length); 
 char *receive_message(void *socket); 
 char *receive_message_more(void *socket);
-int get_broker_detail(int node_type, char *address, int port, char *path_schema);
+char *get_broker_detail(int node_type, char *address, int port, char *path_schema);
 
 #endif
 /* End of packedobjectsd.h */
