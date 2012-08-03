@@ -11,29 +11,25 @@
 /* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the */
 /* GNU General Public License for more details. */
 
-#ifndef LOOKUP_H_
-#define LOOKUP_H_
+#ifndef BROKER_H_
+#define BROKER_H_
 
-#include <db.h>
-#include "packedobjectsd.h"
- 
 typedef struct {
-  DB *db_ptr;
   void *context;
-  void *responder;
-  void *requester;
-  int port;
+  void *frontend;
+  void *backend;
+  int out_port;
+  int in_port;
   char *address;
-}serverObject;
+  char *front_endpoint;
+  char *back_endpoint;
+} brokerObject;
 
-serverObject *make_server_object (void);
-serverObject *init_bdb(serverObject *server_obj);
-serverObject *write_db(serverObject *server_obj,char *hash_schema);
-int read_db(serverObject *server_obj, char *hash_schema, char *buffer);
-serverObject *remove_db(serverObject *server_obj, char *hash_schema);
-serverObject *close_bdb(serverObject *server_obj);
-void *start_server(void *server_object);
-void free_server_object(serverObject *server_obj);
+brokerObject *make_broker_object();
+brokerObject *init_broker(brokerObject *broker_obj, char *address, int in_port, int out_port);
+void start_broker(brokerObject *broker_obj);
+void connect_to_server(brokerObject *broker_obj, char *hash_schema);
+void free_broker_object(brokerObject *broker_obj);
 
 #endif
-/* End of lookup.h */
+/* End of broker.h */

@@ -17,7 +17,7 @@
 #include <inttypes.h> /* for int64_t */
 #include <string.h>   /* for  memcpy() */
 
-#include "packedobjectsd.h"
+#include "message.h"
 #include "xmlutils.h"
 #include "config.h"
 

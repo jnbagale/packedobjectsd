@@ -11,8 +11,8 @@
 /* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the */
 /* GNU General Public License for more details. */
 
-#ifndef PACKEDOBJECTSD_H_
-#define PACKEDOBJECTSD_H_
+#ifndef MESSAGE_H_
+#define MESSAGE_H_
 
 enum ENCODE_TYPE {ENCODED, PLAIN};      /* Supported message encoding types */
 enum NODE_TYPE {PUBLISHER, SUBSCRIBER}; /* Supported node types */
@@ -25,7 +25,7 @@ typedef struct {
   unsigned int port_in;
   unsigned int port_out;
   char *address;  
-} Address;
+} Address; 
 
 Address *make_address_object(void); 
 Address *create_address(Address *addr, char *address, int port_in, int port_out); 
@@ -39,4 +39,4 @@ char *receive_message_more(void *socket);
 char *get_broker_detail(int node_type, char *address, int port, char *path_schema);
 
 #endif
-/* End of packedobjectsd.h */
+/* End of message.h */

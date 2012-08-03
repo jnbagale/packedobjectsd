@@ -11,21 +11,19 @@
 /* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the */
 /* GNU General Public License for more details. */
 
-typedef struct {
+#ifndef DATABASE_H_
+#define DATABASE_H_
 
-  void *context;
-  void *frontend;
-  void *backend;
-  int out_port;
-  int in_port;
-  char *address;
-  char *front_endpoint;
-  char *back_endpoint;
-} brokerObject;
+#include <db.h>
 
-brokerObject *make_broker_object();
-brokerObject *init_broker(brokerObject *broker_obj, char *address, int in_port, int out_port);
-void start_broker(brokerObject *broker_obj);
-void connect_to_server(brokerObject *broker_obj, char *hash_schema);
-void free_broker_object(brokerObject *broker_obj);
-/* End of forwarder.h */
+DB *create_bdb(DB *db_ptr);
+DB *init_bdb(DB *db_ptr);
+DB *write_db(DB *db_ptr,char *hash_schema);
+int read_db(DB *db_ptr, char *hash_schema, char *buffer);
+DB *remove_db(DB *db_ptr, char *hash_schema);
+DB *close_bdb(DB *db_ptr);
+
+
+
+#endif
+/* End of database.h */

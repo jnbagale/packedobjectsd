@@ -20,7 +20,7 @@
 #include <stdlib.h> /* for exit()   */
 #include <inttypes.h> /* for int64_t */
 
-#include "packedobjectsd.h"
+#include "message.h"
 
 typedef struct {
   void *context;

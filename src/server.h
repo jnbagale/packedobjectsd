@@ -11,15 +11,17 @@
 /* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the */
 /* GNU General Public License for more details. */
 
-#ifndef XMLUTILS_H_
-#define XMLUTILS_H_
+#include <db.h>
 
-#include <libxml/xmlschemas.h>
-#include <libxml/xmlschemastypes.h>
+typedef struct {
+  DB *db_ptr;
+  void *context;
+  void *responder;
+  void *requester;
+  int port;
+  char *address;
+}serverObject;
 
-xmlChar *xmldoc2string(xmlDoc *doc, int *size);
-xmlDoc *xmlstring2doc(char *xmlstr, int size);
-xmlDoc *init_xmlutils(char *file);
-
-#endif
-/* End of xmlutils.h */
+serverObject *make_server_object (void);
+void *start_server(void *server_object);
+void free_server_object(serverObject *server_obj);
