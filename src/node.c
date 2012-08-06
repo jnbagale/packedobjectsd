@@ -127,11 +127,13 @@ int main (int argc, char *argv [])
   pub_obj->port = port;
   pub_obj->address = malloc (strlen(address) + 1);
   sprintf(pub_obj->address, "%s",address);
-
+  
   sub_obj->port = port;
   sub_obj->address = malloc (strlen(address) + 1);
   sprintf(sub_obj->address, "%s",address);
- 
+
+
+
   if( (strcmp(type,"both") == 0) || (strcmp(type,"sub") == 0) ) {
     /* Connects to SUB socket, program quits if connect fails */ 
     sub_obj = subscribe_to_broker(sub_obj, "./schema.xsd");

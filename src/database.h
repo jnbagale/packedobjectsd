@@ -16,10 +16,12 @@
 
 #include <db.h>
 
+
 DB *create_bdb(DB *db_ptr);
 DB *init_bdb(DB *db_ptr);
 DB *write_db(DB *db_ptr,char *hash_schema);
 int read_db(DB *db_ptr, char *hash_schema, char *buffer);
+void read_all_db(DB *db_ptr);
 DB *remove_db(DB *db_ptr, char *hash_schema);
 DB *close_bdb(DB *db_ptr);
 

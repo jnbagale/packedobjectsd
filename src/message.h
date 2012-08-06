@@ -25,6 +25,8 @@ typedef struct {
   unsigned int port_in;
   unsigned int port_out;
   char *address;  
+  unsigned int is_running;
+  unsigned int pid;
 } Address; 
 
 Address *make_address_object(void); 
@@ -34,8 +36,8 @@ int serialize_address(char *buffer, Address *addr);
 int deserialize_address(char *buffer, Address *addr);
 int send_message(void *socket, char *message, int message_length); 
 int send_message_more(void *socket, char *message, int message_length); 
-char *receive_message(void *socket); 
-char *receive_message_more(void *socket);
+char *receive_message(void *socket, int *size); 
+char *receive_message_more(void *socket, int *size);
 char *get_broker_detail(int node_type, char *address, int port, char *path_schema);
 
 #endif

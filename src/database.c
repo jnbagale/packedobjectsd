@@ -77,7 +77,7 @@ DB *write_db(DB *db_ptr, char *hash_schema)
   int ret;
   int size;
   DBT key, data;
-  char buffer[MAX_BUFFER];
+  char buffer[MAX_BUFFER_SIZE];
   Address *addr;
   char *address = "127.0.0.1";
 
@@ -87,7 +87,7 @@ DB *write_db(DB *db_ptr, char *hash_schema)
   memset(&key, 0, sizeof(DBT)); /* Initialize the DBTs */
   memset(&data, 0, sizeof(DBT));
   
-  key.data = hash_schema ;
+  key.data = hash_schema;
   key.size = strlen(hash_schema);
 
   size = serialize_address(buffer, addr); /* add checking for error on serialization */
@@ -120,21 +120,22 @@ int read_db(DB *db_ptr, char *hash_schema, char *buffer)
   key.size = strlen(hash_schema);
 
   data.data = buffer;
-  data.ulen = MAX_BUFFER; 
+  data.ulen = MAX_BUFFER_SIZE; 
   data.flags = DB_DBT_USERMEM;
  
   ret =  db_ptr->get(db_ptr, NULL, &key, &data, 0);  /* Retrieving data from the database */
 
   if (ret == DB_NOTFOUND) { 
     db_ptr->err(db_ptr, ret, "The key:- %s: doesn't exist in database\n", hash_schema);
+    return ret;
   }
   else {
+    int size;
     Address *addr;
     addr = make_address_object();
-    ret = deserialize_address(buffer, addr);
+    size = deserialize_address(buffer, addr);
+    return size;
   }
-
-  return ret;
 }
 
 void read_all_db(DB *db_ptr)

@@ -94,13 +94,15 @@ void *subscribe_to_broker(subObject *sub_obj, char *path_schema)
 subObject *receive_data(subObject *sub_obj)
 {
    /* Reading first part of the message */
-  char *encode = receive_message(sub_obj->subscriber);
+  int size;
+  char *encode = NULL;
+  encode = receive_message(sub_obj->subscriber, &size);
   if(encode != NULL) {
     sscanf(encode, "%d", &sub_obj->encode_type);
   }
 
   /* Reading second part of the message if any */
-  sub_obj->message = receive_message_more(sub_obj->subscriber);
+   sub_obj->message = receive_message_more(sub_obj->subscriber, &size);
   
   return sub_obj;
 }

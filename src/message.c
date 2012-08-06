@@ -67,7 +67,7 @@ int deserialize_address(char *buffer, Address *addr)  /* Add network to host ord
 {
   size_t offset = 0;
    
-  if ((addr->address = malloc(MAX_ADDRESS)) == NULL) {
+  if ((addr->address = malloc(MAX_ADDRESS_SIZE)) == NULL) {
     printf("Failed to allocate address!\n");
   }
 
@@ -117,10 +117,10 @@ int send_message_more(void *socket, char *message, int message_length)
   return rc;
 }
 
-char *receive_message(void *socket) 
+char *receive_message(void *socket, int *size) 
 {
   int rc;
-  int size;
+  //int size;
   char *message = NULL;
   zmq_msg_t z_message;
 
@@ -133,20 +133,24 @@ char *receive_message(void *socket)
   rc = zmq_recv (socket, &z_message, 0);
   if(rc == -1) {
     printf("Error occurred during zmq_recv(): %s\n", zmq_strerror (errno));
-  } 
-  else {
-    size = zmq_msg_size (&z_message);
-    message = malloc(size + 1);
-    memcpy (message, zmq_msg_data (&z_message), size);
-    zmq_msg_close (&z_message);
-    message [size] = 0;
+    return NULL;
   }
-  return message;
+  else {
+    *size = zmq_msg_size (&z_message);
+    if(*size > 0) {
+      message = malloc(*size + 1);
+      memcpy (message, zmq_msg_data (&z_message), *size);
+      zmq_msg_close (&z_message);
+      message [*size] = 0;
+     }
+    return message;
+  }
 }
 
-char *receive_message_more(void *socket)
+char *receive_message_more(void *socket, int *size)
 {
   int rc;
+  //int size;
   char *message = NULL;
   int64_t more;
   size_t more_size;
@@ -159,10 +163,10 @@ char *receive_message_more(void *socket)
   }
 
   if (more) {
-   message =  receive_message(socket);
+    message =  receive_message(socket, size);
   }
 
-  return message;   
+ return message;  
 }
 
 char *get_broker_detail(int node_type, char *address, int port, char *path_schema)
@@ -170,6 +174,7 @@ char *get_broker_detail(int node_type, char *address, int port, char *path_schem
   int rc;
   int size;
   int xml_size;
+  char *node;
   char *buffer;
   char *endpoint;
   char *char_schema;
@@ -190,6 +195,9 @@ char *get_broker_detail(int node_type, char *address, int port, char *path_schem
   size = strlen(address) + sizeof (int) + 7;  /* 7 bytes for 'tcp://' and ':' */
   endpoint = malloc(size + 1);
   sprintf(endpoint, "tcp://%s:%d", address, port);
+  node = malloc (sizeof(int));
+  sprintf(node,"%d", node_type);
+  size = strlen(node);
 
   /* Create socket to connect to look up server*/
   requester = zmq_socket (context, ZMQ_REQ);
@@ -205,6 +213,12 @@ char *get_broker_detail(int node_type, char *address, int port, char *path_schem
     return broker_address;
   }
 
+  rc = send_message_more(requester, node, size); 
+  if (rc == -1){
+    printf("Error occurred during zmq_send(): %s\n", zmq_strerror (errno));
+    return broker_address;
+  }
+
   rc = send_message(requester, hash_schema, strlen(hash_schema)); 
   if (rc == -1){
     printf("Error occurred during zmq_send(): %s\n", zmq_strerror (errno));
@@ -212,14 +226,14 @@ char *get_broker_detail(int node_type, char *address, int port, char *path_schem
   }
 
   addr = make_address_object();
-  buffer = malloc(MAX_BUFFER + 1); 
-  buffer = receive_message(requester);
+  buffer = malloc(MAX_BUFFER_SIZE); 
+  buffer = receive_message(requester, &size);
 
   if (buffer != NULL) {
-    printf ("%s: Received broker address\n",which_node(node_type));
-    deserialize_address(buffer, addr);
-    //printf("Address %s Port In %d Port Out %d\n", addr->address, addr->port_in, addr->port_out);
-    if(node_type ==PUBLISHER) {
+    printf ("%s: Received broker address\n", which_node(node_type));
+    int buffer_size = deserialize_address(buffer, addr);
+     //printf("Address %s Port In %d Port Out %d\n", addr->address, addr->port_in, addr->port_out);
+    if(node_type == PUBLISHER) {
       broker_address = g_strdup_printf("tcp://%s:%d",addr->address, addr->port_in);
     }
     else if(node_type == SUBSCRIBER) {

@@ -1,14 +1,14 @@
 INCLUDES = -Wall -g $(GLIB_CFLAGS) $(PTHREAD_CFLAGS) $(LIBZMQ_CFLAGS) $(LIBXML2_CFLAGS)
 
-bin_PROGRAMS = server node #broker
+bin_PROGRAMS = server node broker
 
-#broker_SOURCES = config.h old_broker.c broker.c broker.h xmlutils.h
+broker_SOURCES = config.h broker_main.c broker.c broker.h xmlutils.h
 
-#broker_LDADD = $(GLIB_LIBS) $(LIBZMQ_LIBS)  $(LIBXML2_LIBS)
+broker_LDADD = $(GLIB_LIBS) $(LIBZMQ_LIBS)  $(LIBXML2_LIBS)
 
-#broker_DATA =
+broker_DATA =
 
-#brokerdir = #/var/lib/misc
+brokerdir = #/var/lib/misc
 
 server_SOURCES = config.h main.c server.c server.h broker.c broker.h database.c database.h message.c message.h xmlutils.c xmlutils.h packedobjectsd.db
  

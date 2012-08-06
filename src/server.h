@@ -20,7 +20,7 @@ typedef struct {
   void *requester;
   int port;
   char *address;
-}serverObject;
+} serverObject;
 
 serverObject *make_server_object (void);
 void *start_server(void *server_object);
