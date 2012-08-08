@@ -54,7 +54,7 @@ void *subscribe_to_broker(subObject *sub_obj, char *path_schema)
 
   if(sub_obj->sub_endpoint == NULL) {
     printf("Broker address received is NULL\n");
-    exit(EXIT_FAILURE);
+    exit(EXIT_FAILURE); /* Handle it gently. Don't exit here. return sthg to user */
   }
  
   /* Prepare the context and subscriber socket */

@@ -11,7 +11,13 @@
 /* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the */
 /* GNU General Public License for more details. */
 
+#ifndef SERVER_H_
+#define SERVER_H_
+
 #include <db.h>
+#include <glib.h>
+
+#define MAX_BROKER_PROCESS 100
 
 typedef struct {
   DB *db_ptr;
@@ -20,8 +26,16 @@ typedef struct {
   void *requester;
   int port;
   char *address;
+  int count;
+  int port_in_count;
+  int port_out_count;
+  GHashTable *process_db;
 } serverObject;
+
 
 serverObject *make_server_object (void);
 void *start_server(void *server_object);
 void free_server_object(serverObject *server_obj);
+
+#endif
+/* End of server.h */

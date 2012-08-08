@@ -62,7 +62,7 @@ DB *init_bdb(DB *db_ptr)
   ret = db_ptr->open(db_ptr, NULL, DATABASE, NULL, DB_HASH, flags, 0);  /* open the database */
   if (ret != 0) {
     printf("Error opening database!\n");
-    exit(EXIT_FAILURE);
+    exit(EXIT_FAILURE); /* Handle error nicely */
   }
   /* else { */
   /*   printf("Database is opened and ready for use\n"); */
@@ -72,25 +72,17 @@ DB *init_bdb(DB *db_ptr)
 }
 
 
-DB *write_db(DB *db_ptr, char *hash_schema)
+DB *write_db(DB *db_ptr, char *hash_schema, char *buffer, int size)
 {
   int ret;
-  int size;
   DBT key, data;
-  char buffer[MAX_BUFFER_SIZE];
-  Address *addr;
-  char *address = "127.0.0.1";
-
-  addr = make_address_object();
-  addr = create_address(addr, address , 5556, 8100);
 
   memset(&key, 0, sizeof(DBT)); /* Initialize the DBTs */
   memset(&data, 0, sizeof(DBT));
   
   key.data = hash_schema;
   key.size = strlen(hash_schema);
-
-  size = serialize_address(buffer, addr); /* add checking for error on serialization */
+ 
   data.data = buffer; 
   data.size = size; 
 
@@ -102,9 +94,8 @@ DB *write_db(DB *db_ptr, char *hash_schema)
     printf("The key:- %s is inserted to database successfully\n", hash_schema);
   }
   
-  db_ptr = close_bdb(db_ptr);
+  close_bdb(db_ptr);
   db_ptr = init_bdb(db_ptr);
-  
   return db_ptr;
 }
 
@@ -130,15 +121,15 @@ int read_db(DB *db_ptr, char *hash_schema, char *buffer)
     return ret;
   }
   else {
-    int size;
-    Address *addr;
-    addr = make_address_object();
-    size = deserialize_address(buffer, addr);
-    return size;
+    /* int size; */
+    /* Address *addr; */
+    /* addr = make_address_object(); */
+    /* size = deserialize_address(buffer, addr); */
+    return 0;
   }
 }
 
-void read_all_db(DB *db_ptr)
+int read_all_db(DB *db_ptr)
 { 
   int ret;
   DBC *cursorp;
@@ -155,11 +146,14 @@ void read_all_db(DB *db_ptr)
     }
   if (ret != DB_NOTFOUND) {
     fprintf(stderr,"Nothing found in the database.\n");
+    return -1;
   }
  
   /* Close cursor before exit */
-  if (cursorp != NULL)
+  if (cursorp != NULL) {
     cursorp->c_close(cursorp);
+  }
+  return 0;
 }
 
 
@@ -180,18 +174,21 @@ DB *remove_db(DB *db_ptr, char *hash_schema)
   }
   else {
     printf("The key:- %s is removed from the database successfully\n", hash_schema);
-    db_ptr = close_bdb(db_ptr);
+    //DB *db_temp = db_ptr;
+    close_bdb(db_ptr);
     db_ptr = init_bdb(db_ptr);
   }
 
   return db_ptr;
 }
 
-DB *close_bdb(DB *db_ptr)
+int close_bdb(DB *db_ptr)
 {
   /* If the database is not NULL, close it. */
   if (db_ptr != NULL) {
-    db_ptr->close(db_ptr, 0); 
+    db_ptr->close(db_ptr, 0);
+    return 0;
   }
-  return db_ptr;
+
+  return -1; 
 }

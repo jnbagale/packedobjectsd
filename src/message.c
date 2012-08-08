@@ -120,7 +120,6 @@ int send_message_more(void *socket, char *message, int message_length)
 char *receive_message(void *socket, int *size) 
 {
   int rc;
-  //int size;
   char *message = NULL;
   zmq_msg_t z_message;
 
@@ -150,10 +149,9 @@ char *receive_message(void *socket, int *size)
 char *receive_message_more(void *socket, int *size)
 {
   int rc;
-  //int size;
-  char *message = NULL;
   int64_t more;
   size_t more_size;
+  char *message = NULL;
   more_size = sizeof (more);
 
   rc = zmq_getsockopt (socket, ZMQ_RCVMORE, &more, &more_size);
@@ -174,6 +172,7 @@ char *get_broker_detail(int node_type, char *address, int port, char *path_schem
   int rc;
   int size;
   int xml_size;
+  int buffer_size; 
   char *node;
   char *buffer;
   char *endpoint;
@@ -186,7 +185,7 @@ char *get_broker_detail(int node_type, char *address, int port, char *path_schem
   Address *addr;
  
   /* Creating MD5 hash of the xml schema */
-  doc_schema = init_xmlutils(path_schema);
+  doc_schema = init_xmlutils(path_schema); /* Add error checking if xml doesn't exist in given path */
   char_schema = (char *)xmldoc2string(doc_schema, &xml_size);
   hash_schema = g_compute_checksum_for_string(G_CHECKSUM_MD5, char_schema, strlen(char_schema));
 
@@ -220,6 +219,7 @@ char *get_broker_detail(int node_type, char *address, int port, char *path_schem
   }
 
   rc = send_message(requester, hash_schema, strlen(hash_schema)); 
+  
   if (rc == -1){
     printf("Error occurred during zmq_send(): %s\n", zmq_strerror (errno));
     return broker_address;
@@ -230,14 +230,19 @@ char *get_broker_detail(int node_type, char *address, int port, char *path_schem
   buffer = receive_message(requester, &size);
 
   if (buffer != NULL) {
-    printf ("%s: Received broker address\n", which_node(node_type));
-    int buffer_size = deserialize_address(buffer, addr);
-     //printf("Address %s Port In %d Port Out %d\n", addr->address, addr->port_in, addr->port_out);
-    if(node_type == PUBLISHER) {
-      broker_address = g_strdup_printf("tcp://%s:%d",addr->address, addr->port_in);
+    buffer_size = deserialize_address(buffer, addr);
+     if(size != buffer_size) {
+      printf("The received address structure could not be decoded\n");
     }
-    else if(node_type == SUBSCRIBER) {
-      broker_address = g_strdup_printf("tcp://%s:%d",addr->address, addr->port_out);
+    else {
+      //printf("Address %s Port In %d Port Out %d\n", addr->address, addr->port_in, addr->port_out);
+      if(node_type == PUBLISHER) {
+	broker_address = g_strdup_printf("tcp://%s:%d",addr->address, addr->port_in);
+      }
+      else if(node_type == SUBSCRIBER) {
+	broker_address = g_strdup_printf("tcp://%s:%d",addr->address, addr->port_out);
+      }
+      printf ("%s: Received broker address: %s\n", which_node(node_type), broker_address);
     }
   }
 

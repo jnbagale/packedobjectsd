@@ -26,7 +26,7 @@ typedef struct {
   unsigned int port_out;
   char *address;  
   unsigned int is_running;
-  unsigned int pid;
+  pid_t pid;
 } Address; 
 
 Address *make_address_object(void); 

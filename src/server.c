@@ -26,9 +26,6 @@
 #include "message.h"
 #include "database.h"
 
-#define MAX_BROKER_PROCESS 100
-static  int current = 0;
-
 serverObject *make_server_object(void)
 {
   serverObject *server_obj;
@@ -37,11 +34,15 @@ serverObject *make_server_object(void)
     printf("failed to malloc serverObject!");
     exit(EXIT_FAILURE);
   }
+  server_obj->count = 0;
+  server_obj->port_in_count = 5556;
+  server_obj->port_out_count = 8100;
+  server_obj->process_db = g_hash_table_new(g_str_hash, g_str_equal);
 
   return server_obj;
 }
 
-pid_t create_new_broker(serverObject *server_obj)
+pid_t fork_new_broker(char *address, int port_in, int port_out)
 {
   /* Initialisation of broker object & variables */
   printf("Forking new child process for broker\n");
@@ -53,39 +54,56 @@ pid_t create_new_broker(serverObject *server_obj)
   else if(broker_pid == 0) {
     brokerObject *broker_obj;
     broker_obj = make_broker_object();
-    broker_obj = init_broker(broker_obj, "127.0.0.1", 5556, 8100);
-    printf("Starting a new broker...\n");
+    broker_obj = init_broker(broker_obj, address, port_in, port_out);
     start_broker(broker_obj);    /* Run the broker */
   }
 
   return broker_pid;
 }
 
+serverObject *create_new_broker(serverObject *server_obj, char *request, char *buffer, int *buffer_size) {
+ 
+  pid_t broker_pid;
+  Address *addr = make_address_object();
+  addr = create_address(addr, server_obj->address, server_obj->port_in_count, server_obj->port_out_count);
+  *buffer_size = serialize_address(buffer, addr); /* add checking for error on serialization */
+  server_obj->db_ptr = write_db(server_obj->db_ptr, request, buffer, *buffer_size);
+ 	    
+  broker_pid = fork_new_broker(server_obj->address, server_obj->port_in_count, server_obj->port_out_count);
+  if(broker_pid >= 0) {
+    g_hash_table_insert(server_obj->process_db, (gpointer)request, &broker_pid);
+  }
+
+  free_address_object(addr); /* Free up Address structure */
+  return server_obj;
+}
+
+
 void *start_server(void *server_object)
 {
   int rc;
   int size;
-  int buffer_size;
-  int node_type;
+  int node_type; 
+  int buffer_size = 0;
   char *rep_endpoint;
   char *node = NULL; 
-  char *request = NULL;
   char *buffer = NULL;
+  char *request = NULL;
   serverObject *server_obj;
-  pid_t pid[MAX_BROKER_PROCESS];
 
   server_obj =  (serverObject *) server_object; /* Casting void * pointer back to serverObject pointer */
 
   /* Initialise the berkeley database */
   //server_obj->db_ptr = create_bdb(server_obj->db_ptr);
   server_obj->db_ptr = init_bdb(server_obj->db_ptr);
+  //read_all_db(server_obj->db_ptr);
 
   /* Prepare the context and server socket */
   server_obj->context = zmq_init (1);
   server_obj->responder = zmq_socket (server_obj->context, ZMQ_REP);
   if (server_obj->responder == NULL){
       printf("Error occurred during zmq_socket(): %s\n", zmq_strerror (errno));
-      exit(EXIT_FAILURE);
+      exit(EXIT_FAILURE); /* Handle the error!!! */
     }
 
   size = strlen(server_obj->address) + sizeof(int) + 7; /* 7 bytes for 'tcp://' and ':' */
@@ -95,60 +113,73 @@ void *start_server(void *server_object)
   rc = zmq_bind (server_obj->responder, rep_endpoint);
   if (rc == -1){
       printf("Error occurred during zmq_bind(): %s\n", zmq_strerror (errno));
-      exit(EXIT_FAILURE);
+      exit(EXIT_FAILURE); /* Handle the error!!! */
     }
  
   while (1) {
   
-    /* Wait for next request from client */
+    /* Wait for next request from node */
     printf ("\nWaiting for request...\n");
     node = receive_message(server_obj->responder, &size);
     if(node != NULL) {
       sscanf(node, "%d", &node_type);
-      printf("%s sent a request\n",which_node(node_type));
+      printf("Received broker detail request from a %s\n",which_node(node_type));
     }
     else {
+      printf("Could not determine requesting node type! Assuming it as a SUBSCRIBER\n");
       node_type = SUBSCRIBER; /* Assume node type as SUBSCRIBER if node type information is not sent by the node */
     }
 
     request = receive_message_more(server_obj->responder, &size);
-    if(request != NULL) {
+    if(request == NULL) {
+      printf("Received request is null! Sending back null reply... \n");
+    }
+    else {
       if ((buffer = malloc(MAX_BUFFER_SIZE)) == NULL) {
 	printf("Failed to allocate buffer!\n");
       }
-    }
+      else {
+	/* check for the schema hash on the database and get back Address structure */
+	//if(node_type == PUBLISHER) server_obj->db_ptr = remove_db(server_obj->db_ptr, request);
 
-    /* check for the schema hash on the database and get back Address structure */
-    buffer_size = read_db(server_obj->db_ptr, request, buffer);
-    if(buffer_size < 0) {
-      if(node_type == PUBLISHER) {
-	//remove_db(server_obj->db_ptr, request);
-	/* TODO:- Start a new broker and return the new broker details */ 
-	server_obj->db_ptr = write_db(server_obj->db_ptr, request);
-	buffer_size = read_db(server_obj->db_ptr, request, buffer);
-	pid[current] = create_new_broker(server_obj);
-	if( pid[current] >= 0) {
-	  current++;
+	buffer_size = read_db(server_obj->db_ptr, request, buffer);	
+	if(buffer_size < 0) {
+	  if(node_type == PUBLISHER) {
+	    server_obj = create_new_broker(server_obj, request, buffer, &buffer_size);
+	    server_obj->count++;
+	    server_obj->port_in_count++;
+	    server_obj->port_out_count++;
+	  }
+	  else {
+	    printf("No broker exists for the given schema! Sending back null reply... \n");
+	    buffer = NULL;
+	    buffer_size = 0;
+	  }
+	} else {
+	  Address *addr = make_address_object();
+	  buffer_size = deserialize_address(buffer, addr);
+
+	  if((node_type == PUBLISHER) && (g_hash_table_lookup(server_obj->process_db, request) == NULL)) {
+	    pid_t broker_pid;
+	    broker_pid = fork_new_broker(server_obj->address, addr->port_in, addr->port_out);
+	    if(broker_pid >= 0) {
+	      g_hash_table_insert(server_obj->process_db, (gpointer)request, &broker_pid);
+	    }
+	  }
+	  free_address_object(addr); /* Free up Address structure */
 	}
       }
-      else if(node_type == SUBSCRIBER) {
-	printf("No broker details found... \n");
-	buffer = NULL;
-	buffer_size = 0;
-      }
     }
-    
+   
     /* Send reply back to client */
     rc = send_message (server_obj->responder, buffer, buffer_size);
     if (rc == -1){
       printf("Error occurred during zmq_send(): %s\n", zmq_strerror (errno));
     }
-    
-    /* int status; */
-    /* pid_t pid; */
-    /* printf("Waiting for broker child to quit\n"); */
-    /* pid = wait(&status); */
-    /* printf("Child with PID %ld exited with status 0x%x.\n", (long)pid, status); */
+    else {
+      printf("Sent back broker detail for the given schema...\n");
+    }
+
     usleep(10000); /* Sleep for 10 milliseconds to allow other threads to run */
   }
 
@@ -171,4 +202,5 @@ void free_server_object(serverObject *server_obj)
     printf("The server_obj struct pointer is NULL\n");
    }
 }
+
 /* End of server.c */

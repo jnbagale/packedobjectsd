@@ -45,7 +45,7 @@ brokerObject *init_broker(brokerObject *broker_obj, char *address, int in_port, 
   broker_obj->out_port = out_port;
 
   broker_obj->address = malloc(size + 1);
-  memcpy(broker_obj->address, address, size);
+  sprintf(broker_obj->address,"%s", address);
 
   /* To subscribe to all the publishers */
   broker_obj->front_endpoint = malloc(size + sizeof (int) + 7 + 1); /* 7 bytes for 'tcp://' and ':' */
@@ -54,6 +54,7 @@ brokerObject *init_broker(brokerObject *broker_obj, char *address, int in_port, 
   /* To publish to all the subscribers */
   broker_obj->back_endpoint = malloc(size + sizeof (int) + 7 + 1); /* 7 bytes for 'tcp://' and ':' */
   sprintf( broker_obj->back_endpoint, "tcp://%s:%d",broker_obj->address, broker_obj->out_port);
+ 
   return broker_obj;
 }
 
