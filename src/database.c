@@ -71,7 +71,6 @@ DB *init_bdb(DB *db_ptr)
   return db_ptr;
 }
 
-
 DB *write_db(DB *db_ptr, char *hash_schema, char *buffer, int size)
 {
   int ret;
@@ -121,29 +120,47 @@ int read_db(DB *db_ptr, char *hash_schema, char *buffer)
     return ret;
   }
   else {
-    /* int size; */
-    /* Address *addr; */
-    /* addr = make_address_object(); */
-    /* size = deserialize_address(buffer, addr); */
     return 0;
   }
 }
 
-int read_all_db(DB *db_ptr)
+int get_max_port(DB *db_ptr, int *max_port_in, int *max_port_out)
 { 
   int ret;
+  int size;
   DBC *cursorp;
   DBT key, data;
-  
+  Address *addr;
+  char *buffer;
+  *max_port_in = 5556;
+  *max_port_out = 8100;
+
+  buffer = malloc(MAX_BUFFER_SIZE);
   db_ptr->cursor(db_ptr, NULL, &cursorp, 0);  /* Initialize cursor */
 
   memset(&key, 0, sizeof(DBT));   /* Initialize our DBTs. */
   memset(&data, 0, sizeof(DBT));
  
+  data.data = buffer;
+  data.ulen = MAX_BUFFER_SIZE; 
+  data.flags = DB_DBT_USERMEM;
+
   while (!(ret=cursorp->c_get(cursorp, &key, &data, DB_NEXT)))  /* Iterate over the database, retrieving each record in turn. */
     {
-      printf("%s - %s\n",(char *) key.data, (char *) data.data);
+      //printf("%s - %s\n",(char *) key.data, (char *) data.data);
+
+      addr = make_address_object();
+      size = deserialize_address(buffer, addr);
+
+      if(addr->port_in >= *max_port_in) {
+	*max_port_in = addr->port_in + 1;
+      }
+
+      if(addr->port_out >= *max_port_out) {
+	*max_port_out = addr->port_out + 1;
+      }
     }
+
   if (ret != DB_NOTFOUND) {
     fprintf(stderr,"Nothing found in the database.\n");
     return -1;
@@ -153,6 +170,9 @@ int read_all_db(DB *db_ptr)
   if (cursorp != NULL) {
     cursorp->c_close(cursorp);
   }
+ 
+  printf("Max port in %d, Max port out %d\n", *max_port_in, *max_port_out);
+
   return 0;
 }
 

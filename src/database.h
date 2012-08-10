@@ -22,7 +22,8 @@ DB *write_db(DB *db_ptr,char *hash_schema, char *buffer, int size);
 int read_db(DB *db_ptr, char *hash_schema, char *buffer);
 DB *remove_db(DB *db_ptr, char *hash_schema);
 int close_bdb(DB *db_ptr);
-int read_all_db(DB *db_ptr);
+int get_max_port(DB *db_ptr, int *max_port_in, int *max_port_out);
+
 
 
 #endif

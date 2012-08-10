@@ -27,8 +27,8 @@ typedef struct {
   int port;
   char *address;
   int count;
-  int port_in_count;
-  int port_out_count;
+  int max_port_in;
+  int max_port_out;
 } serverObject;
 
 

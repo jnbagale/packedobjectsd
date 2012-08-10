@@ -14,11 +14,11 @@
 #include <stdio.h>
 #include <stdlib.h>  /* for exit()  */
 #include <string.h> /* for strlen()*/
-#include <zmq.h>   /* ZeroMQ request reply connection */
+#include <zmq.h>   /* ZeroMQ functions   */
 #include <unistd.h>      /* for fork()  */
-#include <sys/types.h>  /* pid_t */
-#include <sys/wait.h>  /* for wait() */
-#include <errno.h>    /* errno */
+#include <sys/types.h>  /* pid_t       */
+#include <sys/wait.h>  /* for wait()  */
+#include <errno.h>    /* errors      */
 
 #include "config.h"
 #include "server.h"
@@ -34,9 +34,6 @@ serverObject *make_server_object(void)
     printf("failed to malloc serverObject!");
     exit(EXIT_FAILURE);
   }
-  server_obj->count = 0;
-  server_obj->port_in_count = 5556;
-  server_obj->port_out_count = 8100;
 
   return server_obj;
 }
@@ -65,12 +62,15 @@ serverObject *create_new_broker(serverObject *server_obj, char *request, char *b
   pid_t broker_pid;
   Address *addr = make_address_object();
   	    
-  broker_pid = fork_new_broker(server_obj->address, server_obj->port_in_count, server_obj->port_out_count);
+  broker_pid = fork_new_broker(server_obj->address, server_obj->max_port_in, server_obj->max_port_out);
 
   if(broker_pid >= 0) {
-    addr = create_address(addr, server_obj->address, server_obj->port_in_count, server_obj->port_out_count, (long) broker_pid);
+    addr = create_address(addr, server_obj->address, server_obj->max_port_in, server_obj->max_port_out, (long) broker_pid);
     *buffer_size = serialize_address(buffer, addr); /* add checking for error on serialization */
     server_obj->db_ptr = write_db(server_obj->db_ptr, request, buffer, *buffer_size);
+    server_obj->count++;
+    server_obj->max_port_in++;
+    server_obj->max_port_out++;
    }
 
   free_address_object(addr); /* Free up Address structure */
@@ -95,7 +95,7 @@ void *start_server(void *server_object)
   /* Initialise the berkeley database */
   //server_obj->db_ptr = create_bdb(server_obj->db_ptr);
   server_obj->db_ptr = init_bdb(server_obj->db_ptr);
-  read_all_db(server_obj->db_ptr);
+  get_max_port(server_obj->db_ptr, &server_obj->max_port_in, &server_obj->max_port_out);
 
   /* Prepare the context and server socket */
   server_obj->context = zmq_init (1);
@@ -145,9 +145,6 @@ void *start_server(void *server_object)
 	if(buffer_size < 0) {
 	  if(node_type == PUBLISHER) {
 	    server_obj = create_new_broker(server_obj, request, buffer, &buffer_size);
-	    server_obj->count++;
-	    server_obj->port_in_count++;
-	    server_obj->port_out_count++;
 	  }
 	  else {
 	    printf("No broker exists for the given schema! Sending back null reply... \n");
@@ -166,7 +163,10 @@ void *start_server(void *server_object)
 	    } else if (errno == ESRCH) {
 	      printf("Broker process [%ld] is not running! Starting new broker process...\n", addr->pid);
 	      server_obj->db_ptr = remove_db(server_obj->db_ptr, request);
+	      server_obj->max_port_in = addr->port_in;
+	      server_obj->max_port_out = addr->port_out;
 	      server_obj = create_new_broker(server_obj, request, buffer, &buffer_size);
+	      get_max_port(server_obj->db_ptr, &server_obj->max_port_in, &server_obj->max_port_out);
 
 	      /* no such process with the given pid is running */
 	    } else {
