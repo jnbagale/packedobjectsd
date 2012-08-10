@@ -29,7 +29,6 @@ typedef struct {
   int count;
   int port_in_count;
   int port_out_count;
-  GHashTable *process_db;
 } serverObject;
 
 

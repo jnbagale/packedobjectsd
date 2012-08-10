@@ -22,15 +22,16 @@ static inline char *which_node (int node_type) {
 }
 
 typedef struct {
+  long pid;
   unsigned int port_in;
   unsigned int port_out;
   char *address;  
-  unsigned int is_running;
-  pid_t pid;
+
 } Address; 
 
 Address *make_address_object(void); 
-Address *create_address(Address *addr, char *address, int port_in, int port_out); 
+Address *create_address(Address *addr, char *address, int port_in, int port_out, long pid); 
+Address *assign_pid_address(Address *addr, long pid); 
 void free_address_object(Address *addr); 
 int serialize_address(char *buffer, Address *addr);
 int deserialize_address(char *buffer, Address *addr);

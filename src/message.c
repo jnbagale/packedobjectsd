@@ -34,11 +34,12 @@ Address *make_address_object(void)
   return addr;
 }
 
-Address *create_address(Address *addr, char *address, int port_in, int port_out) 
+Address *create_address(Address *addr, char *address, int port_in, int port_out, long pid ) 
 {
-  addr->address = g_strdup(address);
+  addr->pid = pid;
   addr->port_in = port_in;
   addr->port_out = port_out;
+  addr->address = g_strdup(address);
 
   return addr;
 }
@@ -53,8 +54,10 @@ int serialize_address(char *buffer, Address *addr) /* Add host to network order 
 {
   size_t offset = 0;
 
-  memcpy(buffer, &addr->port_in, sizeof(addr->port_in));
-  offset = sizeof(addr->port_in);
+  memcpy(buffer, &addr->pid, sizeof(addr->pid));
+  offset = sizeof(addr->pid);
+  memcpy(buffer + offset, &addr->port_in, sizeof(addr->port_in));
+  offset = offset + sizeof(addr->port_in);
   memcpy(buffer + offset, &addr->port_out, sizeof(addr->port_out));
   offset = offset + sizeof(addr->port_out);
   memcpy(buffer + offset, addr->address, strlen(addr->address) + 1);
@@ -71,8 +74,10 @@ int deserialize_address(char *buffer, Address *addr)  /* Add network to host ord
     printf("Failed to allocate address!\n");
   }
 
-  memcpy(&addr->port_in, buffer, sizeof(addr->port_in));
-  offset = sizeof(addr->port_in);
+  memcpy(&addr->pid, buffer, sizeof(addr->pid));
+  offset = sizeof(addr->pid);
+  memcpy(&addr->port_in, buffer + offset, sizeof(addr->port_in));
+  offset = offset + sizeof(addr->port_in);
   memcpy(&addr->port_out, buffer + offset, sizeof(addr->port_out));
   offset = offset + sizeof(addr->port_out);
   memcpy(addr->address, buffer + offset, strlen(buffer + offset) + 1);

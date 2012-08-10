@@ -37,7 +37,6 @@ serverObject *make_server_object(void)
   server_obj->count = 0;
   server_obj->port_in_count = 5556;
   server_obj->port_out_count = 8100;
-  server_obj->process_db = g_hash_table_new(g_str_hash, g_str_equal);
 
   return server_obj;
 }
@@ -65,14 +64,14 @@ serverObject *create_new_broker(serverObject *server_obj, char *request, char *b
  
   pid_t broker_pid;
   Address *addr = make_address_object();
-  addr = create_address(addr, server_obj->address, server_obj->port_in_count, server_obj->port_out_count);
-  *buffer_size = serialize_address(buffer, addr); /* add checking for error on serialization */
-  server_obj->db_ptr = write_db(server_obj->db_ptr, request, buffer, *buffer_size);
- 	    
+  	    
   broker_pid = fork_new_broker(server_obj->address, server_obj->port_in_count, server_obj->port_out_count);
+
   if(broker_pid >= 0) {
-    g_hash_table_insert(server_obj->process_db, (gpointer)request, &broker_pid);
-  }
+    addr = create_address(addr, server_obj->address, server_obj->port_in_count, server_obj->port_out_count, (long) broker_pid);
+    *buffer_size = serialize_address(buffer, addr); /* add checking for error on serialization */
+    server_obj->db_ptr = write_db(server_obj->db_ptr, request, buffer, *buffer_size);
+   }
 
   free_address_object(addr); /* Free up Address structure */
   return server_obj;
@@ -96,7 +95,7 @@ void *start_server(void *server_object)
   /* Initialise the berkeley database */
   //server_obj->db_ptr = create_bdb(server_obj->db_ptr);
   server_obj->db_ptr = init_bdb(server_obj->db_ptr);
-  //read_all_db(server_obj->db_ptr);
+  read_all_db(server_obj->db_ptr);
 
   /* Prepare the context and server socket */
   server_obj->context = zmq_init (1);
@@ -159,12 +158,20 @@ void *start_server(void *server_object)
 	  Address *addr = make_address_object();
 	  buffer_size = deserialize_address(buffer, addr);
 
-	  if((node_type == PUBLISHER) && (g_hash_table_lookup(server_obj->process_db, request) == NULL)) {
-	    pid_t broker_pid;
-	    broker_pid = fork_new_broker(server_obj->address, addr->port_in, addr->port_out);
-	    if(broker_pid >= 0) {
-	      g_hash_table_insert(server_obj->process_db, (gpointer)request, &broker_pid);
-	    }
+	  if(node_type == PUBLISHER) {
+
+	    if (kill(addr->pid, 0) == 0) {
+	      //printf("process is already running %ld In %d Out %d\n", addr->pid, addr->port_in, addr->port_out);
+
+	    } else if (errno == ESRCH) {
+	      printf("Broker process [%ld] is not running! Starting new broker process...\n", addr->pid);
+	      server_obj->db_ptr = remove_db(server_obj->db_ptr, request);
+	      server_obj = create_new_broker(server_obj, request, buffer, &buffer_size);
+
+	      /* no such process with the given pid is running */
+	    } else {
+	      /* some other error... use perror("...") or strerror(errno) to report */
+	    }  
 	  }
 	  free_address_object(addr); /* Free up Address structure */
 	}
