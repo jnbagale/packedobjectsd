@@ -12,8 +12,9 @@ AC_DEFINE([DEFAULT_TYPE],["both"],["the default node type: pub, sub or both"])
 AC_DEFINE([DEFAULT_RECV_FREQ],[1000],["the default receiving frequency for subscribers in milliseconds"])
 AC_DEFINE([DEFAULT_SEND_FREQ],[1000],["the default sending frequency for publishers in milliseconds"])
 AC_DEFINE([DATABASE],["packedobjectsd.db"],["the default database for lookup server"])
-AC_DEFINE([MAX_BUFFER_SIZE],[99],["the maximum size for address buffer"])
+AC_DEFINE([MAX_BUFFER_SIZE],[100],["the maximum size for address buffer"])
 AC_DEFINE([MAX_ADDRESS_SIZE],[20],["the maximum size for network address"])
+AC_DEFINE([MAX_BROKER_PROCESS], [100],["the maximum number of brokers processes to run in one machine"])
 
 # --enable-debug flag
 AC_ARG_ENABLE(debug,
@@ -57,8 +58,6 @@ PKG_CHECK_MODULES(LIBZMQ, [libzmq])
 
 # check for libxml2
 PKG_CHECK_MODULES(LIBXML2, [libxml-2.0])
-
-
 
 AC_CONFIG_FILES([Makefile src/Makefile])
 

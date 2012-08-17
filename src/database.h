@@ -14,17 +14,15 @@
 #ifndef DATABASE_H_
 #define DATABASE_H_
 
-#include <db.h>
+#include <db.h>  /* for Berkeley DB hash table */
 
-DB *create_bdb(DB *db_ptr);
+DB *create_bdb (DB *db_ptr);
 DB *init_bdb(DB *db_ptr);
 DB *write_db(DB *db_ptr,char *hash_schema, char *buffer, int size);
 int read_db(DB *db_ptr, char *hash_schema, char *buffer);
 DB *remove_db(DB *db_ptr, char *hash_schema);
 int close_bdb(DB *db_ptr);
 int get_max_port(DB *db_ptr, int *max_port_in, int *max_port_out);
-
-
 
 #endif
 /* End of database.h */

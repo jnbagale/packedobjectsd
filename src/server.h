@@ -14,10 +14,7 @@
 #ifndef SERVER_H_
 #define SERVER_H_
 
-#include <db.h>
-#include <glib.h>
-
-#define MAX_BROKER_PROCESS 100
+#include <db.h>  /* for Berkeley DB hash table */
 
 typedef struct {
   DB *db_ptr;

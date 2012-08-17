@@ -14,11 +14,11 @@
 #ifndef PUBLISHER_H_
 #define PUBLISHER_H_
 
-#include <zmq.h>
 #include <stdio.h>
-#include <string.h> /* for strlen() */
-#include <stdlib.h> /* for exit()   */
+#include <string.h>     /* for strlen() */
+#include <stdlib.h>    /* for exit()   */
 #include <inttypes.h> /* for int64_t */
+#include <zmq.h>     /* ZeroMQ functions   */
 
 #include "message.h"
 
