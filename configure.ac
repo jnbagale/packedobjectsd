@@ -59,6 +59,6 @@ PKG_CHECK_MODULES(LIBZMQ, [libzmq])
 # check for libxml2
 PKG_CHECK_MODULES(LIBXML2, [libxml-2.0])
 
-AC_CONFIG_FILES([Makefile src/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile examples/Makefile])
 
 AC_OUTPUT

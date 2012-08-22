@@ -102,17 +102,17 @@ int main (int argc, char *argv [])
   GError *error = NULL;
   GOptionContext *context;
   GOptionEntry entries[] = 
-  {
-    { "verbose", 'v', 0, G_OPTION_ARG_NONE, &verbose, "Verbose output", NULL },
-    { "address", 'h', 0, G_OPTION_ARG_STRING, &address, "Lookup server address", NULL },
-    { "type",'t', 0, G_OPTION_ARG_STRING, &type, "node type:pub or sub or both", NULL },
-    { "port", 'p', 0, G_OPTION_ARG_INT, &port, "Lookup server port", "N" },
-    { "recv-freq", 'r', 0, G_OPTION_ARG_INT, &recv_freq, "Receiving frequency for subscriber", "N" },
-    { "send-freq", 's', 0, G_OPTION_ARG_INT, &send_freq, "Sending frequency for publisher", "N" },
-    { "pub-schema-path", 'x', 0, G_OPTION_ARG_STRING, &pub_schema_path, "File path for Publisher xml schema", NULL },
-    { "sub-schema-path", 'y', 0, G_OPTION_ARG_STRING, &sub_schema_path, "File path for Subscriber xml schema", NULL },
-    { NULL }
-  };
+    {
+      { "verbose", 'v', 0, G_OPTION_ARG_NONE, &verbose, "Verbose output", NULL },
+      { "address", 'h', 0, G_OPTION_ARG_STRING, &address, "Lookup server address", NULL },
+      { "type",'t', 0, G_OPTION_ARG_STRING, &type, "node type:pub or sub or both", NULL },
+      { "port", 'p', 0, G_OPTION_ARG_INT, &port, "Lookup server port", "N" },
+      { "recv-freq", 'r', 0, G_OPTION_ARG_INT, &recv_freq, "Receiving frequency for subscriber", "N" },
+      { "send-freq", 's', 0, G_OPTION_ARG_INT, &send_freq, "Sending frequency for publisher", "N" },
+      { "pub-schema-path", 'x', 0, G_OPTION_ARG_STRING, &pub_schema_path, "File path for Publisher xml schema", NULL },
+      { "sub-schema-path", 'y', 0, G_OPTION_ARG_STRING, &sub_schema_path, "File path for Subscriber xml schema", NULL },
+      { NULL }
+    };
  
   context = g_option_context_new ("- node");
   g_option_context_add_main_entries (context, entries, PACKAGE_NAME);
@@ -176,4 +176,4 @@ int main (int argc, char *argv [])
   /* We should never reach here unless something goes wrong! */
   return EXIT_FAILURE;
 }
-/* End of node.c */
+/* End of simple_pub_sub.c */
