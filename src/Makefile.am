@@ -18,6 +18,10 @@ library_include_HEADERS = $(topsrcdir)/include/packedobjectsd.h \
 				$(topsrcdir)/include/message.h 	 $(topsrcdir)/include/database.h   \
 				$(topsrcdir)/include/broker.h    $(topsrcdir)/include/xmlutils.h
 
+pkgconfigdir = $(libdir)/pkgconfig
+
+pkgconfig_DATA = $(topsrcdir)/pkgconfig/packedobjectsd.pc
+
 bin_PROGRAMS = server 
 
 server_SOURCES = config.h main.c server.c server.h packedobjectsd.db

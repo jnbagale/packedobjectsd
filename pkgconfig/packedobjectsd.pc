@@ -1,0 +1,11 @@
+prefix=/usr/local
+exec_prefix=$(exec_prefix)
+libdir=$(exec_prefix)/lib
+includedir=$(exec_prefix)/include
+
+Name: PackedobjectsD
+Description: A lightweight secure xml messaging library.
+Requires: libzmq >= 2.1.11 libxml2 >= 2.7.8
+Version: 1.0.0
+Libs: -L${libdir} -lpackedobjectsd
+Cflags: -I${includedir}/packedobjectsd 
