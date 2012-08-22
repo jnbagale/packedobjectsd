@@ -28,6 +28,7 @@ int main(int argc, char** argv)
   char *address = DEFAULT_SERVER_ADDRESS;
   int server_port = DEFAULT_SERVER_PORT;
   serverObject *server_obj = NULL;
+
   /* For command line arguments */
   GError *error = NULL;
   GOptionContext *context;
@@ -70,4 +71,4 @@ int main(int argc, char** argv)
   /* We should never reach here unless something goes wrong! */
   return EXIT_FAILURE;  
 }
-/* End of server.c */
+/* End of main.c */

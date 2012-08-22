@@ -28,7 +28,6 @@ typedef struct {
   int max_port_out;
 } serverObject;
 
-
 serverObject *make_server_object (void);
 void *start_server(void *server_object);
 void free_server_object(serverObject *server_obj);

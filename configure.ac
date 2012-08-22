@@ -59,6 +59,12 @@ PKG_CHECK_MODULES(LIBZMQ, [libzmq])
 # check for libxml2
 PKG_CHECK_MODULES(LIBXML2, [libxml-2.0])
 
+# just create shared library
+AC_DISABLE_STATIC
+AC_PROG_LIBTOOL
+
+AC_CONFIG_MACRO_DIR([m4])
+
 AC_CONFIG_FILES([Makefile src/Makefile examples/Makefile])
 
 AC_OUTPUT

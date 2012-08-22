@@ -20,16 +20,7 @@
 #include <string.h> /* for  memset() & strlen() */
 #include <zmq.h>   /* for ZeroMQ functions */
 
-#include "message.h"
-
-/* Function prototype declarations */
-DB *create_bdb(DB *db_ptr);
-DB *init_bdb(DB *db_ptr);
-DB *write_db(DB *db_ptr, char *hash_schema, char *buffer, int size);
-int read_db(DB *db_ptr, char *hash_schema, char *buffer);
-int get_max_port(DB *db_ptr, int *max_port_in, int *max_port_out);
-DB *remove_db(DB *db_ptr, char *hash_schema);
-int close_bdb(DB *db_ptr);
+#include "message.h" /* for deserialise_address() */
 
 DB *create_bdb(DB *db_ptr)
 {
@@ -80,6 +71,41 @@ DB *init_bdb(DB *db_ptr)
   return db_ptr;
 }
 
+int close_bdb(DB *db_ptr)
+{
+  /* If the database is not NULL, close it. */
+  if (db_ptr != NULL) {
+    db_ptr->close(db_ptr, 0);
+    return 0;
+  }
+
+  return -1; 
+}
+
+DB *remove_db(DB *db_ptr, char *hash_schema)
+{
+  int ret;
+  DBT key;
+ 
+  memset(&key, 0, sizeof(DBT));  /* Initialize the DBTs */
+  key.data = hash_schema;
+  key.size = strlen(hash_schema);
+
+  ret = db_ptr->del(db_ptr, NULL, &key, 0);  
+  if(ret != 0) {
+    if (ret == DB_NOTFOUND) {
+      db_ptr->err(db_ptr, ret, "The key:- %s: could not be removed", hash_schema);
+    }
+  }
+  else {
+    printf("The key:- %s is removed from the database successfully\n", hash_schema);
+    //DB *db_temp = db_ptr;
+    close_bdb(db_ptr);
+    db_ptr = init_bdb(db_ptr);
+  }
+
+  return db_ptr;
+}
 DB *write_db(DB *db_ptr, char *hash_schema, char *buffer, int size)
 {
   int ret;
@@ -182,43 +208,6 @@ int get_max_port(DB *db_ptr, int *max_port_in, int *max_port_out)
   }
  
   return 0;
-}
-
-
-DB *remove_db(DB *db_ptr, char *hash_schema)
-{
-  int ret;
-  DBT key;
- 
-  memset(&key, 0, sizeof(DBT));  /* Initialize the DBTs */
-  key.data = hash_schema;
-  key.size = strlen(hash_schema);
-
-  ret = db_ptr->del(db_ptr, NULL, &key, 0);  
-  if(ret != 0) {
-    if (ret == DB_NOTFOUND) {
-      db_ptr->err(db_ptr, ret, "The key:- %s: could not be removed", hash_schema);
-    }
-  }
-  else {
-    printf("The key:- %s is removed from the database successfully\n", hash_schema);
-    //DB *db_temp = db_ptr;
-    close_bdb(db_ptr);
-    db_ptr = init_bdb(db_ptr);
-  }
-
-  return db_ptr;
-}
-
-int close_bdb(DB *db_ptr)
-{
-  /* If the database is not NULL, close it. */
-  if (db_ptr != NULL) {
-    db_ptr->close(db_ptr, 0);
-    return 0;
-  }
-
-  return -1; 
 }
 
 #endif
