@@ -15,6 +15,7 @@
 #include <string.h>     /* for strlen() */
 #include <stdlib.h>    /* for exit()   */
 #include <inttypes.h> /* for uint64_t */
+#include <zmq.h>
 
 #include "packedobjectsd.h"
 #include "broker.h"

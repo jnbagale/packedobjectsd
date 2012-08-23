@@ -15,13 +15,15 @@
 /* Publisher connects to broker's inbound socket */
 
 #include <stdio.h>
-#include <string.h>   /* for strcmp0()*/
+#include <unistd.h>   /* for sleep()  */
+#include <string.h>   /* for strcmp()*/
 
-#include "packedobjectsd/packedobjectsd.h"
+#include "packedobjectsd.h"
 
 int main (int argc, char *argv [])
 {
   int ret;
+  int size;
   int encode_type = ENCODED; /* ENCODED or PLAIN */
   int port = DEFAULT_SERVER_PORT ; /* Port number where lookup server is running */
   char *address = DEFAULT_SERVER_ADDRESS; /* IP address where lookup server is running */
@@ -48,17 +50,20 @@ int main (int argc, char *argv [])
   sub_obj->address = malloc (strlen(address) + 1);
   sprintf(sub_obj->address, "%s",address);
 
-  /* Connects to SUB socket */ 
-  if((sub_obj = subscribe_to_broker(sub_obj, sub_schema_path)) == NULL) {
-    return -1;
-  }
-   
   /* Connects to PUB socket */
   if((pub_obj = publish_to_broker(pub_obj, pub_schema_path)) == NULL) {
     return -1;
   }
+   
+  /* Connects to SUB socket */ 
+  if((sub_obj = subscribe_to_broker(sub_obj, sub_schema_path)) == NULL) {
+    return -1;
+  }
+
+  sleep(1); /* Sleep 1 second to allow broker to run if it's not running already */
+  size = strlen(message1);
+  ret = send_data(pub_obj, message1, size, encode_type); 
   
-  ret = send_data(pub_obj, message1, strlen(message1), encode_type); 
   if(ret != -1) {
     printf("Message sent: %s\n", message1);
     sub_obj = receive_data(sub_obj);

@@ -14,7 +14,6 @@
 #ifndef PACKEDOBJECTSD_H_
 #define PACKEDOBJECTSD_H_
 
-#include <zmq.h>
 #include "config.h" 
 #include "broker.h" /* for enum types: ENCODED/PLAIN and PUBLISHER/SUBSCRIBER */
 
@@ -43,6 +42,7 @@ void unsubscribe_to_broker(subObject *sub_obj);
 void free_sub_object(subObject *sub_obj);
 pubObject *make_pub_object();
 pubObject *publish_to_broker(pubObject *pub_obj, char *path_schema);
+int send_data(pubObject *pub_obj, char *message, int message_length, int encode_type);
 void unpublish_to_broker(pubObject *pub_obj);
 void free_pub_object(pubObject *pub_obj);
 

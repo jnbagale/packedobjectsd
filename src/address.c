@@ -12,7 +12,7 @@
 /* GNU General Public License for more details. */
 
 #include <stdio.h>
-//#include <stdlib.h>  /* for free() */
+#include <stdlib.h>  /* for free() */
 #include <string.h> /* for  memcpy() & strlen() */
 
 #include "address.h"
