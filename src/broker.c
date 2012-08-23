@@ -15,9 +15,6 @@
 /* Binds subscribers to outbound socket */
 /* Binds publishers to inbound socket */
 
-#ifndef BROKER_H_
-#define BROKER_H_
-
 #include <stdio.h>
 #include <string.h>     /* for strncat() & memcpy() */
 #include <stdlib.h>    /* for exit()   */
@@ -25,26 +22,11 @@
 #include <zmq.h>     /* for ZeroMQ functions */
 #include <glib.h>   /* for g_compute_checksum_for_string() */
 
+#include "broker.h"
 #include "xmlutils.h"
+#include "address.h"
 #include "message.h"
-
-enum ENCODE_TYPE {ENCODED, PLAIN};      /* Supported message encoding types */
-enum NODE_TYPE {PUBLISHER, SUBSCRIBER}; /* Supported node types */
-
-static inline char *which_node (int node_type) {
-  return ((node_type) ? "SUBSCRIBER" : "PUBLISHER"); 
-}
-
-typedef struct {
-  void *context;
-  void *frontend;
-  void *backend;
-  int out_port;
-  int in_port;
-  char *address;
-  char *front_endpoint;
-  char *back_endpoint;
-} brokerObject;
+#include "config.h"
 
 brokerObject *make_broker_object()
 {
@@ -52,7 +34,7 @@ brokerObject *make_broker_object()
 
   if ((broker_obj = (brokerObject *)malloc(sizeof(brokerObject))) == NULL) {
     printf("failed to malloc brokerObject!");
-    exit(EXIT_FAILURE);
+    return NULL;
   }
 
   return broker_obj;
@@ -78,21 +60,7 @@ brokerObject *init_broker(brokerObject *broker_obj, char *address, int in_port, 
   return broker_obj;
 }
 
-void free_broker_object(brokerObject *broker_obj)
-{
-  if(broker_obj != NULL) {
-  zmq_close(broker_obj->frontend);
-  zmq_close(broker_obj->backend);
-  zmq_term (broker_obj->context);
-  free(broker_obj->address);
-  free(broker_obj);  
-  }
-  else {
-    printf("The broker_obj struct pointer is NULL\n");
-  }
-}
-
-void start_broker(brokerObject *broker_obj)
+void start_broker(brokerObject *broker_obj) /* Remove exit() functions and retrun errors */
 {
   int rc; 
   uint64_t hwm = 100; 
@@ -188,7 +156,7 @@ char *get_broker_detail(int node_type, char *address, int port, char *path_schem
   doc_schema = init_xmlutils(path_schema); /* Add error checking if xml doesn't exist in given path */
   if(doc_schema == NULL) {
     printf("The XML schema: %s doesn't exist\n", path_schema);
-    exit(EXIT_FAILURE);
+    return NULL;
   }
   char_schema = (char *)xmldoc2string(doc_schema, &xml_size);
   hash_schema = g_compute_checksum_for_string(G_CHECKSUM_MD5, char_schema, strlen(char_schema));
@@ -235,16 +203,18 @@ char *get_broker_detail(int node_type, char *address, int port, char *path_schem
 
   if (buffer != NULL) {
     buffer_size = deserialize_address(buffer, addr);
-     if(size != buffer_size) {
+    if(size != buffer_size) {
       printf("The received address structure could not be decoded\n");
     }
     else {
       //printf("Address %s Port In %d Port Out %d\n", addr->address, addr->port_in, addr->port_out);
+      size = strlen(addr->address) + sizeof (int) + 7;  /* 7 bytes for 'tcp://' and ':' */
+      broker_address = malloc(size + 1);
       if(node_type == PUBLISHER) {
-	broker_address = g_strdup_printf("tcp://%s:%d",addr->address, addr->port_in);
+	sprintf(broker_address, "tcp://%s:%d", addr->address, addr->port_in);
       }
       else if(node_type == SUBSCRIBER) {
-	broker_address = g_strdup_printf("tcp://%s:%d",addr->address, addr->port_out);
+	sprintf(broker_address, "tcp://%s:%d", addr->address, addr->port_out);
       }
       printf ("%s: Received broker address: %s\n", which_node(node_type), broker_address);
     }
@@ -258,5 +228,18 @@ char *get_broker_detail(int node_type, char *address, int port, char *path_schem
   return broker_address;
 }
 
-#endif
-/* End of broker.h */
+void free_broker_object(brokerObject *broker_obj)
+{
+  if(broker_obj != NULL) {
+  zmq_close(broker_obj->frontend);
+  zmq_close(broker_obj->backend);
+  zmq_term (broker_obj->context);
+  free(broker_obj->address);
+  free(broker_obj);  
+  }
+  else {
+    printf("The broker_obj struct pointer is NULL\n");
+  }
+}
+
+/* End of broker.c */

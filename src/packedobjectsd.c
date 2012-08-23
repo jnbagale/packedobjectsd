@@ -11,34 +11,14 @@
 /* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the */
 /* GNU General Public License for more details. */
 
-#ifndef PACKEDOBJECTSD_H_
-#define PACKEDOBJECTSD_H_
-
 #include <stdio.h>
 #include <string.h>     /* for strlen() */
 #include <stdlib.h>    /* for exit()   */
-#include <inttypes.h> /* for int64_t */
-#include <zmq.h>     /* ZeroMQ functions   */
+#include <inttypes.h> /* for uint64_t */
 
+#include "packedobjectsd.h"
 #include "broker.h"
-
-typedef struct {
-  void *context;
-  void *subscriber;
-  int port;
-  int encode_type;
-  char *message;
-  char *address;
-  char *sub_endpoint;
-} subObject;
-
-typedef struct {
-  void *context;
-  void *publisher;
-  int port;
-  char *address;
-  char *pub_endpoint;
- } pubObject;
+#include "message.h"
 
 subObject *make_sub_object()
 {
@@ -46,7 +26,7 @@ subObject *make_sub_object()
 
   if ((sub_obj = (subObject *) malloc(sizeof(subObject))) == NULL) {
     printf("failed to malloc subObject!\n");
-    exit(EXIT_FAILURE);
+    return NULL;
   }
 
   return sub_obj;
@@ -62,7 +42,7 @@ void *subscribe_to_broker(subObject *sub_obj, char *path_schema)
 
   if(sub_obj->sub_endpoint == NULL) {
     printf("Broker address received is NULL\n");
-    exit(EXIT_FAILURE); /* Handle it gently. Don't exit here. return sthg to user */
+    return NULL;
   }
  
   /* Prepare the context and subscriber socket */
@@ -139,7 +119,7 @@ pubObject *make_pub_object()
 
   if ((pub_obj = (pubObject *) malloc(sizeof(pubObject))) == NULL) {
     printf("failed to malloc pubObject!\n");
-    exit(EXIT_FAILURE);
+    return NULL;
   }
 
   return pub_obj;
@@ -155,7 +135,7 @@ pubObject *publish_to_broker(pubObject *pub_obj, char *path_schema)
 
   if(pub_obj->pub_endpoint == NULL) {
     printf("Broker address received is NULL\n");
-    exit(EXIT_FAILURE);
+    return NULL;
   }
 
   /* Prepare the context and publisher socket */
@@ -225,5 +205,4 @@ void free_pub_object(pubObject *pub_obj)
   }
 }
 
-#endif
-/* End of packedobjectsd.h */
+/* End of packedobjectsd.c */
