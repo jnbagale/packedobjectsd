@@ -15,7 +15,6 @@
 /* Publisher connects to broker's inbound socket */
 
 #include <stdio.h>
-#include <unistd.h>   /* for sleep()  */
 #include <string.h>   /* for strcmp()*/
 
 #include "packedobjectsd.h"
@@ -24,60 +23,38 @@ int main (int argc, char *argv [])
 {
   int ret;
   int size;
-  int encode_type = ENCODED; /* ENCODED or PLAIN */
-  int port = DEFAULT_SERVER_PORT ; /* Port number where lookup server is running */
-  char *address = DEFAULT_SERVER_ADDRESS; /* IP address where lookup server is running */
-  char *pub_schema_path = "../schema/schema.xsd";
-  char *sub_schema_path = "../schema/schema.xsd";
-  char *message1 = "packedobjectsd test";
+  int node_type = 2; /* Subscriber 0; Publisher 1; Both 2 */
+  int encode_type = 1; /* Plain 0; Encoded 1 */
+  int server_port = DEFAULT_SERVER_PORT ; /* Port number where lookup server is running */
+  char *server_address = DEFAULT_SERVER_ADDRESS; /* IP address where lookup server is running */
+  char *path_schema = "../schema/schema.xsd";
+  char *message = "packedobjectsd test message";
  
   /* Initialise objects and variables  */
-  pubObject *pub_obj = NULL;
-  subObject *sub_obj= NULL;
+  packedobjectsdObject *pod_obj = NULL;
 
-  if((pub_obj = make_pub_object()) == NULL){
+  if((pod_obj = packedobjectsd_init(node_type, path_schema, server_address, server_port)) == NULL){
     return -1;
   }  
-  if((sub_obj = make_sub_object()) == NULL) {
-    return -1;
-  }
   
-  pub_obj->port = port;
-  pub_obj->address = malloc (strlen(address) + 1);
-  sprintf(pub_obj->address, "%s",address);
-  
-  sub_obj->port = port;
-  sub_obj->address = malloc (strlen(address) + 1);
-  sprintf(sub_obj->address, "%s",address);
-
-  /* Connects to PUB socket */
-  if((pub_obj = publish_to_broker(pub_obj, pub_schema_path)) == NULL) {
-    return -1;
-  }
-   
-  /* Connects to SUB socket */ 
-  if((sub_obj = subscribe_to_broker(sub_obj, sub_schema_path)) == NULL) {
-    return -1;
-  }
-
-  sleep(1); /* Sleep 1 second to allow broker to run if it's not running already */
-  size = strlen(message1);
-  ret = send_data(pub_obj, message1, size, encode_type); 
+  size = strlen(message);
+  ret = send_data(pod_obj, message, size, encode_type); 
   
   if(ret != -1) {
-    printf("Message sent: %s\n", message1);
-    sub_obj = receive_data(sub_obj);
-    if(strcmp(message1, sub_obj->message) !=0) {
+    printf("Message sent: %s\n", message);
+    pod_obj = receive_data(pod_obj);
+    if(pod_obj->data_received == NULL) {
       printf("Message could not be received!\n");
     }
     else {
-      printf("Message received: %s\n", sub_obj->message);
+      printf("Message received: %s\n", pod_obj->data_received);
     }
   }
   else {
-      printf("Message could not be sent\n");
-      return -1;
-    }
+    printf("Message could not be sent\n");
+  }
+
+  packedobjectsd_free(pod_obj);
 
   return 0;
 }

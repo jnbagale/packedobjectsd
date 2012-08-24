@@ -14,37 +14,27 @@
 #ifndef PACKEDOBJECTSD_H_
 #define PACKEDOBJECTSD_H_
 
-#include "config.h" 
-#include "broker.h" /* for enum types: ENCODED/PLAIN and PUBLISHER/SUBSCRIBER */
+#include "config.h"
 
 typedef struct {
-  void *context;
-  void *subscriber;
-  int port;
-  int encode_type;
-  char *message;
-  char *address;
-  char *sub_endpoint;
-} subObject;
+  void *publisher_context;
+  void *subscriber_context;
+  void *publisher_socket;
+  void *subscriber_socket;
+  char *data_received;
+  char *server_address;
+  char *publisher_endpoint;
+  char *subscriber_endpoint;
+  int node_type;    /* Subscriber 0; Publisher 1; Both 2 */
+  int encode_type; /* Plain 0; Encoded 1 */
+  int server_port;
+} packedobjectsdObject;
 
-typedef struct {
-  void *context;
-  void *publisher;
-  int port;
-  char *address;
-  char *pub_endpoint;
- } pubObject;
 
-subObject *make_sub_object();
-void *subscribe_to_broker(subObject *sub_obj, char *path_schema);
-subObject *receive_data(subObject *sub_obj);
-void unsubscribe_to_broker(subObject *sub_obj);
-void free_sub_object(subObject *sub_obj);
-pubObject *make_pub_object();
-pubObject *publish_to_broker(pubObject *pub_obj, char *path_schema);
-int send_data(pubObject *pub_obj, char *message, int message_length, int encode_type);
-void unpublish_to_broker(pubObject *pub_obj);
-void free_pub_object(pubObject *pub_obj);
+packedobjectsdObject *packedobjectsd_init(int node_type, char *path_schema, char *server_address, int server_port);
+packedobjectsdObject *receive_data(packedobjectsdObject *pod_obj);
+int send_data(packedobjectsdObject *pod_obj, char *message, int message_length, int encode_type);
+void packedobjectsd_free(packedobjectsdObject *pod_obj);
 
 #endif
 /* End of packedobjectsd.h */
