@@ -46,9 +46,13 @@ AC_CHECK_LIB(db, db_create, , AC_MSG_ERROR(*** berkeley db library not found))
 AC_CHECK_HEADERS(db.h)
 
 
-# required libraries pthreads
+# Check for pthreads library and header
 AC_CHECK_LIB(pthread, pthread_create, , AC_MSG_ERROR(*** pthread library not found))
 AC_CHECK_HEADERS(pthread.h,, [AC_MSG_ERROR([pthread.h required])])
+
+# Check for cryptography library and header
+AC_CHECK_LIB([crypt], [crypt], [LIBS="$LIBS -lcrypt"])
+AC_CHECK_HEADERS(crypt.h,, [AC_MSG_ERROR([crypt.h required])])
 
 # check for glib
 PKG_CHECK_MODULES(GLIB, [glib-2.0])

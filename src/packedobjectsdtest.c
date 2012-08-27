@@ -10,12 +10,13 @@
 /* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the */
 /* GNU General Public License for more details. */
 
-/* A sample ZeroMQ node which can act as both publisher and subscriber */
+/* A test ZeroMQ node which can act as both publisher and subscriber */
 /* Subscriber connects to broker's outbound socket */
 /* Publisher connects to broker's inbound socket */
 
 #include <stdio.h>
 #include <string.h>   /* for strcmp()*/
+#include <unistd.h>  /* for sleep() */
 
 #include "packedobjectsd.h"
 
@@ -32,11 +33,13 @@ int main (int argc, char *argv [])
  
   /* Initialise objects and variables  */
   packedobjectsdObject *pod_obj = NULL;
+  packedobjectsdObject *pod_obj1 = NULL;
 
-  if((pod_obj = packedobjectsd_init(node_type, path_schema, server_address, server_port)) == NULL){
+  if((pod_obj = packedobjectsd_init(node_type, path_schema, server_address, server_port)) == NULL) {
     return -1;
-  }  
-  
+  }
+  sleep(1); /* Allow broker to start if it's not already running */
+ 
   size = strlen(message);
   ret = send_data(pod_obj, message, size, encode_type); 
   

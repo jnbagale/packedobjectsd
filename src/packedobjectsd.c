@@ -12,7 +12,6 @@
 /* GNU General Public License for more details. */
 
 #include <stdio.h>
-#include <unistd.h>      /* for sleep()  */
 #include <string.h>     /* for strlen() */
 #include <stdlib.h>    /* for exit()   */
 #include <inttypes.h> /* for uint64_t */
@@ -52,11 +51,10 @@ packedobjectsdObject *packedobjectsd_init(int node_type, char *path_schema, char
   case 2:
     packedobjectsd_publish(pod_obj, path_schema);
     packedobjectsd_subscribe(pod_obj, path_schema);
-    sleep(1); /* Sleep 1 second to allow broker to run if it's not running already */
-   
+      
     break;
   default:
-    printf("Invalid node type\n");
+    printf("Invalid node type\n"); /* Handle this properly */
    
   }
 

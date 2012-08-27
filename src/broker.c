@@ -20,7 +20,7 @@
 #include <stdlib.h>    /* for exit()   */
 #include <inttypes.h> /* for uint64_t */
 #include <zmq.h>     /* for ZeroMQ functions */
-#include <glib.h>   /* for g_compute_checksum_for_string() */
+#include <crypt.h>  /* for crypt() */
 
 #include "broker.h"
 #include "xmlutils.h"
@@ -101,7 +101,7 @@ void start_broker(brokerObject *broker_obj) /* Remove exit() functions and retru
     free( broker_obj->front_endpoint);
   }
 
-   /* Subscribe for all the messages from publishers */
+  /* Subscribe for all the messages from publishers */
   rc = zmq_setsockopt (broker_obj->frontend, ZMQ_SUBSCRIBE, "", 0); 
   if (rc == -1){
     printf("Error occurred during zmq_setsockopt() backend: %s\n", zmq_strerror (errno));
@@ -159,8 +159,8 @@ char *get_broker_detail(int node_type, char *address, int port, char *path_schem
     return NULL;
   }
   char_schema = (char *)xmldoc2string(doc_schema, &xml_size);
-  hash_schema = g_compute_checksum_for_string(G_CHECKSUM_MD5, char_schema, strlen(char_schema));
-
+  hash_schema = crypt(char_schema, "$1$");
+  
   /* Initialise the zeromq context and socket address */ 
   context = zmq_init (1);
   size = strlen(address) + sizeof (int) + 7;  /* 7 bytes for 'tcp://' and ':' */
