@@ -1,5 +1,5 @@
 
-INCLUDES = -Wall -g $(GLIB_CFLAGS) $(PTHREAD_CFLAGS) $(LIBZMQ_CFLAGS) $(LIBXML2_CFLAGS) 
+INCLUDES = -Wall -g $(LIBZMQ_CFLAGS) $(LIBXML2_CFLAGS) 
 
 lib_LTLIBRARIES = libpackedobjectsd.la
 
@@ -23,12 +23,3 @@ packedobjectsdtest_SOURCES = packedobjectsdtest.c
 
 packedobjectsdtest_LDADD = $(lib_LTLIBRARIES)
 
-bin_PROGRAMS = server 
-
-server_SOURCES = config.h main.c server.c server.h database.c database.h packedobjectsd.db
-
-server_LDADD = $(lib_LTLIBRARIES) $(GLIB_LIBS) $(PTHREAD_LIBS) $(LIBZMQ_LIBS) $(LIBXML2_LIBS) 
-
-server_DATA = packedobjectsd.db 
-
-serverdir = #/var/lib/misc

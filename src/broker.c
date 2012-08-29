@@ -20,120 +20,17 @@
 #include <stdlib.h>    /* for exit()   */
 #include <inttypes.h> /* for uint64_t */
 #include <zmq.h>     /* for ZeroMQ functions */
+
+#define _XOPEN_SOURCE       /* See feature_test_macros(7) */
+#include <unistd.h>
+#define _GNU_SOURCE
 #include <crypt.h>  /* for crypt() */
 
 #include "broker.h"
-#include "xmlutils.h"
 #include "address.h"
 #include "message.h"
+#include "xmlutils.h"
 #include "config.h"
-
-brokerObject *make_broker_object()
-{
-  brokerObject *broker_obj;
-
-  if ((broker_obj = (brokerObject *)malloc(sizeof(brokerObject))) == NULL) {
-    printf("failed to malloc brokerObject!");
-    return NULL;
-  }
-
-  return broker_obj;
-}
-
-brokerObject *init_broker(brokerObject *broker_obj, char *address, int in_port, int out_port)
-{
-  int size = strlen(address);
-  broker_obj->in_port = in_port;
-  broker_obj->out_port = out_port;
-
-  broker_obj->address = malloc(size + 1);
-  sprintf(broker_obj->address,"%s", address);
-
-  /* To subscribe to all the publishers */
-  broker_obj->front_endpoint = malloc(size + sizeof (int) + 7 + 1); /* 7 bytes for 'tcp://' and ':' */
-  sprintf(broker_obj->front_endpoint, "tcp://%s:%d",broker_obj->address, broker_obj->in_port);
-
-  /* To publish to all the subscribers */
-  broker_obj->back_endpoint = malloc(size + sizeof (int) + 7 + 1); /* 7 bytes for 'tcp://' and ':' */
-  sprintf( broker_obj->back_endpoint, "tcp://%s:%d",broker_obj->address, broker_obj->out_port);
- 
-  return broker_obj;
-}
-
-void start_broker(brokerObject *broker_obj) /* Remove exit() functions and retrun errors */
-{
-  int rc; 
-  uint64_t hwm = 100; 
-
-  /* Prepare the context */
-  broker_obj->context  = zmq_init (1);
-  if (!broker_obj->context){
-    printf("Error occurred during zmq_init(): %s\n", zmq_strerror (errno));
-    free_broker_object(broker_obj);
-    exit(EXIT_FAILURE);
-  }
-
-  /* Prepare the frontend socket */
-  broker_obj->frontend  = zmq_socket (broker_obj->context, ZMQ_SUB);
-  if (broker_obj->frontend == NULL){
-    printf("Error occurred during zmq_socket() frontend: %s\n", zmq_strerror (errno));
-    free_broker_object(broker_obj);
-    exit(EXIT_FAILURE);
-  }
-
-  /* Prepare the backend socket */
-  broker_obj->backend = zmq_socket (broker_obj->context, ZMQ_PUB);
-  if (broker_obj->backend == NULL){
-    printf("Error occurred during zmq_socket() backend: %s\n", zmq_strerror (errno));
-    free_broker_object(broker_obj);
-    exit(EXIT_FAILURE);
-  }
-
-  /* Bind the frontend socket to subscribe to publishers */
-  rc = zmq_bind (broker_obj->frontend,  broker_obj->front_endpoint);
-  if (rc == -1){
-    printf("Error occurred during zmq_bind() frontend: %s\n", zmq_strerror (errno));
-    free_broker_object(broker_obj);
-    exit(EXIT_FAILURE);
-  }
-  else{
-    printf("Broker: Successfully binded to frontend socket at %s\n",  broker_obj->front_endpoint);
-    free( broker_obj->front_endpoint);
-  }
-
-  /* Subscribe for all the messages from publishers */
-  rc = zmq_setsockopt (broker_obj->frontend, ZMQ_SUBSCRIBE, "", 0); 
-  if (rc == -1){
-    printf("Error occurred during zmq_setsockopt() backend: %s\n", zmq_strerror (errno));
-    free_broker_object(broker_obj);
-    exit(EXIT_FAILURE);
-  }
-
-  /* Set high water mark to control number of messages buffered for subscribers */
-  rc = zmq_setsockopt (broker_obj->backend, ZMQ_HWM, &hwm, sizeof (hwm));
-  if (rc == -1){
-    printf("Error occurred during zmq_setsockopt() backend: %s\n", zmq_strerror (errno));
-    free_broker_object(broker_obj);
-    exit(EXIT_FAILURE);
-  }
-
-  /* Bind the backend socket to publish to subscribers */
-  rc = zmq_bind (broker_obj->backend,  broker_obj->back_endpoint);
-  if (rc == -1){
-    printf("Error occurred during zmq_bind() backend: %s\n", zmq_strerror (errno));
-    free_broker_object(broker_obj);
-    exit(EXIT_FAILURE);
-  }
-  else{
-    printf("Broker: Successfully binded to backend socket at %s\n", broker_obj->back_endpoint);
-    free(broker_obj->back_endpoint);
-  }
-
-  /* Start the forwarder device */
-  zmq_device (ZMQ_FORWARDER, broker_obj->frontend, broker_obj->backend);
-
-  /* We should never reach here unless something goes wrong! */
-}
 
 char *get_broker_detail(int node_type, char *address, int port, char *path_schema)
 {
@@ -159,7 +56,7 @@ char *get_broker_detail(int node_type, char *address, int port, char *path_schem
     return NULL;
   }
   char_schema = (char *)xmldoc2string(doc_schema, &xml_size);
-  hash_schema = crypt(char_schema, "$1$");
+  hash_schema = crypt(char_schema, "$1$"); /* $1$ is MD5 */
   
   /* Initialise the zeromq context and socket address */ 
   context = zmq_init (1);
@@ -226,20 +123,6 @@ char *get_broker_detail(int node_type, char *address, int port, char *path_schem
   free(endpoint);
 
   return broker_address;
-}
-
-void free_broker_object(brokerObject *broker_obj)
-{
-  if(broker_obj != NULL) {
-  zmq_close(broker_obj->frontend);
-  zmq_close(broker_obj->backend);
-  zmq_term (broker_obj->context);
-  free(broker_obj->address);
-  free(broker_obj);  
-  }
-  else {
-    printf("The broker_obj struct pointer is NULL\n");
-  }
 }
 
 /* End of broker.c */

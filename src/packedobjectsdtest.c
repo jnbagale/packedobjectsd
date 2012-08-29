@@ -33,7 +33,6 @@ int main (int argc, char *argv [])
  
   /* Initialise objects and variables  */
   packedobjectsdObject *pod_obj = NULL;
-  packedobjectsdObject *pod_obj1 = NULL;
 
   if((pod_obj = packedobjectsd_init(node_type, path_schema, server_address, server_port)) == NULL) {
     return -1;

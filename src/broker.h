@@ -25,22 +25,7 @@ static inline char *which_node (int node_type) {
   return ((node_type) ? "SUBSCRIBER" : "PUBLISHER"); 
 }
 
-typedef struct {
-  void *context;
-  void *frontend;
-  void *backend;
-  int out_port;
-  int in_port;
-  char *address;
-  char *front_endpoint;
-  char *back_endpoint;
-} brokerObject;
-
-brokerObject *make_broker_object();
-brokerObject *init_broker(brokerObject *broker_obj, char *address, int in_port, int out_port);
-void start_broker(brokerObject *broker_obj);
 char *get_broker_detail(int node_type, char *address, int port, char *path_schema);
-void free_broker_object(brokerObject *broker_obj);
 
 #endif
 /* End of broker.h */
