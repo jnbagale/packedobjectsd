@@ -216,7 +216,6 @@ int send_data(packedobjectsdObject *pod_obj, xmlDocPtr doc)
     printf("Error occurred while sending the message(): %s\n", zmq_strerror (errno));
   }
    
-  
   return rc;
 }
 
