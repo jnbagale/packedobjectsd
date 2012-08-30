@@ -16,7 +16,7 @@
 #include <string.h> /* for  memcpy() & strlen() */
 
 #include "address.h"
-#include "config.h"
+
 Address *make_address_object(void) 
 {
   Address *addr;

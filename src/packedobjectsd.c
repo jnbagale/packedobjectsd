@@ -19,12 +19,12 @@
 
 #include "broker.h"
 #include "message.h"
+#include "xmlutils.h"
 #include "packedobjectsd.h"
 
 
 static void *packedobjectsd_subscribe(packedobjectsdObject *pod_obj, char *path_schema);
 static packedobjectsdObject *packedobjectsd_publish(packedobjectsdObject *pod_obj, char *path_schema);
-
 
 packedobjectsdObject *packedobjectsd_init(int node_type, char *path_schema, char *server_address, int server_port)
 {
@@ -38,7 +38,10 @@ packedobjectsdObject *packedobjectsd_init(int node_type, char *path_schema, char
   int size = strlen(server_address);
   pod_obj->server_address = malloc( size + 1);
   sprintf(pod_obj->server_address, server_address, size);
- 
+
+  pod_obj->pc = NULL;
+  pod_obj->pc = init_packedobjects((const char *) path_schema); /* check if pod_obj->pc is NULL */
+
   switch (node_type) {
   case 0:
     packedobjectsd_subscribe(pod_obj, path_schema);
@@ -145,44 +148,72 @@ static packedobjectsdObject *packedobjectsd_publish(packedobjectsdObject *pod_ob
   return pod_obj;
 }
 
-packedobjectsdObject *receive_data(packedobjectsdObject *pod_obj)
+xmlDocPtr receive_data(packedobjectsdObject *pod_obj)
 {
   /* Reading first part of the message */
   int size;
+  char *pdu = NULL;
   char *encode = NULL;
+  xmlDocPtr doc = NULL;
+
   encode = receive_message(pod_obj->subscriber_socket, &size);
   if(encode != NULL) {
     sscanf(encode, "%d", &pod_obj->encode_type);
   }
 
   /* Reading second part of the message if any */
-  pod_obj->data_received = receive_message_more(pod_obj->subscriber_socket, &size);
-  
-  return pod_obj;
+  pdu = receive_message_more(pod_obj->subscriber_socket, &size);
+
+  if(pod_obj->encode_type == ENCODED) {
+    doc = packedobjects_decode(pod_obj->pc, pdu);
+    size = pod_obj->pc->bytes;
+    printf("Encoded pdu %s,bytes:%d\n", pdu, size);
+  }
+  else {
+    size = strlen(pdu);
+    doc = (xmlDoc *) xmlstring2doc(pdu, size);
+    printf("Plain pdu %s,bytes:%d\n", pdu, size);
+  }
+
+  return doc;
 }
 
-int send_data(packedobjectsdObject *pub_obj, char *message, int message_length, int encode_type)
+int send_data(packedobjectsdObject *pod_obj, xmlDocPtr doc, int encode_type)
 {
   int rc;
   int size;
   char encode[3];
-  
+  char *pdu = NULL;
+
   sprintf(encode,"%d", encode_type);
   size = strlen(encode);
 
   /* Send ENCODE_TYPE as first part of the message */
-  rc = send_message_more (pub_obj->publisher_socket, encode, size); 
+  rc = send_message_more (pod_obj->publisher_socket, encode, size); 
   if (rc == -1){
     printf("Error occurred while sending encode type: %s\n", zmq_strerror (errno));
     return rc;
   }
 
   /* Send actual data as second part of the message */
-  rc = send_message(pub_obj->publisher_socket, message, message_length);
+  if(encode_type == ENCODED) {
+    if (pod_obj->pc) {
+      pdu = packedobjects_encode(pod_obj->pc, doc);
+      size =  pod_obj->pc->bytes;
+      printf("Encoded pdu %s,bytes:%d\n", pdu, size);
+    }
+  }
+  else {
+    pdu = (char *)xmldoc2string(doc, &size);
+    printf("Plain pdu %s, bytes:%d\n", pdu, size);
+  }
+
+  rc = send_message(pod_obj->publisher_socket, pdu, size);
   if (rc == -1){
     printf("Error occurred while sending the message(): %s\n", zmq_strerror (errno));
   }
- 
+   
+  
   return rc;
 }
 
@@ -200,6 +231,7 @@ void packedobjectsd_free(packedobjectsdObject *pod_obj)
       zmq_term (pod_obj->publisher_context);
     }
 
+    free_packedobjects(pod_obj->pc);
     free(pod_obj->server_address);
     free(pod_obj);
   }

@@ -1,9 +1,9 @@
 
-INCLUDES = -Wall -g $(LIBZMQ_CFLAGS) $(LIBXML2_CFLAGS) 
+INCLUDES = -Wall -g $(LIBZMQ_CFLAGS) $(LIBXML2_CFLAGS) $(LIBPACKEDOBJECTS_CFLAGS)
 
 lib_LTLIBRARIES = libpackedobjectsd.la
 
-libpackedobjectsd_la_LIBADD = $(LIBZMQ_LIBS) $(LIBXML2_LIBS)
+libpackedobjectsd_la_LIBADD = $(LIBZMQ_LIBS) $(LIBXML2_LIBS) $(LIBPACKEDOBJECTS_LIBS)
 
 libpackedobjectsd_la_SOURCES = 	packedobjectsd.c packedobjectsd.h message.c message.h \
 				address.c address.h broker.c broker.h xmlutils.c xmlutils.h	

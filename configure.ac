@@ -6,15 +6,8 @@ AM_CONFIG_HEADER([src/config.h])
 AC_DEFINE([PROGNAME],["packedobjectsd"],["light-weight secure messaging framework"])
 AC_DEFINE([DEFAULT_SERVER_ADDRESS],["127.0.0.1"],["the default lookup server address"])
 AC_DEFINE([DEFAULT_SERVER_PORT],[5555],["the default lookup server port"])
-AC_DEFINE([DEFAULT_PORT_OUT],[8100],["the default zeromq broker outbound port: for subscribers"])
-AC_DEFINE([DEFAULT_PORT_IN],[5556],["the default zeromq broker inbound port: for publishers"])
-AC_DEFINE([DEFAULT_TYPE],["both"],["the default node type: pub, sub or both"])
-AC_DEFINE([DEFAULT_RECV_FREQ],[1000],["the default receiving frequency for subscribers in milliseconds"])
-AC_DEFINE([DEFAULT_SEND_FREQ],[1000],["the default sending frequency for publishers in milliseconds"])
-AC_DEFINE([DATABASE],["packedobjectsd.db"],["the default database for lookup server"])
 AC_DEFINE([MAX_BUFFER_SIZE],[100],["the maximum size for address buffer"])
 AC_DEFINE([MAX_ADDRESS_SIZE],[20],["the maximum size for network address"])
-AC_DEFINE([MAX_BROKER_PROCESS], [100],["the maximum number of brokers processes to run in one machine"])
 
 # --enable-debug flag
 AC_ARG_ENABLE(debug,
@@ -62,6 +55,9 @@ PKG_CHECK_MODULES(LIBZMQ, [libzmq])
 
 # check for libxml2
 PKG_CHECK_MODULES(LIBXML2, [libxml-2.0])
+
+# check for libpackedobjects
+PKG_CHECK_MODULES(LIBPACKEDOBJECTS, [libpackedobjects])
 
 # just create shared library
 AC_DISABLE_STATIC

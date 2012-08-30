@@ -18,11 +18,10 @@
 #ifndef BROKER_H_
 #define BROKER_H_
 
-enum ENCODE_TYPE {ENCODED, PLAIN};      /* Supported message encoding types */
-enum NODE_TYPE {PUBLISHER, SUBSCRIBER}; /* Supported node types */
+#define MAX_BUFFER_SIZE 100 /* the maximum size for address buffer */
 
 static inline char *which_node (int node_type) {
-  return ((node_type) ? "SUBSCRIBER" : "PUBLISHER"); 
+  return ((node_type) ? "PUBLISHER" : "SUBSCRIBER"); 
 }
 
 char *get_broker_detail(int node_type, char *address, int port, char *path_schema);

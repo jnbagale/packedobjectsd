@@ -14,6 +14,8 @@
 #ifndef ADDRESS_H_
 #define ADDRESS_H_
 
+#define MAX_ADDRESS_SIZE 20 /* the maximum size for network address */
+
 typedef struct {
   long pid;
   unsigned int port_in;

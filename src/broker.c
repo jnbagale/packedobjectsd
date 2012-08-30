@@ -30,7 +30,6 @@
 #include "address.h"
 #include "message.h"
 #include "xmlutils.h"
-#include "config.h"
 
 char *get_broker_detail(int node_type, char *address, int port, char *path_schema)
 {
@@ -107,10 +106,10 @@ char *get_broker_detail(int node_type, char *address, int port, char *path_schem
       //printf("Address %s Port In %d Port Out %d\n", addr->address, addr->port_in, addr->port_out);
       size = strlen(addr->address) + sizeof (int) + 7;  /* 7 bytes for 'tcp://' and ':' */
       broker_address = malloc(size + 1);
-      if(node_type == PUBLISHER) {
+      if(node_type == 1) {
 	sprintf(broker_address, "tcp://%s:%d", addr->address, addr->port_in);
       }
-      else if(node_type == SUBSCRIBER) {
+      else if(node_type == 0) {
 	sprintf(broker_address, "tcp://%s:%d", addr->address, addr->port_out);
       }
       printf ("%s: Received broker address: %s\n", which_node(node_type), broker_address);

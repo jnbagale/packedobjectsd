@@ -23,39 +23,43 @@
 int main (int argc, char *argv [])
 {
   int ret;
-  int size;
-  int node_type = 2; /* Subscriber 0; Publisher 1; Both 2 */
-  int encode_type = 1; /* Plain 0; Encoded 1 */
+  int node_type = BOTH; /* Subscriber 0; Publisher 1; Both 2 */
+  int encode_type = ENCODED; /* Plain 0; Encoded 1 */
   int server_port = DEFAULT_SERVER_PORT ; /* Port number where lookup server is running */
   char *server_address = DEFAULT_SERVER_ADDRESS; /* IP address where lookup server is running */
-  char *path_schema = "../schema/schema.xsd";
-  char *message = "packedobjectsd test message";
- 
+  char *path_schema = "../schema/personnel.xsd";
+  char *path_xml = "../schema/personnel.xml";
+  xmlDocPtr doc_sent = NULL;
+  xmlDocPtr doc_received = NULL;
+
   /* Initialise objects and variables  */
   packedobjectsdObject *pod_obj = NULL;
-
+ 
   if((pod_obj = packedobjectsd_init(node_type, path_schema, server_address, server_port)) == NULL) {
     return -1;
   }
   sleep(1); /* Allow broker to start if it's not already running */
  
-  size = strlen(message);
-  ret = send_data(pod_obj, message, size, encode_type); 
+  doc_sent = packedobjects_new_doc((const char *) path_xml);
+  ret = send_data(pod_obj, doc_sent, encode_type); 
   
   if(ret != -1) {
-    printf("Message sent: %s\n", message);
-    pod_obj = receive_data(pod_obj);
-    if(pod_obj->data_received == NULL) {
+    printf("Message sent\n");
+    doc_received = receive_data(pod_obj);
+    if(doc_received == NULL) {
       printf("Message could not be received!\n");
     }
     else {
-      printf("Message received: %s\n", pod_obj->data_received);
+      printf("Message received\n");
     }
   }
   else {
     printf("Message could not be sent\n");
   }
-
+  
+  packedobjects_dump_doc(doc_received);
+  xmlFreeDoc(doc_received);
+  xmlFreeDoc(doc_sent);
   packedobjectsd_free(pod_obj);
 
   return 0;
