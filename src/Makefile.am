@@ -19,7 +19,7 @@ pkgconfig_DATA = $(top_builddir)/pkgconfig/packedobjectsd.pc
 
 check_PROGRAMS = packedobjectsdtest
 
-packedobjectsdtest_SOURCES = packedobjectsdtest.c
+packedobjectsdtest_SOURCES = main.c
 
 packedobjectsdtest_LDADD = $(lib_LTLIBRARIES)
 

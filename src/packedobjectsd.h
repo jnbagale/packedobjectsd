@@ -33,15 +33,15 @@ typedef struct {
   char *publisher_endpoint;
   char *subscriber_endpoint;
   int node_type;    /* Subscriber 0; Publisher 1; Both 2 */
-  int encode_type; /* Plain 0; Encoded 1 */
+  int encode_type;  /* Plain 0; Encoded 1 */
   int server_port;
   packedobjectsContext *pc;
 } packedobjectsdObject;
 
 
-packedobjectsdObject *packedobjectsd_init(int node_type, char *path_schema, char *server_address, int server_port);
+packedobjectsdObject *packedobjectsd_init(char *path_schema);
 xmlDocPtr receive_data(packedobjectsdObject *pod_obj);
-int send_data(packedobjectsdObject *pod_obj, xmlDocPtr doc, int encode_type);
+int send_data(packedobjectsdObject *pod_obj, xmlDocPtr doc);
 void packedobjectsd_free(packedobjectsdObject *pod_obj);
 
 #endif

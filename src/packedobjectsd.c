@@ -26,23 +26,26 @@
 static void *packedobjectsd_subscribe(packedobjectsdObject *pod_obj, char *path_schema);
 static packedobjectsdObject *packedobjectsd_publish(packedobjectsdObject *pod_obj, char *path_schema);
 
-packedobjectsdObject *packedobjectsd_init(int node_type, char *path_schema, char *server_address, int server_port)
+packedobjectsdObject *packedobjectsd_init(char *path_schema)
 {
+  //int size;
   packedobjectsdObject *pod_obj;
+
   if ((pod_obj = (packedobjectsdObject *) malloc(sizeof(packedobjectsdObject))) == NULL) {
     printf("failed to malloc packedobjectsdObject!\n");
     return NULL;
   }
-
-  pod_obj->server_port = server_port;
-  int size = strlen(server_address);
-  pod_obj->server_address = malloc( size + 1);
-  sprintf(pod_obj->server_address, server_address, size);
-
+  /* Initialise default values */
+  //size = strlen(DEFAULT_SERVER_ADDRESS); /* IP address where lookup server is running */
+  //pod_obj->server_address = malloc( size + 1);
+  pod_obj->server_address = DEFAULT_SERVER_ADDRESS;
+  pod_obj->server_port = DEFAULT_SERVER_PORT ; /* Port number where lookup server is running */
+  pod_obj->node_type = BOTH;
+  pod_obj->encode_type = ENCODED; /* Plain 0; Encoded 1 */
   pod_obj->pc = NULL;
   pod_obj->pc = init_packedobjects((const char *) path_schema); /* check if pod_obj->pc is NULL */
-
-  switch (node_type) {
+  
+  switch (pod_obj->node_type) {
   case 0:
     packedobjectsd_subscribe(pod_obj, path_schema);
     break;
@@ -171,21 +174,21 @@ xmlDocPtr receive_data(packedobjectsdObject *pod_obj)
   }
   else {
     size = strlen(pdu);
-    doc = (xmlDoc *) xmlstring2doc(pdu, size);
+    doc = (xmlDocPtr) xmlstring2doc(pdu, size);
     printf("Plain pdu %s,bytes:%d\n", pdu, size);
   }
 
   return doc;
 }
 
-int send_data(packedobjectsdObject *pod_obj, xmlDocPtr doc, int encode_type)
+int send_data(packedobjectsdObject *pod_obj, xmlDocPtr doc)
 {
   int rc;
   int size;
   char encode[3];
   char *pdu = NULL;
 
-  sprintf(encode,"%d", encode_type);
+  sprintf(encode,"%d", pod_obj->encode_type);
   size = strlen(encode);
 
   /* Send ENCODE_TYPE as first part of the message */
@@ -196,7 +199,7 @@ int send_data(packedobjectsdObject *pod_obj, xmlDocPtr doc, int encode_type)
   }
 
   /* Send actual data as second part of the message */
-  if(encode_type == ENCODED) {
+  if(pod_obj->encode_type == ENCODED) {
     if (pod_obj->pc) {
       pdu = packedobjects_encode(pod_obj->pc, doc);
       size =  pod_obj->pc->bytes;
@@ -232,7 +235,7 @@ void packedobjectsd_free(packedobjectsdObject *pod_obj)
     }
 
     free_packedobjects(pod_obj->pc);
-    free(pod_obj->server_address);
+    //free(pod_obj->server_address);
     free(pod_obj);
   }
 }
