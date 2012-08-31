@@ -36,22 +36,23 @@ int main (int argc, char *argv [])
   sleep(1); /* Allow broker to start if it's not already running */
  
   doc_sent = packedobjects_new_doc((const char *) path_xml);
-  ret = send_data(pod_obj, doc_sent); 
-  
-  if(ret != -1) {
-    printf("Message sent\n");
-    doc_received = receive_data(pod_obj);
-    if(doc_received == NULL) {
-      printf("Message could not be received!\n");
+  if(doc_sent != NULL) {
+    ret = send_data(pod_obj, doc_sent); 
+    if(ret != -1) {
+      printf("Message sent\n");
+      doc_received = receive_data(pod_obj);
+      if(doc_received == NULL) {
+	printf("Message could not be received!\n");
+      }
+      else {
+	printf("Message received\n");
+      }
     }
     else {
-      printf("Message received\n");
+      printf("Message could not be sent\n");
     }
   }
-  else {
-    printf("Message could not be sent\n");
-  }
-  
+
   packedobjects_dump_doc(doc_received);
   xmlFreeDoc(doc_received);
   xmlFreeDoc(doc_sent);

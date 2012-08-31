@@ -3,7 +3,7 @@ AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([src/])
 AM_CONFIG_HEADER([src/config.h])
 
-AC_DEFINE([PROGNAME],["packedobjectsd"],["light-weight secure messaging framework"])
+AC_DEFINE([PROGNAME],["packedobjectsd"],["lightweight XML messaging framework"])
 AC_DEFINE([DEFAULT_SERVER_ADDRESS],["127.0.0.1"],["the default lookup server address"])
 AC_DEFINE([DEFAULT_SERVER_PORT],[5555],["the default lookup server port"])
 AC_DEFINE([MAX_BUFFER_SIZE],[100],["the maximum size for address buffer"])

@@ -23,7 +23,7 @@
 #include "packedobjectsd.h"
 
 
-static void *packedobjectsd_subscribe(packedobjectsdObject *pod_obj, char *path_schema);
+static packedobjectsdObject *packedobjectsd_subscribe(packedobjectsdObject *pod_obj, char *path_schema);
 static packedobjectsdObject *packedobjectsd_publish(packedobjectsdObject *pod_obj, char *path_schema);
 
 packedobjectsdObject *packedobjectsd_init(char *path_schema)
@@ -45,29 +45,44 @@ packedobjectsdObject *packedobjectsd_init(char *path_schema)
   pod_obj->pc = NULL;
   pod_obj->pc = init_packedobjects((const char *) path_schema); /* check if pod_obj->pc is NULL */
   
-  switch (pod_obj->node_type) {
-  case 0:
-    packedobjectsd_subscribe(pod_obj, path_schema);
-    break;
+  if(pod_obj->pc != NULL) {
+    switch (pod_obj->node_type) {
+    case 0:
+      pod_obj = packedobjectsd_subscribe(pod_obj, path_schema);
+      if(pod_obj == NULL) {
+	return NULL;
+      }
+      break;
 
-  case 1:
-    packedobjectsd_publish(pod_obj, path_schema);
-    break;
+    case 1:
+      pod_obj = packedobjectsd_publish(pod_obj, path_schema);
+      if(pod_obj == NULL) {
+	return NULL;
+      }
+      break;
    
-  case 2:
-    packedobjectsd_publish(pod_obj, path_schema);
-    packedobjectsd_subscribe(pod_obj, path_schema);
-      
-    break;
-  default:
-    printf("Invalid node type\n"); /* Handle this properly */
-   
+    case 2:
+      pod_obj = packedobjectsd_publish(pod_obj, path_schema);
+      if(pod_obj == NULL) {
+	return NULL;
+      }
+      pod_obj = packedobjectsd_subscribe(pod_obj, path_schema);
+      if(pod_obj == NULL) {
+	return NULL;
+      }  
+      break;
+    default:
+      printf("Invalid node type\n"); /* Handle this properly */
+    }
+  }
+  else {
+    return NULL;
   }
 
   return pod_obj;
 }
 
-static void *packedobjectsd_subscribe(packedobjectsdObject *pod_obj, char *path_schema)
+static packedobjectsdObject *packedobjectsd_subscribe(packedobjectsdObject *pod_obj, char *path_schema)
 {
   int rc;
   uint64_t hwm = 100;
@@ -200,11 +215,10 @@ int send_data(packedobjectsdObject *pod_obj, xmlDocPtr doc)
 
   /* Send actual data as second part of the message */
   if(pod_obj->encode_type == ENCODED) {
-    if (pod_obj->pc) {
-      pdu = packedobjects_encode(pod_obj->pc, doc);
-      size =  pod_obj->pc->bytes;
-      printf("Encoded pdu %s,bytes:%d\n", pdu, size);
-    }
+    pdu = packedobjects_encode(pod_obj->pc, doc);
+    size =  pod_obj->pc->bytes;
+    printf("Encoded pdu %s,bytes:%d\n", pdu, size);
+    
   }
   else {
     pdu = (char *)xmldoc2string(doc, &size);
