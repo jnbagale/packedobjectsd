@@ -15,18 +15,15 @@
 #include <string.h>     /* for strlen() */
 #include <stdlib.h>    /* for exit()   */
 #include <inttypes.h> /* for uint64_t */
-#include <zmq.h>
 
 #include "broker.h"
-#include "message.h"
 #include "xmlutils.h"
 #include "packedobjectsd.h"
 
+static packedobjectsdObject *packedobjectsd_subscribe(packedobjectsdObject *pod_obj, char *file_schema);
+static packedobjectsdObject *packedobjectsd_publish(packedobjectsdObject *pod_obj, char *file_schema);
 
-static packedobjectsdObject *packedobjectsd_subscribe(packedobjectsdObject *pod_obj, char *path_schema);
-static packedobjectsdObject *packedobjectsd_publish(packedobjectsdObject *pod_obj, char *path_schema);
-
-packedobjectsdObject *packedobjectsd_init(char *path_schema)
+packedobjectsdObject *packedobjectsd_init(char *file_schema)
 {
   //int size;
   packedobjectsdObject *pod_obj;
@@ -43,30 +40,30 @@ packedobjectsdObject *packedobjectsd_init(char *path_schema)
   pod_obj->node_type = BOTH;
   pod_obj->encode_type = ENCODED; /* Plain 0; Encoded 1 */
   pod_obj->pc = NULL;
-  pod_obj->pc = init_packedobjects((const char *) path_schema); /* check if pod_obj->pc is NULL */
+  pod_obj->pc = init_packedobjects((const char *) file_schema); /* check if pod_obj->pc is NULL */
   
   if(pod_obj->pc != NULL) {
     switch (pod_obj->node_type) {
     case 0:
-      pod_obj = packedobjectsd_subscribe(pod_obj, path_schema);
+      pod_obj = packedobjectsd_subscribe(pod_obj, file_schema);
       if(pod_obj == NULL) {
 	return NULL;
       }
       break;
 
     case 1:
-      pod_obj = packedobjectsd_publish(pod_obj, path_schema);
+      pod_obj = packedobjectsd_publish(pod_obj, file_schema);
       if(pod_obj == NULL) {
 	return NULL;
       }
       break;
    
     case 2:
-      pod_obj = packedobjectsd_publish(pod_obj, path_schema);
+      pod_obj = packedobjectsd_publish(pod_obj, file_schema);
       if(pod_obj == NULL) {
 	return NULL;
       }
-      pod_obj = packedobjectsd_subscribe(pod_obj, path_schema);
+      pod_obj = packedobjectsd_subscribe(pod_obj, file_schema);
       if(pod_obj == NULL) {
 	return NULL;
       }  
@@ -82,13 +79,16 @@ packedobjectsdObject *packedobjectsd_init(char *path_schema)
   return pod_obj;
 }
 
-static packedobjectsdObject *packedobjectsd_subscribe(packedobjectsdObject *pod_obj, char *path_schema)
+static packedobjectsdObject *packedobjectsd_subscribe(packedobjectsdObject *pod_obj, char *file_schema)
 {
   int rc;
   uint64_t hwm = 100;
+  char *hash_schema = NULL;
+ 
+  hash_schema = xmlfile2hash(file_schema); /* Creat MD5 Hash of the XML schmea */
 
   /* Retrieve broker's address details from lookup server using the schema */
-  pod_obj->subscriber_endpoint = get_broker_detail(SUBSCRIBER, pod_obj->server_address, pod_obj->server_port, path_schema);
+  pod_obj->subscriber_endpoint = get_broker_detail(SUBSCRIBER, pod_obj->server_address, pod_obj->server_port, hash_schema);
 
   if(pod_obj->subscriber_endpoint == NULL) {
     printf("Broker address received is NULL\n");
@@ -129,13 +129,16 @@ static packedobjectsdObject *packedobjectsd_subscribe(packedobjectsdObject *pod_
   return pod_obj;
 }
 
-static packedobjectsdObject *packedobjectsd_publish(packedobjectsdObject *pod_obj, char *path_schema)
+static packedobjectsdObject *packedobjectsd_publish(packedobjectsdObject *pod_obj, char *file_schema)
 {
   int rc; 
   uint64_t hwm = 100;
+  char *hash_schema = NULL;
+ 
+  hash_schema = xmlfile2hash(file_schema); /* Creat MD5 Hash of the XML schmea */
 
   /* Retrieve broker's address details from lookup server using the schema */
-  pod_obj->publisher_endpoint = get_broker_detail(PUBLISHER, pod_obj->server_address, pod_obj->server_port, path_schema);
+  pod_obj->publisher_endpoint = get_broker_detail(PUBLISHER, pod_obj->server_address, pod_obj->server_port, hash_schema);
 
   if(pod_obj->publisher_endpoint == NULL) {
     printf("Broker address received is NULL\n");
@@ -185,12 +188,10 @@ xmlDocPtr receive_data(packedobjectsdObject *pod_obj)
   if(pod_obj->encode_type == ENCODED) {
     doc = packedobjects_decode(pod_obj->pc, pdu);
     size = pod_obj->pc->bytes;
-    printf("Encoded pdu %s,bytes:%d\n", pdu, size);
   }
   else {
     size = strlen(pdu);
     doc = (xmlDocPtr) xmlstring2doc(pdu, size);
-    printf("Plain pdu %s,bytes:%d\n", pdu, size);
   }
 
   return doc;
@@ -217,12 +218,9 @@ int send_data(packedobjectsdObject *pod_obj, xmlDocPtr doc)
   if(pod_obj->encode_type == ENCODED) {
     pdu = packedobjects_encode(pod_obj->pc, doc);
     size =  pod_obj->pc->bytes;
-    printf("Encoded pdu %s,bytes:%d\n", pdu, size);
-    
   }
   else {
     pdu = (char *)xmldoc2string(doc, &size);
-    printf("Plain pdu %s, bytes:%d\n", pdu, size);
   }
 
   rc = send_message(pod_obj->publisher_socket, pdu, size);

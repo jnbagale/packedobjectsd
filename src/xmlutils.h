@@ -17,9 +17,10 @@
 #include <libxml/xmlschemas.h>
 #include <libxml/xmlschemastypes.h>
 
+xmlDoc *init_xmlutils(char *file);
 xmlChar *xmldoc2string(xmlDoc *doc, int *size);
 xmlDoc *xmlstring2doc(char *xmlstr, int size);
-xmlDoc *init_xmlutils(char *file);
+char *xmlfile2hash(char *file_schema); 
 
 #endif
 /* End of xmlutils.h */

@@ -18,13 +18,15 @@
 #ifndef BROKER_H_
 #define BROKER_H_
 
+#include "message.h"
+
 #define MAX_BUFFER_SIZE 100 /* the maximum size for address buffer */
 
 static inline char *which_node (int node_type) {
   return ((node_type) ? "PUBLISHER" : "SUBSCRIBER"); 
 }
 
-char *get_broker_detail(int node_type, char *address, int port, char *path_schema);
+char *get_broker_detail(int node_type, char *address, int port, char *hash_schema);
 
 #endif
 /* End of broker.h */

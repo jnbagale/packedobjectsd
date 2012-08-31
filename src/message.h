@@ -14,6 +14,8 @@
 #ifndef MESSAGE_H_
 #define MESSAGE_H_
 
+#include <zmq.h>  /* for ZeroMQ functions */
+
 int send_message(void *socket, char *message, int message_length); 
 int send_message_more(void *socket, char *message, int message_length); 
 char *receive_message(void *socket, int *size); 

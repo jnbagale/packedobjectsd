@@ -23,6 +23,5 @@ src/.libs/
 src/*.o
 src/*.la
 src/*.lo
-src/server
-schema/.deps/
+src/packedobjectsdtest
 

@@ -39,7 +39,7 @@ typedef struct {
 } packedobjectsdObject;
 
 
-packedobjectsdObject *packedobjectsd_init(char *path_schema);
+packedobjectsdObject *packedobjectsd_init(char *file_schema);
 xmlDocPtr receive_data(packedobjectsdObject *pod_obj);
 int send_data(packedobjectsdObject *pod_obj, xmlDocPtr doc);
 void packedobjectsd_free(packedobjectsdObject *pod_obj);

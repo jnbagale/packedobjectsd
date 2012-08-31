@@ -19,44 +19,23 @@
 #include <string.h>     /* for strncat() & memcpy() */
 #include <stdlib.h>    /* for exit()   */
 #include <inttypes.h> /* for uint64_t */
-#include <zmq.h>     /* for ZeroMQ functions */
-
-#define _XOPEN_SOURCE       /* See feature_test_macros(7) */
-#include <unistd.h>
-#define _GNU_SOURCE
-#include <crypt.h>  /* for crypt() */
 
 #include "broker.h"
 #include "address.h"
-#include "message.h"
-#include "xmlutils.h"
 
-char *get_broker_detail(int node_type, char *address, int port, char *path_schema)
+char *get_broker_detail(int node_type, char *address, int port, char *hash_schema)
 {
   int rc;
   int size;
-  int xml_size;
   int buffer_size; 
   char *node;
   char *buffer;
   char *endpoint;
-  char *char_schema;
-  char *hash_schema;
   char *broker_address = NULL;
-  xmlDoc *doc_schema;
   void *context;
   void *requester;
   Address *addr;
  
-  /* Creating MD5 hash of the xml schema */
-  doc_schema = init_xmlutils(path_schema); /* Add error checking if xml doesn't exist in given path */
-  if(doc_schema == NULL) {
-    printf("The XML schema: %s doesn't exist\n", path_schema);
-    return NULL;
-  }
-  char_schema = (char *)xmldoc2string(doc_schema, &xml_size);
-  hash_schema = crypt(char_schema, "$1$"); /* $1$ is MD5 */
-  
   /* Initialise the zeromq context and socket address */ 
   context = zmq_init (1);
   size = strlen(address) + sizeof (int) + 7;  /* 7 bytes for 'tcp://' and ':' */

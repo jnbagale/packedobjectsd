@@ -25,27 +25,28 @@ int main (int argc, char *argv [])
   int ret;
   xmlDocPtr doc_sent = NULL;
   xmlDocPtr doc_received = NULL;
-  char *path_xml = "../schema/personnel.xml";
-  char *path_schema = "../schema/personnel.xsd";
+  char *file_xml = "../schema/personnel.xml";
+  char *file_schema = "../schema/personnel.xsd";
  
   /* Initialise objects and variables  */
   packedobjectsdObject *pod_obj = NULL;
-  if((pod_obj = packedobjectsd_init(path_schema)) == NULL) {
+  if((pod_obj = packedobjectsd_init(file_schema)) == NULL) {
     return -1;
   }
   sleep(1); /* Allow broker to start if it's not already running */
  
-  doc_sent = packedobjects_new_doc((const char *) path_xml);
+  doc_sent = packedobjects_new_doc((const char *) file_xml);
   if(doc_sent != NULL) {
     ret = send_data(pod_obj, doc_sent); 
     if(ret != -1) {
       printf("Message sent\n");
+      packedobjects_dump_doc(doc_sent);
       doc_received = receive_data(pod_obj);
       if(doc_received == NULL) {
 	printf("Message could not be received!\n");
       }
       else {
-	printf("Message received\n");
+	printf("\nMessage received\n");
       }
     }
     else {
