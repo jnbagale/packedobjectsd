@@ -35,41 +35,43 @@ char *get_broker_detail(int node_type, char *address, int port, char *hash_schem
   void *context;
   void *requester;
   Address *addr;
- 
-  /* Initialise the zeromq context and socket address */ 
-  context = zmq_init (1);
+  
   size = strlen(address) + sizeof (int) + 7;  /* 7 bytes for 'tcp://' and ':' */
   endpoint = malloc(size + 1);
   sprintf(endpoint, "tcp://%s:%d", address, port);
-  node = malloc (sizeof(int));
-  sprintf(node,"%d", node_type);
+
+  node = malloc (sizeof(int) + 1);
+  sprintf(node, "%d", node_type);
   size = strlen(node);
+ 
+  /* Initialise the zeromq context and socket address */ 
+  context = zmq_init (1);
 
   /* Create socket to connect to look up server*/
   requester = zmq_socket (context, ZMQ_REQ);
   if (requester == NULL){
     printf("Error occurred during zmq_socket(): %s\n", zmq_strerror (errno));
-    return broker_address ;
+    return NULL;
   }
 
   printf("%s: Connecting to the server...\n \n",which_node (node_type));
   rc = zmq_connect (requester, endpoint);
   if (rc == -1){
     printf("Error occurred during zmq_connect(): %s\n", zmq_strerror (errno));
-    return broker_address;
+    return NULL;
   }
 
   rc = send_message_more(requester, node, size); 
   if (rc == -1){
     printf("Error occurred during zmq_send(): %s\n", zmq_strerror (errno));
-    return broker_address;
+    return NULL;
   }
 
   rc = send_message(requester, hash_schema, strlen(hash_schema)); 
   
   if (rc == -1){
     printf("Error occurred during zmq_send(): %s\n", zmq_strerror (errno));
-    return broker_address;
+    return NULL;
   }
 
   addr = make_address_object();
@@ -91,7 +93,6 @@ char *get_broker_detail(int node_type, char *address, int port, char *hash_schem
       else if(node_type == 0) {
 	sprintf(broker_address, "tcp://%s:%d", addr->address, addr->port_out);
       }
-      printf ("%s: Received broker address: %s\n", which_node(node_type), broker_address);
     }
   }
 
@@ -99,7 +100,9 @@ char *get_broker_detail(int node_type, char *address, int port, char *hash_schem
   zmq_close (requester);
   zmq_term (context);
   free(endpoint);
-
+  free(buffer);
+  free(node);
+  
   return broker_address;
 }
 
