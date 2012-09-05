@@ -65,6 +65,10 @@ char *xmlfile2hash(char *file_schema)
   char_schema = (char *)xmldoc2string(doc_schema, &xml_size);
   hash_schema = crypt(char_schema, "$1$"); /* $1$ is MD5 */
 
+  /* Freeing up unused memory */
+  free(char_schema);
+  xmlFreeDoc(doc_schema);
+
   return hash_schema;
 }
 

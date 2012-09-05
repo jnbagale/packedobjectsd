@@ -27,13 +27,12 @@ typedef struct {
   void *subscriber_context;
   void *publisher_socket;
   void *subscriber_socket;
-  char *path_schema;
+  char *file_schema;
   char *data_received;
   char *server_address;
   char *publisher_endpoint;
   char *subscriber_endpoint;
   int node_type;    /* Subscriber 0; Publisher 1; Both 2 */
-  int encode_type;  /* Plain 0; Encoded 1 */
   int server_port;
   packedobjectsContext *pc;
 } packedobjectsdObject;

@@ -16,7 +16,6 @@ pkgconfigdir = $(libdir)/pkgconfig
 
 pkgconfig_DATA = $(top_builddir)/pkgconfig/packedobjectsd.pc
 
-
 check_PROGRAMS = packedobjectsdtest
 
 packedobjectsdtest_SOURCES = main.c

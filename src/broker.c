@@ -73,32 +73,39 @@ char *get_broker_detail(int node_type, char *address, int port, char *hash_schem
     printf("Error occurred during zmq_send(): %s\n", zmq_strerror (errno));
     return NULL;
   }
-
-  addr = make_address_object();
+  
   buffer = malloc(MAX_BUFFER_SIZE); 
-  buffer = receive_message(requester, &size);
-
-  if (buffer != NULL) {
-    buffer_size = deserialize_address(buffer, addr);
-    if(size != buffer_size) {
-      printf("The received address structure could not be decoded\n");
-    }
-    else {
-      //printf("Address %s Port In %d Port Out %d\n", addr->address, addr->port_in, addr->port_out);
-      size = strlen(addr->address) + sizeof (int) + 7;  /* 7 bytes for 'tcp://' and ':' */
-      broker_address = malloc(size + 1);
-      if(node_type == 1) {
-	sprintf(broker_address, "tcp://%s:%d", addr->address, addr->port_in);
-      }
-      else if(node_type == 0) {
-	sprintf(broker_address, "tcp://%s:%d", addr->address, addr->port_out);
-      }
-    }
+  buffer = receive_message(requester, size);
+  if (buffer == NULL) {
+    printf("The received message is NULL\n");
+    return NULL;
   }
 
+  addr = make_address_object();
+  if(addr == NULL) {
+    return NULL;
+  }
+
+  buffer_size = deserialize_address(buffer, addr);
+  /* if(size != buffer_size) { */
+  /*   printf("The received address structure could not be decoded\n"); */
+  /*   return NULL; */
+  /* } */
+   
+  //printf("Address %s Port In %d Port Out %d\n", addr->address, addr->port_in, addr->port_out);
+  size = strlen(addr->address) + sizeof (int) + 7;  /* 7 bytes for 'tcp://' and ':' */
+  broker_address = malloc(size + 1);
+  if(node_type == 1) {
+    sprintf(broker_address, "tcp://%s:%d", addr->address, addr->port_in);
+  }
+  else if(node_type == 0) {
+    sprintf(broker_address, "tcp://%s:%d", addr->address, addr->port_out);
+  }
+    
   /* Freeing up context, socket and pointers */
-  zmq_close (requester);
-  zmq_term (context);
+  free_address_object(addr);
+  zmq_close(requester);
+  zmq_term(context);
   free(endpoint);
   free(buffer);
   free(node);

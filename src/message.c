@@ -39,21 +39,19 @@ int send_message_more(void *socket, char *message, int message_length)
 {
   int rc;
   zmq_msg_t z_message;
-
   rc = zmq_msg_init_size (&z_message, message_length);
   if (rc == -1){
     printf("Error occurred during zmq_msg_init_size(): %s\n", zmq_strerror (errno));
     return rc;
   }
-
   memcpy (zmq_msg_data (&z_message), message, message_length);
   rc = zmq_send (socket, &z_message, ZMQ_SNDMORE);   /* Send the message as part */
   zmq_msg_close (&z_message);
-
   return rc;
+
 }
 
-char *receive_message(void *socket, int *size) 
+char *receive_message(void *socket, int size) 
 {
   int rc;
   char *message = NULL;
@@ -71,36 +69,16 @@ char *receive_message(void *socket, int *size)
     return NULL;
   }
   else {
-    *size = zmq_msg_size (&z_message);
-    if(*size > 0) {
-      message = malloc(*size + 1);
-      memcpy (message, zmq_msg_data (&z_message), *size);
+    size = zmq_msg_size (&z_message);
+    if(size > 0) {
+      message = malloc(size);
+      memcpy (message, zmq_msg_data (&z_message), size);
       zmq_msg_close (&z_message);
-      message [*size] = 0;
-     }
+      //message [size] = '\0';
+    }
+
     return message;
   }
-}
-
-char *receive_message_more(void *socket, int *size)
-{
-  int rc;
-  int64_t more;
-  size_t more_size;
-  char *message = NULL;
-  more_size = sizeof (more);
-
-  rc = zmq_getsockopt (socket, ZMQ_RCVMORE, &more, &more_size);
-  if (rc == -1){
-    printf("Error occurred during zmq_getsockopt(): %s\n", zmq_strerror (errno));
-    return NULL;
-  }
-
-  if (more) {
-    message =  receive_message(socket, size);
-  }
-
- return message;  
 }
 
 /* End of message.c */

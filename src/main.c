@@ -22,7 +22,7 @@
 
 int main (int argc, char *argv [])
 {
-  int ret;
+  int ret; 
   xmlDocPtr doc_sent = NULL;
   xmlDocPtr doc_received = NULL;
   char *file_xml = "../schema/personnel.xml";
@@ -34,29 +34,33 @@ int main (int argc, char *argv [])
     return -1;
   }
   sleep(1); /* Allow broker to start if it's not already running */
- 
+
+  while(1) {
   doc_sent = packedobjects_new_doc((const char *) file_xml);
   if(doc_sent != NULL) {
-    ret = send_data(pod_obj, doc_sent); 
+    ret = send_data(pod_obj, doc_sent);
     if(ret != -1) {
       printf("Message sent\n");
-      packedobjects_dump_doc(doc_sent);
+      //packedobjects_dump_doc(doc_sent);
       doc_received = receive_data(pod_obj);
       if(doc_received == NULL) {
-	printf("Message could not be received!\n");
+  	printf("Message could not be received!\n");
       }
       else {
-	printf("\nMessage received\n");
+  	printf("\nMessage received\n");
       }
     }
     else {
       printf("Message could not be sent\n");
     }
   }
-
-  packedobjects_dump_doc(doc_received);
+  
+  // packedobjects_dump_doc(doc_received);
   xmlFreeDoc(doc_received);
   xmlFreeDoc(doc_sent);
+  
+  usleep(1000);
+  }
   packedobjectsd_free(pod_obj);
 
   return 0;

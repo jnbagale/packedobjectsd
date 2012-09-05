@@ -25,7 +25,7 @@ Address *make_address_object(void)
     printf("Failed to allocate Address structure!\n");
     return NULL;
   }
-
+  addr->address != NULL;
   return addr;
 }
 
@@ -38,12 +38,6 @@ Address *create_address(Address *addr, char *address, int port_in, int port_out,
   strncpy(addr->address, address, strlen(address));
 
   return addr;
-}
-
-void free_address_object(Address *addr) 
-{
-  free(addr->address);
-  free(addr);
 }
 
 int serialize_address(char *buffer, Address *addr) /* Add host to network order code for port numbers */
@@ -81,6 +75,14 @@ int deserialize_address(char *buffer, Address *addr)  /* Add network to host ord
   offset = offset + strlen(buffer + offset) + 1;
 
   return offset;
+}
+
+void free_address_object(Address *addr) 
+{
+  if(addr->address != NULL) {
+    free(addr->address);
+  }
+  free(addr);
 }
 
 /* End of address.c */
