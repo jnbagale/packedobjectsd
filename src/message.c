@@ -51,9 +51,10 @@ int send_message_more(void *socket, char *message, int message_length)
 
 }
 
-char *receive_message(void *socket, int size) 
+char *receive_message(void *socket) 
 {
   int rc;
+  int size;
   char *message = NULL;
   zmq_msg_t z_message;
 
@@ -74,11 +75,11 @@ char *receive_message(void *socket, int size)
       message = malloc(size);
       memcpy (message, zmq_msg_data (&z_message), size);
       zmq_msg_close (&z_message);
-      //message [size] = '\0';
+      message [size] = '\0';
     }
-
-    return message;
   }
+
+  return message;
 }
 
 /* End of message.c */

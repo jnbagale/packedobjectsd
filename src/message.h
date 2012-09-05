@@ -18,8 +18,7 @@
 
 int send_message(void *socket, char *message, int message_length); 
 int send_message_more(void *socket, char *message, int message_length); 
-char *receive_message(void *socket, int size); 
-char *receive_message_more(void *socket, int size);
+char *receive_message(void *socket); 
 
 #endif
 /* End of message.h */

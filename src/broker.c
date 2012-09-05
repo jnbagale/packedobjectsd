@@ -75,7 +75,7 @@ char *get_broker_detail(int node_type, char *address, int port, char *hash_schem
   }
   
   buffer = malloc(MAX_BUFFER_SIZE); 
-  buffer = receive_message(requester, size);
+  buffer = receive_message(requester);
   if (buffer == NULL) {
     printf("The received message is NULL\n");
     return NULL;
@@ -87,10 +87,10 @@ char *get_broker_detail(int node_type, char *address, int port, char *hash_schem
   }
 
   buffer_size = deserialize_address(buffer, addr);
-  /* if(size != buffer_size) { */
-  /*   printf("The received address structure could not be decoded\n"); */
-  /*   return NULL; */
-  /* } */
+  if(buffer_size <= 0) {
+    printf("The received address structure could not be decoded\n");
+    return NULL;
+  }
    
   //printf("Address %s Port In %d Port Out %d\n", addr->address, addr->port_in, addr->port_out);
   size = strlen(addr->address) + sizeof (int) + 7;  /* 7 bytes for 'tcp://' and ':' */

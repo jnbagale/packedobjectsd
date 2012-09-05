@@ -185,7 +185,7 @@ xmlDocPtr receive_data(packedobjectsdObject *pod_obj)
   char *pdu = NULL;
   xmlDocPtr doc = NULL;
 
-  pdu = receive_message(pod_obj->subscriber_socket, size);
+  pdu = receive_message(pod_obj->subscriber_socket);
   doc = packedobjects_decode(pod_obj->pc, pdu);
   size = pod_obj->pc->bytes;
   
