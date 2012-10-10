@@ -38,28 +38,28 @@ packedobjectsdObject *packedobjectsd_init(char *file_schema)
   //pod_obj->server_address = malloc( size + 1);
   pod_obj->server_address = DEFAULT_SERVER_ADDRESS;
   pod_obj->server_port = DEFAULT_SERVER_PORT ; /* Port number where lookup server is running */
-  pod_obj->node_type = BOTH;
+  pod_obj->node_type = 'B';
   pod_obj->pc = NULL;
   pod_obj->pc = init_packedobjects((const char *) file_schema); /* check if pod_obj->pc is NULL */
   hash_schema = xmlfile2hash(file_schema); /* Creat MD5 Hash of the XML schmea */
 
   if(pod_obj->pc != NULL) {
     switch (pod_obj->node_type) {
-    case 0:
+    case 'S':
       pod_obj = packedobjectsd_subscribe(pod_obj, hash_schema);
       if(pod_obj == NULL) {
 	return NULL;
       }
       break;
 
-    case 1:
+    case 'P':
       pod_obj = packedobjectsd_publish(pod_obj, hash_schema);
       if(pod_obj == NULL) {
 	return NULL;
       }
       break;
    
-    case 2:
+    case 'B':
       pod_obj = packedobjectsd_publish(pod_obj, hash_schema);
       if(pod_obj == NULL) {
 	return NULL;
@@ -214,13 +214,13 @@ int send_data(packedobjectsdObject *pod_obj, xmlDocPtr doc)
 void packedobjectsd_free(packedobjectsdObject *pod_obj)
 {
   if (pod_obj != NULL) {
-    if(pod_obj->node_type == 0 || pod_obj->node_type == 2 ) {
+    if(pod_obj->node_type == 'S' || pod_obj->node_type == 'B' ) {
       zmq_setsockopt (pod_obj->subscriber_socket, ZMQ_UNSUBSCRIBE, "", 0);
       zmq_close (pod_obj->subscriber_socket);
       zmq_term (pod_obj->subscriber_context);
      }
 
-    if(pod_obj->node_type == 1 || pod_obj->node_type == 2) {
+    if(pod_obj->node_type == 'P' || pod_obj->node_type == 'B') {
       zmq_close (pod_obj->publisher_socket);
       zmq_term (pod_obj->publisher_context);
     }

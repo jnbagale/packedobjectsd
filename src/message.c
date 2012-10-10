@@ -35,22 +35,6 @@ int send_message(void *socket, char *message, int message_length)
   return rc;
 }
 
-int send_message_more(void *socket, char *message, int message_length) 
-{
-  int rc;
-  zmq_msg_t z_message;
-  rc = zmq_msg_init_size (&z_message, message_length);
-  if (rc == -1){
-    printf("Error occurred during zmq_msg_init_size(): %s\n", zmq_strerror (errno));
-    return rc;
-  }
-  memcpy (zmq_msg_data (&z_message), message, message_length);
-  rc = zmq_send (socket, &z_message, ZMQ_SNDMORE);   /* Send the message as part */
-  zmq_msg_close (&z_message);
-  return rc;
-
-}
-
 char *receive_message(void *socket) 
 {
   int rc;

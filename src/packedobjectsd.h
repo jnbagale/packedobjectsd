@@ -20,7 +20,6 @@
 #define DEFAULT_SERVER_PORT 5555  /* the default lookup server port */
 
 enum ENCODE_TYPE {PLAIN, ENCODED};      /* Supported message encoding types */
-enum NODE_TYPE {SUBSCRIBER, PUBLISHER, BOTH }; /* Supported node types */
 
 typedef struct {
   void *publisher_context;
@@ -32,7 +31,7 @@ typedef struct {
   char *server_address;
   char *publisher_endpoint;
   char *subscriber_endpoint;
-  int node_type;    /* Subscriber 0; Publisher 1; Both 2 */
+  char node_type;    /* Subscriber 'S'; Publisher 'P'; Both 'B' */
   int server_port;
   packedobjectsContext *pc;
 } packedobjectsdObject;
