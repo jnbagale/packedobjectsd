@@ -16,7 +16,7 @@
 #include <stdlib.h>    /* for exit()   */
 #include <inttypes.h> /* for uint64_t */
 
-#include "broker.h"
+#include "request.h"
 #include "xmlutils.h"
 #include "packedobjectsd.h"
 
@@ -87,7 +87,7 @@ static packedobjectsdObject *packedobjectsd_subscribe(packedobjectsdObject *pod_
   uint64_t hwm = 100;
   
   /* Retrieve broker's address details from lookup server using the schema */
-  pod_obj->subscriber_endpoint = get_broker_detail(SUBSCRIBER, pod_obj->server_address, pod_obj->server_port, hash_schema);
+  pod_obj->subscriber_endpoint = get_broker_detail('S', pod_obj->server_address, pod_obj->server_port, hash_schema);
 
   if(pod_obj->subscriber_endpoint == NULL) {
     printf("Broker address received is NULL\n");
@@ -141,7 +141,7 @@ static packedobjectsdObject *packedobjectsd_publish(packedobjectsdObject *pod_ob
   uint64_t hwm = 100;
   
   /* Retrieve broker's address details from lookup server using the schema */
-  pod_obj->publisher_endpoint = get_broker_detail(PUBLISHER, pod_obj->server_address, pod_obj->server_port, hash_schema);
+  pod_obj->publisher_endpoint = get_broker_detail('P', pod_obj->server_address, pod_obj->server_port, hash_schema);
 
   if(pod_obj->publisher_endpoint == NULL) {
     printf("Broker address received is NULL\n");

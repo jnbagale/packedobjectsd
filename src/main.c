@@ -15,55 +15,75 @@
 /* Publisher connects to broker's inbound socket */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>   /* for strcmp()*/
 #include <unistd.h>  /* for sleep() */
 
 #include "packedobjectsd.h"
 
+static void send_file(packedobjectsdObject *pod_obj, char *file_xml);
+static void receive_file(packedobjectsdObject *pod_obj);
+static void exit_with_message(char *message);
+
+static void send_file(packedobjectsdObject *pod_obj, char *file_xml)
+{
+  int ret;
+  xmlDocPtr doc_sent = NULL;
+
+  if((doc_sent = packedobjects_new_doc((const char *)file_xml)) == NULL) {
+    exit_with_message("did not find .xml file");
+    }
+
+    ret = send_data(pod_obj, doc_sent);
+    if(ret == -1) {
+      exit_with_message("message could not be sent\n");
+    }
+    printf("message sent\n");
+    //packedobjects_dump_doc(doc_sent);
+    xmlFreeDoc(doc_sent);
+}
+
+static void receive_file(packedobjectsdObject *pod_obj)
+{ 
+  xmlDocPtr doc_received = NULL;
+
+  if((doc_received = receive_data(pod_obj)) == NULL) {
+   exit_with_message("message could not be received\n");
+  }
+  printf("message received\n");
+  // packedobjects_dump_doc(doc_received);
+  xmlFreeDoc(doc_received);
+  
+}
+
+static void exit_with_message(char *message)
+{
+  printf("Failed to run: %s\n", message);
+  exit(EXIT_FAILURE);
+}
+
 int main (int argc, char *argv [])
 {
-  int ret; 
-  xmlDocPtr doc_sent = NULL;
-  xmlDocPtr doc_received = NULL;
+  packedobjectsdObject *pod_obj = NULL;
   char *file_xml = "../schema/personnel.xml";
   char *file_schema = "../schema/personnel.xsd";
  
-  /* Initialise objects and variables  */
-  packedobjectsdObject *pod_obj = NULL;
+  /* Initialise packedobjectsd */
   if((pod_obj = packedobjectsd_init(file_schema)) == NULL) {
-    return -1;
+    exit_with_message("failed to initialise libpackedobjectsd\n");
   }
   sleep(1); /* Allow broker to start if it's not already running */
 
   while(1) {
-  doc_sent = packedobjects_new_doc((const char *) file_xml);
-  if(doc_sent != NULL) {
-    ret = send_data(pod_obj, doc_sent);
-    if(ret != -1) {
-      printf("Message sent\n");
-      //packedobjects_dump_doc(doc_sent);
-      doc_received = receive_data(pod_obj);
-      if(doc_received == NULL) {
-  	printf("Message could not be received!\n");
-      }
-      else {
-  	printf("\nMessage received\n");
-      }
-    }
-    else {
-      printf("Message could not be sent\n");
-    }
+    send_file(pod_obj, file_xml);
+    receive_file(pod_obj);
+    usleep(1000); /* Do nothing for 1 ms */
   }
-  
-  // packedobjects_dump_doc(doc_received);
-  xmlFreeDoc(doc_received);
-  xmlFreeDoc(doc_sent);
-  
-  usleep(1000);
-  }
+  xmlCleanupParser();
+  /* free packedobjectsd */
   packedobjectsd_free(pod_obj);
 
-  return 0;
+  return EXIT_SUCCESS;
 }
 
 /* End of packedobjectsdtest.c */

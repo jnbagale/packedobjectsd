@@ -6,11 +6,11 @@ lib_LTLIBRARIES = libpackedobjectsd.la
 libpackedobjectsd_la_LIBADD = $(LIBZMQ_LIBS) $(LIBXML2_LIBS) $(LIBPACKEDOBJECTS_LIBS)
 
 libpackedobjectsd_la_SOURCES = 	packedobjectsd.c packedobjectsd.h message.c message.h \
-				address.c address.h broker.c broker.h xmlutils.c xmlutils.h	
+				address.c address.h request.c request.h xmlutils.c xmlutils.h	
 
 library_includedir = $(includedir)/packedobjectsd
 
-library_include_HEADERS = packedobjectsd.h message.h broker.h xmlutils.h
+library_include_HEADERS = packedobjectsd.h message.h request.h xmlutils.h
 
 pkgconfigdir = $(libdir)/pkgconfig
 
