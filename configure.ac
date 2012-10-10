@@ -4,10 +4,6 @@ AC_CONFIG_SRCDIR([src/])
 AM_CONFIG_HEADER([src/config.h])
 
 AC_DEFINE([PROGNAME],["packedobjectsd"],["lightweight XML messaging framework"])
-AC_DEFINE([DEFAULT_SERVER_ADDRESS],["127.0.0.1"],["the default lookup server address"])
-AC_DEFINE([DEFAULT_SERVER_PORT],[5555],["the default lookup server port"])
-AC_DEFINE([MAX_BUFFER_SIZE],[100],["the maximum size for address buffer"])
-AC_DEFINE([MAX_ADDRESS_SIZE],[20],["the maximum size for network address"])
 
 # --enable-debug flag
 AC_ARG_ENABLE(debug,
@@ -46,9 +42,6 @@ AC_CHECK_HEADERS(pthread.h,, [AC_MSG_ERROR([pthread.h required])])
 # Check for cryptography library and header
 AC_CHECK_LIB([crypt], [crypt], [LIBS="$LIBS -lcrypt"])
 AC_CHECK_HEADERS(crypt.h,, [AC_MSG_ERROR([crypt.h required])])
-
-# check for glib
-PKG_CHECK_MODULES(GLIB, [glib-2.0])
 
 # check for zeromq
 PKG_CHECK_MODULES(LIBZMQ, [libzmq])
