@@ -138,8 +138,7 @@ char *get_broker_detail(char node_type, char *address, int port, char *hash_sche
     return NULL;
   }
 
-  buffer_size = deserialize_address(buffer, addr);
-  if(buffer_size <= 0) {
+  if((buffer_size = deserialize_address(buffer, addr)) <= 0) {
     printf("The received address structure could not be decoded\n");
     return NULL;
   }
