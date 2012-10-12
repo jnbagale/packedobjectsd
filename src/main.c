@@ -10,20 +10,24 @@
 /* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the */
 /* GNU General Public License for more details. */
 
-/* A test ZeroMQ node which can act as both publisher and subscriber */
-/* Subscriber connects to broker's outbound socket */
-/* Publisher connects to broker's inbound socket */
+/* A packedobjectsd test program which implements both publisher and subscriber */
+/* Subscriber connects to server and receives messages */
+/* Publisher connects to server and sends messages */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>   /* for strcmp()*/
 #include <unistd.h>  /* for sleep() */
+#include <getopt.h>
 
 #include "packedobjectsd.h"
+
+static int verbose_flag;
 
 static void send_file(packedobjectsdObject *pod_obj, char *file_xml);
 static void receive_file(packedobjectsdObject *pod_obj);
 static void exit_with_message(char *message);
+static void print_usage(void);
 
 static void send_file(packedobjectsdObject *pod_obj, char *file_xml)
 {
@@ -62,22 +66,77 @@ static void exit_with_message(char *message)
   exit(EXIT_FAILURE);
 }
 
+static void print_usage(void)
+
+{
+
+  printf("usage: packedobjectsd --schema <file> --xml <file> \n");
+
+  exit(EXIT_SUCCESS);
+
+}
+
 int main (int argc, char *argv [])
 {
   packedobjectsdObject *pod_obj = NULL;
-  char *file_xml = "../schema/personnel.xml";
-  char *file_schema = "../schema/personnel.xsd";
- 
+  const char *file_xml = NULL;
+  const char *file_schema = NULL;
+  int loop = 1;
+  int c;
+
+while(1) {
+    static struct option long_options[] =
+      {
+        {"verbose", no_argument, &verbose_flag, 1},
+        {"help",  no_argument, 0, 'h'},
+        {"schema",  required_argument, 0, 's'},
+        {"xml",  required_argument, 0, 'x'},
+        {"loop",  required_argument, 0, 'l'},        
+        {0, 0, 0, 0}
+      };
+
+    int option_index = 0;
+    c = getopt_long (argc, argv, "hs:x:l:?", long_options, &option_index);
+    if (c == -1) break;
+    switch (c)
+      {
+      case 0:
+        if (long_options[option_index].flag != 0) break;
+        printf ("option %s", long_options[option_index].name);
+        if (optarg) printf (" with arg %s", optarg);
+        printf ("\n");
+        break;
+      case 'h':
+        print_usage();
+        break;  
+      case 's':
+       file_schema = optarg;
+        break;
+      case 'x':
+        file_xml = optarg;
+        break;
+      case 'l':
+        loop = atoi(optarg);
+        break;        
+      case '?':
+        print_usage();
+        break;
+      default:
+        abort ();
+     }
+  }
+
   /* Initialise packedobjectsd */
   if((pod_obj = packedobjectsd_init(file_schema)) == NULL) {
     exit_with_message("failed to initialise libpackedobjectsd\n");
   }
   sleep(1); /* Allow broker to start if it's not already running */
 
-  while(1) {
+  while(loop) {
     send_file(pod_obj, file_xml);
     receive_file(pod_obj);
     usleep(1000); /* Do nothing for 1 ms */
+    loop--;
   }
   xmlCleanupParser();
   /* free packedobjectsd */
