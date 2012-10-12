@@ -27,7 +27,6 @@ typedef struct {
   void *publisher_socket;
   void *subscriber_socket;
   char *file_schema;
-  char *data_received;
   char *server_address;
   char *publisher_endpoint;
   char *subscriber_endpoint;
@@ -37,7 +36,7 @@ typedef struct {
 } packedobjectsdObject;
 
 
-packedobjectsdObject *packedobjectsd_init(char *file_schema);
+packedobjectsdObject *packedobjectsd_init(const char *file_schema);
 xmlDocPtr receive_data(packedobjectsdObject *pod_obj);
 int send_data(packedobjectsdObject *pod_obj, xmlDocPtr doc);
 void packedobjectsd_free(packedobjectsdObject *pod_obj);

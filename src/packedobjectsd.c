@@ -23,7 +23,7 @@
 static packedobjectsdObject *packedobjectsd_subscribe(packedobjectsdObject *pod_obj, char *hash_schema);
 static packedobjectsdObject *packedobjectsd_publish(packedobjectsdObject *pod_obj, char *hash_schema);
 
-packedobjectsdObject *packedobjectsd_init(char *file_schema)
+packedobjectsdObject *packedobjectsd_init(const char *file_schema)
 {
   //int size;
   char *hash_schema = NULL;
@@ -40,7 +40,7 @@ packedobjectsdObject *packedobjectsd_init(char *file_schema)
   pod_obj->server_port = DEFAULT_SERVER_PORT ; /* Port number where lookup server is running */
   pod_obj->node_type = 'B';
   pod_obj->pc = NULL;
-  pod_obj->pc = init_packedobjects((const char *) file_schema); /* check if pod_obj->pc is NULL */
+  pod_obj->pc = init_packedobjects(file_schema); /* check if pod_obj->pc is NULL */
   hash_schema = xmlfile2hash(file_schema); /* Creat MD5 Hash of the XML schmea */
 
   if(pod_obj->pc != NULL) {
@@ -181,14 +181,17 @@ static packedobjectsdObject *packedobjectsd_publish(packedobjectsdObject *pod_ob
 xmlDocPtr receive_data(packedobjectsdObject *pod_obj)
 {
   /* Reading the received message */
-  int size;
   char *pdu = NULL;
   xmlDocPtr doc = NULL;
 
   pdu = receive_message(pod_obj->subscriber_socket);
   doc = packedobjects_decode(pod_obj->pc, pdu);
-  size = pod_obj->pc->bytes;
-  
+
+  if (pod_obj->pc->decode_error) {
+    fprintf(stderr, "Failed to decode with error %d.\n", pod_obj->pc->decode_error);
+    return NULL;
+  }
+
   free(pdu);
   return doc;
 }

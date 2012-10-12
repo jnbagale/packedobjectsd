@@ -49,7 +49,7 @@ xmlDoc *xmlstring2doc(char *xmlstr, int size)
 
 }
 
-char *xmlfile2hash(char *file_schema) 
+char *xmlfile2hash(const char *file_schema) 
 {
   int xml_size;
   char *char_schema;
@@ -57,7 +57,7 @@ char *xmlfile2hash(char *file_schema)
   xmlDoc *doc_schema;
 
  /* Creating MD5 hash of the xml schema using crypt() function */
-  doc_schema = init_xmlutils(file_schema); 
+  doc_schema = init_xmlutils((char *)file_schema); 
   if(doc_schema == NULL) {
     printf("The XML schema: %s doesn't exist\n", file_schema);
     return NULL;

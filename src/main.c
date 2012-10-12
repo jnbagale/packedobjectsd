@@ -24,17 +24,17 @@
 
 static int verbose_flag;
 
-static void send_file(packedobjectsdObject *pod_obj, char *file_xml);
+static void send_file(packedobjectsdObject *pod_obj, const char *file_xml);
 static void receive_file(packedobjectsdObject *pod_obj);
 static void exit_with_message(char *message);
 static void print_usage(void);
 
-static void send_file(packedobjectsdObject *pod_obj, char *file_xml)
+static void send_file(packedobjectsdObject *pod_obj, const char *file_xml)
 {
   int ret;
   xmlDocPtr doc_sent = NULL;
 
-  if((doc_sent = packedobjects_new_doc((const char *)file_xml)) == NULL) {
+  if((doc_sent = packedobjects_new_doc(file_xml)) == NULL) {
     exit_with_message("did not find .xml file");
     }
 
@@ -138,7 +138,7 @@ while(1) {
     usleep(1000); /* Do nothing for 1 ms */
     loop--;
   }
-  xmlCleanupParser();
+  // xmlCleanupParser();
   /* free packedobjectsd */
   packedobjectsd_free(pod_obj);
 

@@ -25,7 +25,7 @@ Address *make_address_object(void)
     printf("Failed to allocate Address structure!\n");
     return NULL;
   }
-  addr->address != NULL;
+  addr->address = NULL;
   return addr;
 }
 

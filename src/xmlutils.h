@@ -20,7 +20,7 @@
 xmlDoc *init_xmlutils(char *file);
 xmlChar *xmldoc2string(xmlDoc *doc, int *size);
 xmlDoc *xmlstring2doc(char *xmlstr, int size);
-char *xmlfile2hash(char *file_schema); 
+char *xmlfile2hash(const char *file_schema); 
 
 #endif
 /* End of xmlutils.h */
