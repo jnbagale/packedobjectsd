@@ -24,4 +24,13 @@ src/*.o
 src/*.la
 src/*.lo
 src/packedobjectsdtest
-
+doc/tutorial.aux
+doc/tutorial.cp
+doc/tutorial.cps
+doc/tutorial.fn
+doc/tutorial.ky
+doc/tutorial.log
+doc/tutorial.pg
+doc/tutorial.toc
+doc/tutorial.tp
+doc/tutorial.vr

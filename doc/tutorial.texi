@@ -1,0 +1,116 @@
+\input texinfo   @c -*-texinfo-*-
+@c %**start of header
+@setfilename tutorial.info
+@settitle libpackedobjectsd tutorial
+@c %**end of header
+
+@copying
+libpackedobjectsd - a light weight XML messaging framework
+     
+Copyright @copyright{} 2011 Jiva N. Bagale
+@end copying
+
+@titlepage
+@title libpackedobjectsd tutorial
+     
+@c The following two commands start the copyright page.
+@page
+@vskip 0pt plus 1filll
+@insertcopying
+@end titlepage
+     
+@c Output the table of contents at the beginning.
+@contents
+
+@ifnottex
+@node Top
+@top libpackedobjects tutorial
+
+libpackedobjectsd - a light weight XML messaging framework   
+@end ifnottex
+
+@menu
+* Introduction::                Introduction
+* Installation::                Installation
+* Getting started::             Getting started
+* Data types::                  Data types
+* Index::                       Index
+@end menu
+
+@node Introduction
+@chapter Introduction
+
+@section What is libpackedobjectsd?
+@cindex What is libpackedobjectsd
+
+libpackedobjectsd is a light-weight XML messaging library. It is created using multiple publisher and subscriber model and built using libpackedobjects and ZeroMQ in C language. It is simple to implement and is suited to embedded systems and mobile devices. The library provides simple API to send and receive XML data to and from multiple nodes. The library connects all the nodes sending/receiving XML data using the same XML schema to one group. The data is also validated by the schema during the send and receive process.
+
+@* @*
+libpackedobjectsd is based on libpackedobjects, libxml2 and ZeroMQ and therefore should run on any system that libxml2 and ZeroMQ runs on. 
+
+@section Key features
+@cindex Key features
+
+@itemize
+@item
+Light-weight and simple
+@item
+Validates XML data on send and receive
+@item
+Fully dynamic including the ability to change the protocol at runtime
+@item
+Simple API with two main function calls
+@item
+Highly portable - designed for embedded and mobile devices
+@item
+Simple subset of XML Schema required to create protocols
+@end itemize
+
+@section Limitations
+@cindex Limitations
+
+todo
+
+@node Installation
+@chapter Installation
+
+@section Installing packedobjectsd
+@cindex Installing packedobjectsd
+
+To install from the latest source:
+@smallexample
+git clone git://gitorious.org/packedobjectsd/packedobjectsd.git
+cd packedobjectsd
+autoreconf -i
+./configure
+make
+make check
+sudo make install
+@end smallexample
+
+@section Further reading
+@cindex Further reading
+
+@node Getting started
+@chapter Getting started
+
+@section Quick start
+@cindex Quick start
+
+After compiling and running 'make check' you should find a binary called 'packedobjectsdtest' in your src directory. This is command-line tool built with packedobjectsd which you can use to test out sending and receiving:
+@*
+@smallexample
+$ ./packedobjectsdtest --help
+usage: packedobjectsd --schema <file> --xml <file> 
+@end smallexample
+@noindent
+To send and receive run:
+@*
+@smallexample
+$ ./packedobjectsdtest --schema foo.xsd --xml foo.xml
+@end smallexample
+
+
+@printindex cp
+     
+@bye

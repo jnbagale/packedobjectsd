@@ -36,15 +36,15 @@ static void send_file(packedobjectsdObject *pod_obj, const char *file_xml)
 
   if((doc_sent = packedobjects_new_doc(file_xml)) == NULL) {
     exit_with_message("did not find .xml file");
-    }
+  }
 
-    ret = send_data(pod_obj, doc_sent);
-    if(ret == -1) {
-      exit_with_message("message could not be sent\n");
-    }
-    printf("message sent\n");
-    //packedobjects_dump_doc(doc_sent);
-    xmlFreeDoc(doc_sent);
+  ret = send_data(pod_obj, doc_sent);
+  if(ret == -1) {
+    exit_with_message("message could not be sent\n");
+  }
+  printf("message sent\n");
+  //packedobjects_dump_doc(doc_sent);
+  xmlFreeDoc(doc_sent);
 }
 
 static void receive_file(packedobjectsdObject *pod_obj)
@@ -52,7 +52,7 @@ static void receive_file(packedobjectsdObject *pod_obj)
   xmlDocPtr doc_received = NULL;
 
   if((doc_received = receive_data(pod_obj)) == NULL) {
-   exit_with_message("message could not be received\n");
+    exit_with_message("message could not be received\n");
   }
   printf("message received\n");
   // packedobjects_dump_doc(doc_received);
@@ -67,13 +67,9 @@ static void exit_with_message(char *message)
 }
 
 static void print_usage(void)
-
 {
-
   printf("usage: packedobjectsd --schema <file> --xml <file> \n");
-
   exit(EXIT_SUCCESS);
-
 }
 
 int main (int argc, char *argv [])
@@ -84,7 +80,7 @@ int main (int argc, char *argv [])
   int loop = 1;
   int c;
 
-while(1) {
+  while(1) {
     static struct option long_options[] =
       {
         {"verbose", no_argument, &verbose_flag, 1},
@@ -110,7 +106,7 @@ while(1) {
         print_usage();
         break;  
       case 's':
-       file_schema = optarg;
+	file_schema = optarg;
         break;
       case 'x':
         file_xml = optarg;
@@ -123,7 +119,7 @@ while(1) {
         break;
       default:
         abort ();
-     }
+      }
   }
 
   /* Initialise packedobjectsd */
