@@ -18,19 +18,18 @@
 
 #include "xmlutils.h"
 
-xmlDoc *init_xmlutils(char *file)
+xmlDoc *init_xmlutils(char *schema_file)
 {
   xmlDoc *doc = NULL;
 
   xmlKeepBlanksDefault(0);
-  doc = xmlReadFile(file, NULL, 0);
+  doc = xmlReadFile(schema_file, NULL, 0);
   
   if (doc == NULL) {
-    printf("error: could not parse file %s\n", file);
+    printf("error: could not parse file %s\n", schema_file);
   }
 
   return doc;
- 
 }
 
 xmlChar *xmldoc2string(xmlDoc *doc, int *size)
@@ -49,27 +48,27 @@ xmlDoc *xmlstring2doc(char *xmlstr, int size)
 
 }
 
-char *xmlfile2hash(const char *file_schema) 
+char *xmlfile2hash(const char *schema_file) 
 {
   int xml_size;
-  char *char_schema;
-  char *hash_schema;
-  xmlDoc *doc_schema;
+  char *schema_char;
+  char *schema_hash;
+  xmlDoc *schema_doc;
 
  /* Creating MD5 hash of the xml schema using crypt() function */
-  doc_schema = init_xmlutils((char *)file_schema); 
-  if(doc_schema == NULL) {
-    printf("The XML schema: %s doesn't exist\n", file_schema);
+  schema_doc = init_xmlutils((char *)schema_file); 
+  if(schema_doc == NULL) {
+    printf("The XML schema: %s doesn't exist\n", schema_file);
     return NULL;
   }
-  char_schema = (char *)xmldoc2string(doc_schema, &xml_size);
-  hash_schema = crypt(char_schema, "$1$"); /* $1$ is MD5 */
+  schema_char = (char *)xmldoc2string(schema_doc, &xml_size);
+  schema_hash = crypt(schema_char, "$1$"); /* $1$ is MD5 */
 
   /* Freeing up unused memory */
-  free(char_schema);
-  xmlFreeDoc(doc_schema);
+  free(schema_char);
+  xmlFreeDoc(schema_doc);
 
-  return hash_schema;
+  return schema_hash;
 }
 
 /* End of xmlutils.c */

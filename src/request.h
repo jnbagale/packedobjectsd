@@ -21,7 +21,7 @@
 
 typedef struct {
   char node_type;
-  char *hash_schema;  
+  char *schema_hash;  
 } Request;
 
 static inline char *which_node (char node_type) {
@@ -34,7 +34,7 @@ Request *make_request_object();
 void free_request_object(Request *req); 
 int serialize_request(char *buffer, Request *req); 
 int deserialize_request(char *buffer, Request *req);
-char *get_broker_detail(char node_type, char *address, int port, char *hash_schema);
+char *get_broker_detail(char node_type, char *address, int port, char *schema_hash);
 
 #endif
 /* End of request.h */

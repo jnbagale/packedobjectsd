@@ -36,8 +36,8 @@ int serialize_request(char *buffer, Request *req) /* Add host to network order c
 
   memcpy(buffer, &req->node_type, sizeof(req->node_type));
   offset = sizeof(req->node_type);
-  memcpy(buffer + offset, req->hash_schema, strlen(req->hash_schema) + 1);
-  offset = offset + strlen(req->hash_schema) + 1;
+  memcpy(buffer + offset, req->schema_hash, strlen(req->schema_hash) + 1);
+  offset = offset + strlen(req->schema_hash) + 1;
  
   return offset;
 }
@@ -46,14 +46,14 @@ int deserialize_request(char *buffer, Request *req)  /* Add network to host orde
 {
   size_t offset = 0;
    
-  if ((req->hash_schema = malloc(MAX_HASH_SIZE)) == NULL) {
-    printf("Failed to allocate hash_schema!\n");
+  if ((req->schema_hash = malloc(MAX_HASH_SIZE)) == NULL) {
+    printf("Failed to allocate schema_hash!\n");
     return -1;
   }
 
   memcpy(&req->node_type, buffer, sizeof(req->node_type));
   offset = sizeof(req->node_type);
-  memcpy(req->hash_schema, buffer + offset, strlen(buffer + offset) + 1);
+  memcpy(req->schema_hash, buffer + offset, strlen(buffer + offset) + 1);
   offset = offset + strlen(buffer + offset) + 1;
 
   return offset;
@@ -61,13 +61,13 @@ int deserialize_request(char *buffer, Request *req)  /* Add network to host orde
 
 void free_request_object(Request *req) 
 {
-  if(req->hash_schema != NULL) {
-    free(req->hash_schema);
+  if(req->schema_hash != NULL) {
+    free(req->schema_hash);
   }
   free(req);
 }
 
-char *get_broker_detail(char node_type, char *address, int port, char *hash_schema)
+char *get_broker_detail(char node_type, char *address, int port, char *schema_hash)
 {
   int rc;
   int ret;
@@ -108,12 +108,12 @@ char *get_broker_detail(char node_type, char *address, int port, char *hash_sche
     return NULL;
   }
 
-  size = strlen(hash_schema);
-  if((req->hash_schema = malloc(size + 1)) == NULL) {
+  size = strlen(schema_hash);
+  if((req->schema_hash = malloc(size + 1)) == NULL) {
     printf("Failed to allocate hash schema!\n");
     return NULL;
   }
-  sprintf(req->hash_schema, "%s", hash_schema);
+  sprintf(req->schema_hash, "%s", schema_hash);
   req->node_type = node_type;
  
   if((ret = serialize_request(req_buffer, req)) == 0) {

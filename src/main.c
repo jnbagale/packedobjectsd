@@ -24,17 +24,17 @@
 
 static int verbose_flag;
 
-static void send_file(packedobjectsdObject *pod_obj, const char *file_xml);
+static void send_file(packedobjectsdObject *pod_obj, const char *xml_file);
 static void receive_file(packedobjectsdObject *pod_obj);
 static void exit_with_message(char *message);
 static void print_usage(void);
 
-static void send_file(packedobjectsdObject *pod_obj, const char *file_xml)
+static void send_file(packedobjectsdObject *pod_obj, const char *xml_file)
 {
   int ret;
   xmlDocPtr doc_sent = NULL;
 
-  if((doc_sent = packedobjects_new_doc(file_xml)) == NULL) {
+  if((doc_sent = packedobjects_new_doc(xml_file)) == NULL) {
     exit_with_message("did not find .xml file");
   }
 
@@ -75,8 +75,8 @@ static void print_usage(void)
 int main (int argc, char *argv [])
 {
   packedobjectsdObject *pod_obj = NULL;
-  const char *file_xml = NULL;
-  const char *file_schema = NULL;
+  const char *xml_file = NULL;
+  const char *schema_file = NULL;
   int loop = 1;
   int c;
 
@@ -106,10 +106,10 @@ int main (int argc, char *argv [])
         print_usage();
         break;  
       case 's':
-	file_schema = optarg;
+	schema_file = optarg;
         break;
       case 'x':
-        file_xml = optarg;
+        xml_file = optarg;
         break;
       case 'l':
         loop = atoi(optarg);
@@ -122,14 +122,19 @@ int main (int argc, char *argv [])
       }
   }
 
+  // do some simple checking
+
+  if (!schema_file) exit_with_message("did not specify --schema file");
+  if (!xml_file) exit_with_message("did not specify --xml file");
+
   /* Initialise packedobjectsd */
-  if((pod_obj = packedobjectsd_init(file_schema)) == NULL) {
+  if((pod_obj = packedobjectsd_init(schema_file)) == NULL) {
     exit_with_message("failed to initialise libpackedobjectsd\n");
   }
   sleep(1); /* Allow broker to start if it's not already running */
 
   while(loop) {
-    send_file(pod_obj, file_xml);
+    send_file(pod_obj, xml_file);
     receive_file(pod_obj);
     usleep(1000); /* Do nothing for 1 ms */
     loop--;

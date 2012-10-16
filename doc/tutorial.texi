@@ -57,8 +57,6 @@ Light-weight and simple
 @item
 Validates XML data on send and receive
 @item
-Fully dynamic including the ability to change the protocol at runtime
-@item
 Simple API with two main function calls
 @item
 Highly portable - designed for embedded and mobile devices
@@ -110,7 +108,26 @@ To send and receive run:
 $ ./packedobjectsdtest --schema foo.xsd --xml foo.xml
 @end smallexample
 
+@section API basics
+@cindex API basics
 
+There are only 4 main function calls which are made available by adding @code{#include <packedobjectsd/packedobjectsd.h>} to your code.
+@smallexample
+packedobjectsdObject *packedobjectsd_init(const char *schema_file);
+
+int send_data(packedobjectsdObject *pod_obj, xmlDocPtr doc);
+
+xmlDocPtr receive_data(packedobjectsdObject *pod_obj);
+
+void packedobjectsd_free(packedobjectsdObject *pod_obj);
+
+@end smallexample
+@noindent
+You first must initialise the library using your XML Schema. Typical use would be one called to init_packedobjects at startup and then multiple calls to encode/decode based on your protocol. The interface to the packedobjects_encode function requires a libxml2 doc type. The packedobjects_decode function returns a libxml2 doc type.
+    
+If during runtime your schema changed you must call the init function again with the new file. The library is designed to do preprocessing of the schema during the init function which then allows efficient encoding and decoding plus validation to take place. Therefore, do not call init_packedobjects more than once if you do not plan on supporting dynamically changing protocols at runtime.
+
+To build an application with the software you must link with the library. Using autoconf you can add @code{PKG_CHECK_MODULES([LIBPACKEDOBJECTS], [libpackedobjects])} to your configure.ac file and then use the variables @code{$(LIBPACKEDOBJECTS_CFLAGS)} and @code{$(PACKEDOBJECTS_LIBS)} in your Makefile.am file.
 @printindex cp
      
 @bye

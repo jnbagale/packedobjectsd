@@ -20,13 +20,13 @@
 #include "xmlutils.h"
 #include "packedobjectsd.h"
 
-static packedobjectsdObject *packedobjectsd_subscribe(packedobjectsdObject *pod_obj, char *hash_schema);
-static packedobjectsdObject *packedobjectsd_publish(packedobjectsdObject *pod_obj, char *hash_schema);
+static packedobjectsdObject *packedobjectsd_subscribe(packedobjectsdObject *pod_obj, char *schema_hash);
+static packedobjectsdObject *packedobjectsd_publish(packedobjectsdObject *pod_obj, char *schema_hash);
 
 packedobjectsdObject *packedobjectsd_init(const char *file_schema)
 {
   //int size;
-  char *hash_schema = NULL;
+  char *schema_hash = NULL;
   packedobjectsdObject *pod_obj;
 
   if ((pod_obj = (packedobjectsdObject *) malloc(sizeof(packedobjectsdObject))) == NULL) {
@@ -41,30 +41,30 @@ packedobjectsdObject *packedobjectsd_init(const char *file_schema)
   pod_obj->node_type = 'B';
   pod_obj->pc = NULL;
   pod_obj->pc = init_packedobjects(file_schema); /* check if pod_obj->pc is NULL */
-  hash_schema = xmlfile2hash(file_schema); /* Creat MD5 Hash of the XML schmea */
+  schema_hash = xmlfile2hash(file_schema); /* Creat MD5 Hash of the XML schmea */
 
   if(pod_obj->pc != NULL) {
     switch (pod_obj->node_type) {
     case 'S':
-      pod_obj = packedobjectsd_subscribe(pod_obj, hash_schema);
+      pod_obj = packedobjectsd_subscribe(pod_obj, schema_hash);
       if(pod_obj == NULL) {
 	return NULL;
       }
       break;
 
     case 'P':
-      pod_obj = packedobjectsd_publish(pod_obj, hash_schema);
+      pod_obj = packedobjectsd_publish(pod_obj, schema_hash);
       if(pod_obj == NULL) {
 	return NULL;
       }
       break;
    
     case 'B':
-      pod_obj = packedobjectsd_publish(pod_obj, hash_schema);
+      pod_obj = packedobjectsd_publish(pod_obj, schema_hash);
       if(pod_obj == NULL) {
 	return NULL;
       }
-      pod_obj = packedobjectsd_subscribe(pod_obj, hash_schema);
+      pod_obj = packedobjectsd_subscribe(pod_obj, schema_hash);
       if(pod_obj == NULL) {
 	return NULL;
       }  
@@ -81,13 +81,13 @@ packedobjectsdObject *packedobjectsd_init(const char *file_schema)
   return pod_obj;
 }
 
-static packedobjectsdObject *packedobjectsd_subscribe(packedobjectsdObject *pod_obj, char *hash_schema)
+static packedobjectsdObject *packedobjectsd_subscribe(packedobjectsdObject *pod_obj, char *schema_hash)
 {
   int rc;
   uint64_t hwm = 100;
   
   /* Retrieve broker's address details from lookup server using the schema */
-  pod_obj->subscriber_endpoint = get_broker_detail('S', pod_obj->server_address, pod_obj->server_port, hash_schema);
+  pod_obj->subscriber_endpoint = get_broker_detail('S', pod_obj->server_address, pod_obj->server_port, schema_hash);
 
   if(pod_obj->subscriber_endpoint == NULL) {
     printf("Broker address received is NULL\n");
@@ -135,13 +135,13 @@ static packedobjectsdObject *packedobjectsd_subscribe(packedobjectsdObject *pod_
   return pod_obj;
 }
 
-static packedobjectsdObject *packedobjectsd_publish(packedobjectsdObject *pod_obj, char *hash_schema)
+static packedobjectsdObject *packedobjectsd_publish(packedobjectsdObject *pod_obj, char *schema_hash)
 {
   int rc; 
   uint64_t hwm = 100;
   
   /* Retrieve broker's address details from lookup server using the schema */
-  pod_obj->publisher_endpoint = get_broker_detail('P', pod_obj->server_address, pod_obj->server_port, hash_schema);
+  pod_obj->publisher_endpoint = get_broker_detail('P', pod_obj->server_address, pod_obj->server_port, schema_hash);
 
   if(pod_obj->publisher_endpoint == NULL) {
     printf("Broker address received is NULL\n");
