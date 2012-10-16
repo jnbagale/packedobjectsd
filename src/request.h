@@ -25,8 +25,8 @@ typedef struct {
 } Request;
 
 static inline char *which_node (char node_type) {
-  if(node_type == 'P') return "PUBLISHER";
-  else if(node_type == 'S') return "SUBSCRIBER";
+  if(node_type == 'P') return "publisher";
+  else if(node_type == 'S') return "subscriber";
   else return NULL;
 }
 

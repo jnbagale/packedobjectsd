@@ -20,64 +20,85 @@
 #include "xmlutils.h"
 #include "packedobjectsd.h"
 
+#ifdef DEBUG_MODE
+
+#define dbg(fmtstr, args...)					\
+  (printf(PROGNAME ":%s: " fmtstr "\n", __func__, ##args))
+#else
+#define dbg(dummy...)
+#endif
+
+#ifdef QUIET_MODE
+
+#define alert(dummy...)
+#else
+#define alert(fmtstr, args...)						\
+  (fprintf(stderr, PROGNAME ":%s: " fmtstr "\n", __func__, ##args))
+#endif
+
 static packedobjectsdObject *packedobjectsd_subscribe(packedobjectsdObject *pod_obj, char *schema_hash);
 static packedobjectsdObject *packedobjectsd_publish(packedobjectsdObject *pod_obj, char *schema_hash);
 
-packedobjectsdObject *packedobjectsd_init(const char *file_schema)
+packedobjectsdObject *init_packedobjectsd(const char *schema_file)
 {
-  //int size;
-  char *schema_hash = NULL;
+  char *schema_hash;
   packedobjectsdObject *pod_obj;
 
   if ((pod_obj = (packedobjectsdObject *) malloc(sizeof(packedobjectsdObject))) == NULL) {
-    printf("failed to malloc packedobjectsdObject!\n");
+    alert("failed to malloc packedobjectsdObject.");
     return NULL;
   }
-  /* Initialise default values */
-  //size = strlen(DEFAULT_SERVER_ADDRESS); /* IP address where lookup server is running */
-  //pod_obj->server_address = malloc( size + 1);
-  pod_obj->server_address = DEFAULT_SERVER_ADDRESS;
-  pod_obj->server_port = DEFAULT_SERVER_PORT ; /* Port number where lookup server is running */
+
+  /* Initialise default values for initialisation */
   pod_obj->node_type = 'B';
-  pod_obj->pc = NULL;
-  pod_obj->pc = init_packedobjects(file_schema); /* check if pod_obj->pc is NULL */
-  schema_hash = xmlfile2hash(file_schema); /* Creat MD5 Hash of the XML schmea */
+  pod_obj->server_port = DEFAULT_SERVER_PORT ; 
+  pod_obj->server_address = DEFAULT_SERVER_ADDRESS;
 
-  if(pod_obj->pc != NULL) {
-    switch (pod_obj->node_type) {
-    case 'S':
-      pod_obj = packedobjectsd_subscribe(pod_obj, schema_hash);
-      if(pod_obj == NULL) {
-	return NULL;
-      }
-      break;
+  pod_obj->pc = init_packedobjects(schema_file); /* check if pod_obj->pc is NULL */
+  if(pod_obj->pc == NULL) {
+    alert("Failed to initialise libpackedobjects.");
+    return NULL;
+  }
 
-    case 'P':
-      pod_obj = packedobjectsd_publish(pod_obj, schema_hash);
-      if(pod_obj == NULL) {
-	return NULL;
-      }
-      break;
-   
-    case 'B':
-      pod_obj = packedobjectsd_publish(pod_obj, schema_hash);
-      if(pod_obj == NULL) {
-	return NULL;
-      }
-      pod_obj = packedobjectsd_subscribe(pod_obj, schema_hash);
-      if(pod_obj == NULL) {
-	return NULL;
-      }  
-      break;
-    default:
-      printf("Invalid node type\n"); /* Handle this properly */
+  if((schema_hash = xmlfile2hash(schema_file)) == NULL) { /* Creat MD5 Hash of the XML schmea */
+    alert("Failed to create hash of the schema file.");
+  }
+  dbg("schema_hash: %s", schema_hash);
+ 
+  switch (pod_obj->node_type) {
+  case 'S':
+    pod_obj = packedobjectsd_subscribe(pod_obj, schema_hash);
+    if(pod_obj == NULL) {
+      alert("Failed to subscribe to packedobjectsd");
       return NULL;
     }
-  }
-  else {
+    break;
+
+  case 'P':
+    pod_obj = packedobjectsd_publish(pod_obj, schema_hash);
+    if(pod_obj == NULL) {
+      alert("Failed to publish to packedobjectsd");
+      return NULL;
+    }
+    break;
+   
+  case 'B':
+    pod_obj = packedobjectsd_publish(pod_obj, schema_hash);
+    if(pod_obj == NULL) {
+      alert("Failed to publish to packedobjectsd");
+      return NULL;
+    }
+    pod_obj = packedobjectsd_subscribe(pod_obj, schema_hash);
+    if(pod_obj == NULL) {
+      alert("Failed to subscribe to packedobjectsd");
+      return NULL;
+    }  
+    break;
+  default:
+    alert("Invalid node type."); /* Handle this properly */
     return NULL;
   }
-
+   
   return pod_obj;
 }
 
@@ -90,45 +111,43 @@ static packedobjectsdObject *packedobjectsd_subscribe(packedobjectsdObject *pod_
   pod_obj->subscriber_endpoint = get_broker_detail('S', pod_obj->server_address, pod_obj->server_port, schema_hash);
 
   if(pod_obj->subscriber_endpoint == NULL) {
-    printf("Broker address received is NULL\n");
+    alert("Broker address received is NULL.");
     return NULL;
   }
   else {
-    printf("SUBSCRIBER: Broker address receieved %s\n", pod_obj->subscriber_endpoint);
+    dbg("Broker address receieved for subscriber: %s", pod_obj->subscriber_endpoint);
   }
  
   /* Prepare the zeromq subscriber context and socket */
-  pod_obj->subscriber_context = zmq_init (1);
-  pod_obj->subscriber_socket = zmq_socket (pod_obj->subscriber_context, ZMQ_SUB);
-  if (pod_obj->subscriber_socket == NULL){
-    printf("Error occurred during zmq_socket(): %s\n", zmq_strerror (errno));
-    return NULL;
- }
-
-  /* Set high water mark to control number of messages buffered */
-  rc = zmq_setsockopt (pod_obj->subscriber_socket, ZMQ_HWM, &hwm, sizeof (hwm));
-  if (rc == -1){
-    printf("Error occurred during zmq_setsockopt(): %s\n", zmq_strerror (errno));
+  if ((pod_obj->subscriber_context = zmq_init(1)) == NULL){
+    alert("Failed to initialise zeromq context for subscriber: %s", zmq_strerror (errno));
     return NULL;
   }
 
-  rc = zmq_connect (pod_obj->subscriber_socket, pod_obj->subscriber_endpoint);
-  if (rc == -1){
-    printf("Error occurred during zmq_connect(): %s\n", zmq_strerror (errno));
+  if((pod_obj->subscriber_socket = zmq_socket (pod_obj->subscriber_context, ZMQ_SUB)) == NULL) {
+    alert("Failed to create zeromq socket for subscriber: %s", zmq_strerror (errno));
     return NULL;
   }
-  else {
-    printf("SUBSCRIBER: Successfully connected to SUB socket\n");
+
+  /* Set high water mark to control number of messages buffered by subscriber */
+  if((rc = zmq_setsockopt (pod_obj->subscriber_socket, ZMQ_HWM, &hwm, sizeof (hwm))) == -1) {
+    alert("Failed to set zeromq socket options for subscriber: %s", zmq_strerror (errno));
+    return NULL;
   }
 
+  if((rc = zmq_connect (pod_obj->subscriber_socket, pod_obj->subscriber_endpoint)) == -1){
+    alert("Failed to create zeromq socket for subscriber: %s", zmq_strerror (errno));
+    return NULL;
+  }
+  
   /* Podscribe to group by filtering the received data*/
   rc = zmq_setsockopt (pod_obj->subscriber_socket, ZMQ_SUBSCRIBE, "", 0);
   if (rc == -1){
-    printf("Error occurred during zmq_setsockopt(): %s\n", zmq_strerror (errno));
+    alert("Failed to set subscribe filter for subscriber: %s", zmq_strerror (errno));
     return NULL;
   }
   else {
-    printf("SUBSCRIBER: Ready to receive data from broker %s\n\n",pod_obj->subscriber_endpoint);
+    dbg("Subscriber is ready to receive data from broker %s",pod_obj->subscriber_endpoint);
   }
 
   free(pod_obj->subscriber_endpoint); /* Free up subscriber endpoint pointer */
@@ -144,43 +163,44 @@ static packedobjectsdObject *packedobjectsd_publish(packedobjectsdObject *pod_ob
   pod_obj->publisher_endpoint = get_broker_detail('P', pod_obj->server_address, pod_obj->server_port, schema_hash);
 
   if(pod_obj->publisher_endpoint == NULL) {
-    printf("Broker address received is NULL\n");
+    alert("Broker address received is NULL");
     return NULL;
   }
   else {
-    printf("PUBLISHER: Broker address receieved %s\n", pod_obj->publisher_endpoint);
+    dbg("Broker address receieved for publisher: %s", pod_obj->publisher_endpoint);
   }
 
   /* Prepare the context and podlisher socket */
-  pod_obj->publisher_context = zmq_init (1);
-  pod_obj->publisher_socket = zmq_socket (pod_obj->publisher_context, ZMQ_PUB); 
-  if (pod_obj->publisher_socket == NULL){
-    printf("Error occurred during zmq_socket(): %s\n", zmq_strerror (errno));
+  if (( pod_obj->publisher_context = zmq_init(1)) == NULL){
+    alert("Failed to initialise zeromq context for publisher: %s", zmq_strerror (errno));
     return NULL;
   }
 
-  rc = zmq_setsockopt (pod_obj->publisher_socket, ZMQ_HWM, &hwm, sizeof (hwm));
-  if (rc == -1){
-    printf("Error occurred during zmq_setsockopt(): %s\n", zmq_strerror (errno));
-    return NULL;
-  }
-  
-  rc = zmq_connect (pod_obj->publisher_socket, pod_obj->publisher_endpoint);
-  if (rc == -1){
-    printf("Error occurred during zmq_connect(): %s\n", zmq_strerror (errno));
+  if((pod_obj->publisher_socket = zmq_socket (pod_obj->publisher_context, ZMQ_PUB)) == NULL){ 
+    alert("Failed to create zeromq socket for publisher: %s", zmq_strerror (errno));
     return NULL;
   }
 
-  printf("PUBLISHER: Successfully connected to PUB socket\n");
-  printf("PUBLISHER: Ready to send data to broker at %s\n\n",pod_obj->publisher_endpoint);
+  if((rc = zmq_setsockopt (pod_obj->publisher_socket, ZMQ_HWM, &hwm, sizeof (hwm))) == -1){
+    alert("Failed to set zeromq socket options for publisher: %s", zmq_strerror (errno));
+    return NULL;
+  }
+
+  if((rc = zmq_connect (pod_obj->publisher_socket, pod_obj->publisher_endpoint)) == -1){
+    alert("Failed to connect publisher: %s\n", zmq_strerror (errno));
+    return NULL;
+  }
+
+  dbg("Publisher is ready to send data to broker at %s",pod_obj->publisher_endpoint);
 
   free(pod_obj->publisher_endpoint); /* Free up publisher endpoint pointer */
   return pod_obj;
 }
 
-xmlDocPtr receive_data(packedobjectsdObject *pod_obj)
+xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj)
 {
   /* Reading the received message */
+  int xml_size;
   char *pdu = NULL;
   xmlDocPtr doc = NULL;
 
@@ -188,40 +208,40 @@ xmlDocPtr receive_data(packedobjectsdObject *pod_obj)
   doc = packedobjects_decode(pod_obj->pc, pdu);
 
   if (pod_obj->pc->decode_error) {
-    fprintf(stderr, "Failed to decode with error %d.\n", pod_obj->pc->decode_error);
+    alert("Failed to decode with error %d.", pod_obj->pc->decode_error);
     return NULL;
   }
-
+  dbg("received %d bytes and decoded");
+  
   free(pdu);
   return doc;
 }
 
-int send_data(packedobjectsdObject *pod_obj, xmlDocPtr doc)
+int packedobjectsd_send(packedobjectsdObject *pod_obj, xmlDocPtr doc)
 {
   int rc;
   int size;
   char *pdu = NULL;
 
-  /* Send actual data as second part of the message */
   pdu = packedobjects_encode(pod_obj->pc, doc);
   size =  pod_obj->pc->bytes;
   
-  rc = send_message(pod_obj->publisher_socket, pdu, size);
-  if (rc == -1){
-    printf("Error occurred while sending the message(): %s\n", zmq_strerror (errno));
+  if((rc = send_message(pod_obj->publisher_socket, pdu, size)) == -1) {
+    alert("Error occurred while sending the message: %s", zmq_strerror (errno));
   }
+  dbg("encoded to %d bytes and sent.",size);
 
   return rc;
 }
 
-void packedobjectsd_free(packedobjectsdObject *pod_obj)
+void free_packedobjectsd(packedobjectsdObject *pod_obj)
 {
   if (pod_obj != NULL) {
     if(pod_obj->node_type == 'S' || pod_obj->node_type == 'B' ) {
       zmq_setsockopt (pod_obj->subscriber_socket, ZMQ_UNSUBSCRIBE, "", 0);
       zmq_close (pod_obj->subscriber_socket);
       zmq_term (pod_obj->subscriber_context);
-     }
+    }
 
     if(pod_obj->node_type == 'P' || pod_obj->node_type == 'B') {
       zmq_close (pod_obj->publisher_socket);
@@ -229,8 +249,8 @@ void packedobjectsd_free(packedobjectsdObject *pod_obj)
     }
 
     free_packedobjects(pod_obj->pc);
-    //free(pod_obj->server_address);
     free(pod_obj);
+    dbg("freeing packedobjectsd is successful");
   }
 }
 

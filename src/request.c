@@ -17,13 +17,30 @@
 
 #include "request.h"
 #include "address.h"
+#include "pod-config.h"
+
+#ifdef DEBUG_MODE
+
+#define dbg(fmtstr, args...)					\
+  (printf(PROGNAME ":%s: " fmtstr "\n", __func__, ##args))
+#else
+#define dbg(dummy...)
+#endif
+
+#ifdef QUIET_MODE
+
+#define alert(dummy...)
+#else
+#define alert(fmtstr, args...)						\
+  (fprintf(stderr, PROGNAME ":%s: " fmtstr "\n", __func__, ##args))
+#endif
 
 Request *make_request_object() 
 {
   Request *req;
   
   if ((req = (Request *) malloc(sizeof(Request))) == NULL) {
-    printf("Failed to allocate Request structure!\n");
+    alert("Failed to allocate Request structure.");
     return NULL;
   }
    
@@ -38,7 +55,8 @@ int serialize_request(char *buffer, Request *req) /* Add host to network order c
   offset = sizeof(req->node_type);
   memcpy(buffer + offset, req->schema_hash, strlen(req->schema_hash) + 1);
   offset = offset + strlen(req->schema_hash) + 1;
- 
+  dbg("serialize offset:%d",offset);
+
   return offset;
 }
 
@@ -55,6 +73,7 @@ int deserialize_request(char *buffer, Request *req)  /* Add network to host orde
   offset = sizeof(req->node_type);
   memcpy(req->schema_hash, buffer + offset, strlen(buffer + offset) + 1);
   offset = offset + strlen(buffer + offset) + 1;
+  dbg("deserialize offset:%d",offset);
 
   return offset;
 }
@@ -85,67 +104,78 @@ char *get_broker_detail(char node_type, char *address, int port, char *schema_ha
   size = strlen(address) + sizeof (int) + 7;  /* 7 bytes for 'tcp://' and ':' */
   endpoint = malloc(size + 1);
   sprintf(endpoint, "tcp://%s:%d", address, port);
+  dbg("Connecting %s to the server at %s...",which_node (node_type), endpoint); 
 
   /* Initialise the zeromq context and socket address */ 
-  context = zmq_init (1);
+  if((context = zmq_init (1)) == NULL) {
+    alert("Failed to initialize zeromq context");
+  }
 
   /* Create socket to connect to look up server*/
-  requester = zmq_socket (context, ZMQ_REQ);
-  if (requester == NULL){
-    printf("Error occurred during zmq_socket(): %s\n", zmq_strerror (errno));
+  if((requester = zmq_socket (context, ZMQ_REQ)) == NULL){
+    alert("Failed to create zeromq socket: %s", zmq_strerror (errno));
     return NULL;
   }
   
-  printf("%s: Connecting to the server...\n \n",which_node (node_type)); 
-  rc = zmq_connect (requester, endpoint);
-  if (rc == -1){
-    printf("Error occurred during zmq_connect(): %s\n", zmq_strerror (errno));
+  if((rc = zmq_connect (requester, endpoint)) == -1){
+    alert("Failed to create zeromq connection: %s", zmq_strerror (errno));
     return NULL;
   }
  
-  req_buffer = malloc(MAX_BUFFER_SIZE);
+  if((req_buffer = malloc(MAX_BUFFER_SIZE)) == NULL) {
+    alert("Failed to allocate request buffer");
+  }
+
   if( (req = make_request_object()) == NULL) {
+    alert("Failed to create request object");
     return NULL;
   }
 
   size = strlen(schema_hash);
+  dbg("schema hash length:%d",size);
+
   if((req->schema_hash = malloc(size + 1)) == NULL) {
-    printf("Failed to allocate hash schema!\n");
+    alert("Failed to allocate hash schema");
     return NULL;
   }
   sprintf(req->schema_hash, "%s", schema_hash);
   req->node_type = node_type;
  
   if((ret = serialize_request(req_buffer, req)) == 0) {
+    alert("Failed to serialize request structure");
     return NULL;
   }
 
-  rc = send_message(requester, req_buffer, ret); 
-  if (rc == -1){
-    printf("Error occurred during zmq_send(): %s\n", zmq_strerror (errno));
+  if((rc = send_message(requester, req_buffer, ret)) == -1) {
+    alert("Failed to send request structure to server: %s", zmq_strerror (errno));
     return NULL;
   }
    
-  buffer = malloc(MAX_BUFFER_SIZE); 
-  buffer = receive_message(requester);
-  if (buffer == NULL) {
-    printf("The received message is NULL\n");
+  if((buffer = malloc(MAX_BUFFER_SIZE)) == NULL){
+    alert("Failed to allocate hash schema");
     return NULL;
   }
 
-  addr = make_address_object();
-  if(addr == NULL) {
+  if((buffer = receive_message(requester)) == NULL){
+    alert("The received message is NULL\n");
+    return NULL;
+  }
+
+  if((addr = make_address_object()) == NULL){
+    alert("Failed to create address object");
     return NULL;
   }
 
   if((buffer_size = deserialize_address(buffer, addr)) <= 0) {
-    printf("The received address structure could not be decoded\n");
+    alert("The received address structure could not be decoded.");
     return NULL;
   }
    
-  //printf("Address %s Port In %d Port Out %d\n", addr->address, addr->port_in, addr->port_out);
   size = strlen(addr->address) + sizeof (int) + 7;  /* 7 bytes for 'tcp://' and ':' */
-  broker_address = malloc(size + 1);
+  if((broker_address = malloc(size + 1)) == NULL){
+    alert("Failed to allocate broker address");
+  }
+
   if(node_type == 'P') {
     sprintf(broker_address, "tcp://%s:%d", addr->address, addr->port_in);
   }

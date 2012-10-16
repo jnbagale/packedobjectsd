@@ -16,20 +16,38 @@
 #include <inttypes.h> /* for int64_t data type  */
 
 #include "message.h"
+#include "pod-config.h"
+
+#ifdef DEBUG_MODE
+
+#define dbg(fmtstr, args...)					\
+  (printf(PROGNAME ":%s: " fmtstr "\n", __func__, ##args))
+#else
+#define dbg(dummy...)
+#endif
+
+#ifdef QUIET_MODE
+
+#define alert(dummy...)
+#else
+#define alert(fmtstr, args...)						\
+  (fprintf(stderr, PROGNAME ":%s: " fmtstr "\n", __func__, ##args))
+#endif
 
 int send_message(void *socket, char *message, int message_length) 
 {
   int rc;
   zmq_msg_t z_message;
 
-  rc = zmq_msg_init_size (&z_message, message_length);
-  if (rc == -1){
-    printf("Error occurred during zmq_msg_init_size(): %s\n", zmq_strerror (errno));
+  if((rc = zmq_msg_init_size (&z_message, message_length)) == -1){
+    alert("Error occurred during zmq_msg_init_size(): %s", zmq_strerror (errno));
     return rc;
   }
 
   memcpy (zmq_msg_data (&z_message), message, message_length);
-  rc = zmq_send (socket, &z_message, 0); 
+  if((rc = zmq_send (socket, &z_message, 0)) == -1){
+    alert("Error occurred during zmq_send(): %s", zmq_strerror (errno));
+  }
   zmq_msg_close (&z_message);
 
   return rc;
@@ -42,27 +60,27 @@ char *receive_message(void *socket)
   char *message = NULL;
   zmq_msg_t z_message;
 
-  rc = zmq_msg_init (&z_message);
-  if (rc == -1){
-    printf("Error occurred during zmq_msg_init_size(): %s\n", zmq_strerror (errno));
+  if((rc = zmq_msg_init (&z_message)) == -1){
+    alert("Error occurred during zmq_msg_init_size(): %s", zmq_strerror (errno));
     return NULL;
   }
 
-  rc = zmq_recv (socket, &z_message, 0);
-  if(rc == -1) {
-    printf("Error occurred during zmq_recv(): %s\n", zmq_strerror (errno));
+  if((rc = zmq_recv(socket, &z_message, 0)) == -1){
+    alert("Error occurred during zmq_recv(): %s", zmq_strerror (errno));
     return NULL;
   }
-  else {
-    size = zmq_msg_size (&z_message);
-    if(size > 0) {
-      message = malloc(size);
-      memcpy (message, zmq_msg_data (&z_message), size);
-      zmq_msg_close (&z_message);
-      message [size] = '\0';
+
+  size = zmq_msg_size (&z_message);
+  if(size > 0) {
+    if((message = malloc(size)) == NULL){
+      alert("Failed to allocated message");
+      return NULL;
     }
+    memcpy (message, zmq_msg_data (&z_message), size);
+    zmq_msg_close (&z_message);
+    message [size] = '\0';   
   }
-
+ 
   return message;
 }
 

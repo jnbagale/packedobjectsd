@@ -14,12 +14,11 @@
 #ifndef PACKEDOBJECTSD_H_
 #define PACKEDOBJECTSD_H_
 
+#include "pod-config.h"
 #include <packedobjects.h>
 
 #define DEFAULT_SERVER_ADDRESS "ec2-107-20-219-103.compute-1.amazonaws.com" /* the default lookup server address */
 #define DEFAULT_SERVER_PORT 5555  /* the default lookup server port */
-
-enum ENCODE_TYPE {PLAIN, ENCODED};      /* Supported message encoding types */
 
 typedef struct {
   void *publisher_context;
@@ -35,11 +34,10 @@ typedef struct {
   packedobjectsContext *pc;
 } packedobjectsdObject;
 
-
-packedobjectsdObject *packedobjectsd_init(const char *schema_file);
-int send_data(packedobjectsdObject *pod_obj, xmlDocPtr doc);
-xmlDocPtr receive_data(packedobjectsdObject *pod_obj);
-void packedobjectsd_free(packedobjectsdObject *pod_obj);
+packedobjectsdObject *init_packedobjectsd(const char *schema_file);
+int packedobjectsd_send(packedobjectsdObject *pod_obj, xmlDocPtr doc);
+xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj);
+void free_packedobjectsd(packedobjectsdObject *pod_obj);
 
 #endif
 /* End of packedobjectsd.h */

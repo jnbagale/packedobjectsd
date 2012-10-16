@@ -38,11 +38,10 @@ static void send_file(packedobjectsdObject *pod_obj, const char *xml_file)
     exit_with_message("did not find .xml file");
   }
 
-  ret = send_data(pod_obj, doc_sent);
-  if(ret == -1) {
+  if((ret = packedobjectsd_send(pod_obj, doc_sent)) == -1){
     exit_with_message("message could not be sent\n");
   }
-  printf("message sent\n");
+
   //packedobjects_dump_doc(doc_sent);
   xmlFreeDoc(doc_sent);
 }
@@ -51,10 +50,9 @@ static void receive_file(packedobjectsdObject *pod_obj)
 { 
   xmlDocPtr doc_received = NULL;
 
-  if((doc_received = receive_data(pod_obj)) == NULL) {
+  if((doc_received = packedobjectsd_receive(pod_obj)) == NULL) {
     exit_with_message("message could not be received\n");
   }
-  printf("message received\n");
   // packedobjects_dump_doc(doc_received);
   xmlFreeDoc(doc_received);
   
@@ -128,7 +126,7 @@ int main (int argc, char *argv [])
   if (!xml_file) exit_with_message("did not specify --xml file");
 
   /* Initialise packedobjectsd */
-  if((pod_obj = packedobjectsd_init(schema_file)) == NULL) {
+  if((pod_obj = init_packedobjectsd(schema_file)) == NULL) {
     exit_with_message("failed to initialise libpackedobjectsd\n");
   }
   sleep(1); /* Allow broker to start if it's not already running */
@@ -139,9 +137,8 @@ int main (int argc, char *argv [])
     usleep(1000); /* Do nothing for 1 ms */
     loop--;
   }
-  // xmlCleanupParser();
   /* free packedobjectsd */
-  packedobjectsd_free(pod_obj);
+  free_packedobjectsd(pod_obj);
 
   return EXIT_SUCCESS;
 }

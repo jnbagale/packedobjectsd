@@ -18,6 +18,10 @@
 
 #include "xmlutils.h"
 
+static xmlDoc *init_xmlutils(char *schema_file);
+static xmlChar *xmldoc2string(xmlDoc *doc, int *size);
+static xmlDoc *xmlstring2doc(char *xmlstr, int size);
+
 xmlDoc *init_xmlutils(char *schema_file)
 {
   xmlDoc *doc = NULL;
@@ -25,10 +29,6 @@ xmlDoc *init_xmlutils(char *schema_file)
   xmlKeepBlanksDefault(0);
   doc = xmlReadFile(schema_file, NULL, 0);
   
-  if (doc == NULL) {
-    printf("error: could not parse file %s\n", schema_file);
-  }
-
   return doc;
 }
 
@@ -58,7 +58,7 @@ char *xmlfile2hash(const char *schema_file)
  /* Creating MD5 hash of the xml schema using crypt() function */
   schema_doc = init_xmlutils((char *)schema_file); 
   if(schema_doc == NULL) {
-    printf("The XML schema: %s doesn't exist\n", schema_file);
+    // printf("The XML schema: %s doesn't exist\n", schema_file);
     return NULL;
   }
   schema_char = (char *)xmldoc2string(schema_doc, &xml_size);
