@@ -7,7 +7,7 @@ libpackedobjectsd_la_LIBADD = $(LIBZMQ_LIBS) $(LIBXML2_LIBS) $(LIBPACKEDOBJECTS_
 
 libpackedobjectsd_la_SOURCES = 	packedobjectsd.c packedobjectsd.h message.c message.h \
 				address.c address.h request.c request.h xmlutils.c xmlutils.h \
-				$(top_builddir)/pkgconfig/packedobjectsd.pc
+				$(top_builddir)/pkgconfig/libpackedobjectsd.pc
 
 library_includedir = $(includedir)/packedobjectsd
 
@@ -21,4 +21,4 @@ packedobjectsdtest_LDADD = $(lib_LTLIBRARIES)
 
 pkgconfigdir = $(libdir)/pkgconfig
 
-pkgconfig_DATA = $(top_builddir)/pkgconfig/packedobjectsd.pc
+pkgconfig_DATA = $(top_builddir)/pkgconfig/libpackedobjectsd.pc

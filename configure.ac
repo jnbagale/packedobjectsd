@@ -1,9 +1,9 @@
-AC_INIT(packedobjectsd, 0.1, jnbagale@gmail.com)
+AC_INIT(libpackedobjectsd, 0.1, jnbagale@gmail.com)
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([src/])
 AM_CONFIG_HEADER([src/config.h])
 
-AC_DEFINE([PROGNAME],["packedobjectsd"],["lightweight XML messaging library"])
+AC_DEFINE([PROGNAME],["libpackedobjectsd"],["lightweight XML messaging library"])
 
 # --enable-debug flag
 AC_ARG_ENABLE(debug,
