@@ -14,8 +14,22 @@
 #ifndef PACKEDOBJECTSD_H_
 #define PACKEDOBJECTSD_H_
 
-#include "pod-config.h"
 #include <packedobjects.h>
+/* Undefine conflict macroses from config.h included in packedobjects.h
+   and our config.h
+*/
+#undef VERSION
+#undef PACKAGE
+#undef PROGNAME
+#undef PACKAGE_NAME
+#undef PACKAGE_STRING
+#undef PACKAGE_VERSION
+#undef PACKAGE_TARNAME
+#undef PACKAGE_BUGREPORT
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #define DEFAULT_SERVER_ADDRESS "ec2-107-20-219-103.compute-1.amazonaws.com" /* the default lookup server address */
 #define DEFAULT_SERVER_PORT 5555  /* the default lookup server port */

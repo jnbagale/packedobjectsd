@@ -200,7 +200,6 @@ static packedobjectsdObject *packedobjectsd_publish(packedobjectsdObject *pod_ob
 xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj)
 {
   /* Reading the received message */
-  int xml_size;
   char *pdu = NULL;
   xmlDocPtr doc = NULL;
 
@@ -211,7 +210,7 @@ xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj)
     alert("Failed to decode with error %d.", pod_obj->pc->decode_error);
     return NULL;
   }
-  dbg("received %d bytes and decoded");
+  dbg("received %d bytes and decoded",pod_obj->pc->bytes);
   
   free(pdu);
   return doc;

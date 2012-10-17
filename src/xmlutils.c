@@ -20,7 +20,6 @@
 
 static xmlDoc *init_xmlutils(char *schema_file);
 static xmlChar *xmldoc2string(xmlDoc *doc, int *size);
-static xmlDoc *xmlstring2doc(char *xmlstr, int size);
 
 xmlDoc *init_xmlutils(char *schema_file)
 {
@@ -39,12 +38,6 @@ xmlChar *xmldoc2string(xmlDoc *doc, int *size)
   xmlDocDumpFormatMemory(doc, &xmlbuff, size, 0);
   
   return xmlbuff;
-
-}
-
-xmlDoc *xmlstring2doc(char *xmlstr, int size)
-{
-  return xmlParseMemory(xmlstr, size);
 
 }
 

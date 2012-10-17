@@ -41,7 +41,7 @@ static void send_file(packedobjectsdObject *pod_obj, const char *xml_file)
   if((ret = packedobjectsd_send(pod_obj, doc_sent)) == -1){
     exit_with_message("message could not be sent\n");
   }
-
+  printf("message sent\n");
   //packedobjects_dump_doc(doc_sent);
   xmlFreeDoc(doc_sent);
 }
@@ -53,6 +53,7 @@ static void receive_file(packedobjectsdObject *pod_obj)
   if((doc_received = packedobjectsd_receive(pod_obj)) == NULL) {
     exit_with_message("message could not be received\n");
   }
+  printf("message received\n");
   // packedobjects_dump_doc(doc_received);
   xmlFreeDoc(doc_received);
   

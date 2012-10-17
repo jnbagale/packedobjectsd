@@ -4,7 +4,7 @@ libdir=$(exec_prefix)/lib
 includedir=$(exec_prefix)/include
 
 Name: PackedobjectsD
-Description: A lightweight secure xml messaging library.
+Description: A light-weight  xml messaging library.
 Requires: libzmq >= 2.1.11 libxml-2.0 >= 2.7.8
 Version: 1.0.0
 Libs: -L${libdir} -lpackedobjectsd

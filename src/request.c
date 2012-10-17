@@ -17,7 +17,7 @@
 
 #include "request.h"
 #include "address.h"
-#include "pod-config.h"
+#include "config.h"
 
 #ifdef DEBUG_MODE
 
@@ -104,7 +104,7 @@ char *get_broker_detail(char node_type, char *address, int port, char *schema_ha
   size = strlen(address) + sizeof (int) + 7;  /* 7 bytes for 'tcp://' and ':' */
   endpoint = malloc(size + 1);
   sprintf(endpoint, "tcp://%s:%d", address, port);
-  dbg("Connecting %s to the server at %s...",which_node (node_type), endpoint); 
+  dbg("Connecting %s to the server at %s",which_node (node_type), endpoint); 
 
   /* Initialise the zeromq context and socket address */ 
   if((context = zmq_init (1)) == NULL) {

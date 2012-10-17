@@ -16,7 +16,7 @@
 #include <inttypes.h> /* for int64_t data type  */
 
 #include "message.h"
-#include "pod-config.h"
+#include "config.h"
 
 #ifdef DEBUG_MODE
 
