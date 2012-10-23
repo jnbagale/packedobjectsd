@@ -67,7 +67,7 @@ static void exit_with_message(char *message)
 
 static void print_usage(void)
 {
-  printf("usage: packedobjectsd --schema <file> --xml <file> \n");
+  printf("usage: packedobjectsdtest --schema <file> --xml <file> \n");
   exit(EXIT_SUCCESS);
 }
 

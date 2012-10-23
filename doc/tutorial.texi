@@ -77,8 +77,8 @@ todo
 
 To install from the latest source:
 @smallexample
-git clone git://gitorious.org/packedobjectsd/packedobjectsd.git
-cd packedobjectsd
+git clone git://gitorious.org/libpackedobjectsd/libpackedobjectsd.git
+cd libpackedobjectsd
 autoreconf -i
 ./configure
 make
@@ -99,7 +99,7 @@ After compiling and running 'make check' you should find a binary called 'packed
 @*
 @smallexample
 $ ./packedobjectsdtest --help
-usage: packedobjectsd --schema <file> --xml <file> 
+usage: packedobjectsdtest --schema <file> --xml <file> 
 @end smallexample
 @noindent
 To send and receive run:
@@ -125,9 +125,12 @@ void free_packedobjectsd(packedobjectsdObject *pod_obj);
 @noindent
 You first must initialise the library using your XML Schema. Typical use would be one called to init_packedobjectsd at startup and then multiple calls send/receive data. The interface to the packedobjectsd_send function requires a libxml2 doc type. The packedobjectsd_receive function returns a libxml2 doc type.
     
-If during runtime your schema changed you must call the init function again with the new file. The library is designed to communicate to the server during the init function which gives it back the network address and port numbers to send or receive the data. Therefore, do not call init_packedobjects more than once if you do not plan on supporting dynamically changing protocols at runtime.
+If during runtime your schema changed you must call the init function again with the new file. The library is designed to communicate to the server during the init function which gives it back the network address and port numbers to send or receive the data. Therefore, do not call init_packedobjectsd more than once if you do not plan on supporting dynamically changing protocols at runtime.
 
-To build an application with the software you must link with the library. Using autoconf you can add @code{PKG_CHECK_MODULES([LIBPACKEDOBJECTSD], [libpackedobjectsd])} to your configure.ac file and then use the variables @code{$(LIBPACKEDOBJECTSD_CFLAGS)} and @code{$(PACKEDOBJECTSD_LIBS)} in your Makefile.am file.
+To build an application with the software you must link with the library. Using autoconf you can add @code{PKG_CHECK_MODULES([LIBPACKEDOBJECTSD], [libpackedobjectsd])} to your configure.ac file and then use the variables @code{$(LIBPACKEDOBJECTSD_CFLAGS)} and @code{$(LIBPACKEDOBJECTSD_LIBS)} in your Makefile.am file.
+
+
+
 @printindex cp
      
 @bye
