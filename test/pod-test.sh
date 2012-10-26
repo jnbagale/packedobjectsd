@@ -1,4 +1,4 @@
-#!/bin/bash
+sen#!/bin/bash
 echo -e "POD test\n\n"
 init()
 { 

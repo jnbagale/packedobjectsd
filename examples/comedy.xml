@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<comedy>
+<video>
+  <category> 
+    <comedy/>
+  </category>
   <movie-name>The dictator</movie-name>
   <release-date> 
     <year>2012</year>
@@ -7,4 +10,4 @@
     <day>16</day>
   </release-date>
   <director>Larry Charles</director>
-</comedy>
+</video>

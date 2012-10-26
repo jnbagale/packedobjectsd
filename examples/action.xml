@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<action>
+<video>
+  <category> 
+    <action/>
+  </category>
+
   <movie-name>skyfall</movie-name>
   <release-date> 
     <year>2012</year>
@@ -7,4 +11,4 @@
     <day>12</day>
   </release-date>
   <director>Sam Mendes</director>
-</action>
+</video>
