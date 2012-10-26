@@ -22,8 +22,8 @@ int main(int argc, char *argv [])
   xmlDocPtr doc_sent_comedy = NULL;
   const char *xml_file_action = "action.xml";
   const char *xml_file_comedy = "comedy.xml";
-  const char *schema_file_action = "action.xsd";
-  const char *schema_file_comedy = "comedy.xsd";
+  const char *schema_file_action = "video.xsd";
+  const char *schema_file_comedy = "video.xsd";
   packedobjectsdObject *pod_obj_action = NULL;
   packedobjectsdObject *pod_obj_comedy = NULL;
 
