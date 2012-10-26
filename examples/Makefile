@@ -1,13 +1,20 @@
-all: simple-video-server.o simple-video-client.o 
-	gcc -o simple-video-server simple-video-server.o  -lpackedobjectsd
-	gcc -o simple-video-client simple-video-client.o  -lpackedobjectsd
+all: simple_server.o simple_client.o multiple_server.o multiple_client.o
+	gcc -o simple_server simple_server.o  -lpackedobjectsd
+	gcc -o simple_client simple_client.o  -lpackedobjectsd
+	gcc -o multiple_server multiple_server.o  -lpackedobjectsd
+	gcc -o multiple_client multiple_client.o  -lpackedobjectsd
 
-simple-video-server.o: simple-video-server.c
-	gcc -c simple-video-server.c  -lpackedobjectsd -I/usr/include/libxml2
-simple-video-client.o: simple-video-client.c
-	gcc -c simple-video-client.c  -lpackedobjectsd -I/usr/include/libxml2
+simple_server.o: simple_server.c
+	gcc -c simple_server.c  -lpackedobjectsd -I/usr/include/libxml2
+simple_client.o: simple_client.c
+	gcc -c simple_client.c  -lpackedobjectsd -I/usr/include/libxml2
+
+multiple_server.o: multiple_server.c
+	gcc -c multiple_server.c  -lpackedobjectsd -I/usr/include/libxml2
+multiple_client.o: multiple_client.c
+	gcc -c multiple_client.c  -lpackedobjectsd -I/usr/include/libxml2
 
 clean:
 	rm -rf *.o
-	rm simple-video-server
-	rm simple-video-client
+	rm simple_server
+	rm simple_client

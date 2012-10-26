@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<comedy>
+  <movie-name>The dictator</movie-name>
+  <release-date> 
+    <year>2012</year>
+    <month>5</month>
+    <day>16</day>
+  </release-date>
+  <director>Larry Charles</director>
+</comedy>

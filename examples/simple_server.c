@@ -10,7 +10,7 @@
 /* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the */
 /* GNU General Public License for more details. */
 
-/* A simple video library server example. The server will broadcast new video */
+/* A simple video library server example. The server will broadcast new action movie */
 /* releases to subscribed clients using packedobjectsd library */
 
 #include <stdio.h>
@@ -28,6 +28,7 @@ int main(int argc, char *argv [])
     printf("failed to initialise libpackedobjectsd\n");
     exit(EXIT_FAILURE);
   }
+
   if((doc_sent = packedobjects_new_doc(xml_file)) == NULL) {
     printf("did not find .xml file");
     exit(EXIT_FAILURE);
@@ -38,7 +39,7 @@ int main(int argc, char *argv [])
     exit(EXIT_FAILURE);
   }
 
-  printf("message sent\n");
+  printf("new action movie released\n");
   packedobjects_dump_doc(doc_sent);
 
   /* free packedobjectsd */

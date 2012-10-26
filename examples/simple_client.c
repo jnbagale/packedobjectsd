@@ -11,16 +11,15 @@
 /* GNU General Public License for more details. */
 
 /* A simple video library client example. The client will receive new video */
-/* releases from subscribed servers using packedobjectsd library */
+/* releases for 'action' movies from server using packedobjectsd library */
 
 #include <stdio.h>
 #include <packedobjectsd/packedobjectsd.h>
 
 int main(int argc, char *argv [])
-{
-  int ret;
-  const char *schema_file = "action.xsd";
+{ 
   xmlDocPtr doc_received = NULL;
+  const char *schema_file = "action.xsd";
   packedobjectsdObject *pod_obj = NULL;
 
   /* Initialise packedobjectsd */
@@ -33,11 +32,11 @@ int main(int argc, char *argv [])
     printf("message could not be received\n");
     exit(EXIT_FAILURE);
   }
-  printf("message received\n");
+  printf("new action movie released\n");
   packedobjects_dump_doc(doc_received);
-  xmlFreeDoc(doc_received);
 
-  /* free packedobjectsd */
+  /* free up memory */
+  xmlFreeDoc(doc_received);
   free_packedobjectsd(pod_obj);
 
   return EXIT_SUCCESS;
