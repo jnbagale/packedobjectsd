@@ -14,7 +14,7 @@
 #ifndef PACKEDOBJECTSD_H_
 #define PACKEDOBJECTSD_H_
 
-#include <packedobjects.h>
+#include <packedobjects/packedobjects.h>
 /* Undefine conflict macroses from config.h included in packedobjects.h
    and our config.h
 */

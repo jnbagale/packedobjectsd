@@ -53,8 +53,7 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file)
   pod_obj->node_type = 'B';
   pod_obj->server_port = DEFAULT_SERVER_PORT ; 
   pod_obj->server_address = DEFAULT_SERVER_ADDRESS;
-
-  pod_obj->pc = init_packedobjects(schema_file); /* check if pod_obj->pc is NULL */
+  pod_obj->pc = init_packedobjects(schema_file); 
   if(pod_obj->pc == NULL) {
     alert("Failed to initialise libpackedobjects.");
     return NULL;

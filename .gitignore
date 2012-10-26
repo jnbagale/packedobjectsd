@@ -24,6 +24,9 @@ src/*.o
 src/*.la
 src/*.lo
 src/packedobjectsdtest
+examples/*.o
+examples/simple-video-client
+examples/simple-video-server
 doc/tutorial.aux
 doc/tutorial.cp
 doc/tutorial.cps

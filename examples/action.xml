@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<action>
+  <movie-name>skyfall</movie-name>
+  <release-date> 
+    <year>2012</year>
+    <month>10</month>
+    <day>12</day>
+  </release-date>
+  <director>Sam Mendes</director>
+</action>
