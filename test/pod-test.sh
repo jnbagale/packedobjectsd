@@ -1,15 +1,16 @@
 #!/bin/bash
-echo "POD test"
+echo -e "POD test\n\n"
 init()
 { 
     schemafile=../schema/personnel.xsd
     xmlfile=../schema/personnel.xml
-
+    cd ../ && ./configure && make && make check
+    echo -e "\n\nRunning packedobjectsdtest program...\n\n"
     send-receive()
     {
 	for i in {1..1}
 	do
-	    ./../src/packedobjectsdtest --xml $xmlfile --schema $schemafile  > pod-result.log 2>&1
+	    cd src && ./packedobjectsdtest --xml $xmlfile --schema $schemafile  > pod-result.log 2>&1
 	done
     }
  
