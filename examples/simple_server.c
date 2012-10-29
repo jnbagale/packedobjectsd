@@ -19,7 +19,7 @@
 int main(int argc, char *argv [])
 { 
   xmlDocPtr doc_sent = NULL;
-  const char *xml_file = "action.xml";
+  const char *xml_file = "video.xml";
   const char *schema_file = "video.xsd";
   packedobjectsdObject *pod_obj = NULL;
 

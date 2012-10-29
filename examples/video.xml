@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<video>
+  <message>
+    <response>
+      <title>skyfall</title>
+      <genre>action</genre>
+      <dateOfRelease>20121012</dateOfRelease>
+      <director>Sam Mendes</director>
+    </response>
+  </message>
+  <message>
+    <response>
+      <title>The dictator</title>
+      <genre>comedy</genre>
+      <dateOfRelease>20120515</dateOfRelease>
+      <director>Larry Charles</director>
+    </response>
+  </message>
+</video>
