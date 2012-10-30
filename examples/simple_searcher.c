@@ -18,7 +18,8 @@
 
 int main(int argc, char *argv [])
 { 
-  xmlDocPtr doc_received = NULL;
+  xmlDocPtr req = NULL;
+  const char *request = "search.xml";
   const char *schema_file = "video.xsd";
   packedobjectsdObject *pod_obj = NULL;
 
@@ -28,15 +29,20 @@ int main(int argc, char *argv [])
     exit(EXIT_FAILURE);
   }
 
-  if((doc_received = packedobjectsd_receive(pod_obj)) == NULL) {
-    printf("message could not be received\n");
+  if((req = packedobjects_new_doc(request)) == NULL) {
+    printf("did not find .xml file");
     exit(EXIT_FAILURE);
   }
-  printf("new action movie released\n");
-  packedobjects_dump_doc(doc_received);
 
+  /* send search request to the server */
+  if(packedobjectsd_send(pod_obj, req) == -1){
+    printf("message could not be sent\n");
+    exit(EXIT_FAILURE);
+  }
+  printf("sent configuration request to the server.\n");
+ 
   /* free up memory */
-  xmlFreeDoc(doc_received);
+  xmlFreeDoc(req);
   free_packedobjectsd(pod_obj);
 
   return EXIT_SUCCESS;

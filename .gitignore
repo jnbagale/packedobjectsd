@@ -25,8 +25,9 @@ src/*.la
 src/*.lo
 src/packedobjectsdtest
 examples/*.o
-examples/simple_client
 examples/simple_server
+examples/simple_receiver
+examples/simple_searcher
 examples/multiple_client
 examples/multiple_server
 doc/tutorial.aux
