@@ -17,10 +17,42 @@
 #include <unistd.h>
 #include <packedobjectsd/packedobjectsd.h>
 
+static int query_schema(xmlDocPtr req, xmlChar *xpath);
+
+static int query_schema(xmlDocPtr req, xmlChar *xpath)
+{
+  xmlXPathContextPtr xpathp = NULL;
+  xmlXPathObjectPtr result = NULL;
+
+  /* setup xpath context */
+  xpathp = xmlXPathNewContext(req);
+  if (xpathp == NULL) {
+    printf("Error in xmlXPathNewContext.");
+    return -1;
+  }
+
+  if(xmlXPathRegisterNs(xpathp, (const xmlChar *)NSPREFIX, (const xmlChar *)NSURL) != 0) {
+    printf("Error: unable to register NS.");
+    return -1;
+  }
+
+  /* Evaluate xpath expression */
+  result = xmlXPathEvalExpression(xpath, xpathp);
+  if (result == NULL) {
+    printf("Error in xmlXPathEvalExpression.");
+    return -1;
+  }
+
+  if(xmlXPathNodeSetIsEmpty(result->nodesetval)) {
+    return -1;
+  }
+
+  return 1;
+}
+
 int main(int argc, char *argv [])
 { 
   xmlDocPtr doc_received = NULL;
-  const char *request = "search.xml";
   const char *schema_file = "video.xsd";
   packedobjectsdObject *pod_obj = NULL;
 
@@ -29,16 +61,18 @@ int main(int argc, char *argv [])
     printf("failed to initialise libpackedobjectsd\n");
     exit(EXIT_FAILURE);
   }
+  printf("listening to the video server ...\n");
   while(1) 
-    {
-      /* send search request to the server */
+    {       
       if((doc_received = packedobjectsd_receive(pod_obj)) == NULL){
 	printf("message could not be received\n");
 	exit(EXIT_FAILURE);
       }
-
-      packedobjects_dump_doc(doc_received);
-
+      /* to ignore messages sent by the searcher program */
+      if((query_schema(doc_received, "/video/message/response")) == 1) {
+	printf("video database is received\n");
+	packedobjects_dump_doc(doc_received);
+      }
       usleep(1000);
     }
 

@@ -39,7 +39,7 @@ int main(int argc, char *argv [])
     printf("message could not be sent\n");
     exit(EXIT_FAILURE);
   }
-  printf("sent configuration request to the server.\n");
+  printf("sent search request to the server\n");
  
   /* free up memory */
   xmlFreeDoc(req);
