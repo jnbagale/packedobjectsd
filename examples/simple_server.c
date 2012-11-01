@@ -28,11 +28,13 @@ static int query_schema(xmlDocPtr req, xmlChar *xpath)
   xpathp = xmlXPathNewContext(req);
   if (xpathp == NULL) {
     printf("Error in xmlXPathNewContext.");
+    xmlXPathFreeContext(xpathp);
     return -1;
   }
 
   if(xmlXPathRegisterNs(xpathp, (const xmlChar *)NSPREFIX, (const xmlChar *)NSURL) != 0) {
     printf("Error: unable to register NS.");
+    xmlXPathFreeContext(xpathp);
     return -1;
   }
 
@@ -40,32 +42,41 @@ static int query_schema(xmlDocPtr req, xmlChar *xpath)
   result = xmlXPathEvalExpression(xpath, xpathp);
   if (result == NULL) {
     printf("Error in xmlXPathEvalExpression.");
+    xmlXPathFreeObject(result); 
+    xmlXPathFreeContext(xpathp);
     return -1;
   }
 
   if(xmlXPathNodeSetIsEmpty(result->nodesetval)) {
+    xmlXPathFreeObject(result); 
+    xmlXPathFreeContext(xpathp);
     return -1;
   }
 
+  xmlXPathFreeObject(result); 
+  xmlXPathFreeContext(xpathp);
+     
   return 1;
 }
 
 int main(int argc, char *argv [])
 { 
-  xmlDocPtr req = NULL;
-  xmlDocPtr doc_sent = NULL;
+  packedobjectsdObject *pod_obj = NULL;
   const char *xml_file = "video.xml";
   const char *schema_file = "video.xsd";
-  packedobjectsdObject *pod_obj = NULL;
  
   /* Initialise packedobjectsd */
   if((pod_obj = init_packedobjectsd(schema_file)) == NULL) {
     printf("failed to initialise libpackedobjectsd\n");
     exit(EXIT_FAILURE);
   }
+
   printf("waiting for search request...\n");
   while(1) 
     {     
+      int ret;
+      xmlDocPtr req = NULL;
+     
       if((req = packedobjectsd_receive(pod_obj)) == NULL) {
 	printf("message could not be received\n");
 	exit(EXIT_FAILURE);
@@ -74,6 +85,7 @@ int main(int argc, char *argv [])
       /* to ignore messages sent by itself */
       if((query_schema(req, "/video/message/search")) == 1) {
 	printf("request received\n");
+	xmlDocPtr doc_sent = NULL;
 	if((doc_sent = packedobjects_new_doc(xml_file)) == NULL) {
 	  printf("did not find .xml file");
 	  exit(EXIT_FAILURE);
@@ -83,16 +95,15 @@ int main(int argc, char *argv [])
 	  printf("message could not be sent\n");
 	  exit(EXIT_FAILURE);
 	}
-	
 	printf("video database is sent\n");
+	xmlFreeDoc(doc_sent);
       }
 
+      xmlFreeDoc(req);
       usleep(1000);
     }
 
-  xmlFreeDoc(req);
-  xmlFreeDoc(doc_sent);
-  /* free packedobjectsd */
+  /* free up memory but we should never reach here! */
   free_packedobjectsd(pod_obj);
 
   return EXIT_SUCCESS;

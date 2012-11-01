@@ -14,12 +14,13 @@
 /* releases for 'action' movies from server using packedobjectsd library */
 
 #include <stdio.h>
+#include <unistd.h>
 #include <packedobjectsd/packedobjectsd.h>
 
 int main(int argc, char *argv [])
 { 
   xmlDocPtr req = NULL;
-  const char *request = "search.xml";
+  const char *request = "search.xml";  /* should be created on the memory? */
   const char *schema_file = "video.xsd";
   packedobjectsdObject *pod_obj = NULL;
 
@@ -34,13 +35,15 @@ int main(int argc, char *argv [])
     exit(EXIT_FAILURE);
   }
 
-  /* send search request to the server */
+  while(1) {
+  /* send search request to the video server */
   if(packedobjectsd_send(pod_obj, req) == -1){
     printf("message could not be sent\n");
     exit(EXIT_FAILURE);
   }
-  printf("sent search request to the server\n");
- 
+  printf("search request sent to the video server\n");
+  usleep(1000);
+  }
   /* free up memory */
   xmlFreeDoc(req);
   free_packedobjectsd(pod_obj);
