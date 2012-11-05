@@ -14,7 +14,7 @@
 /* releases for 'action' & 'comedy' movies from server using packedobjectsd library */
 
 #include <stdio.h>
-#include <packedobjectsd/packedobjectsd.h>
+#include "packedobjectsd.h"
 
 int main(int argc, char *argv [])
 {

@@ -209,7 +209,7 @@ xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj)
     alert("Failed to decode with error %d.", pod_obj->pc->decode_error);
     return NULL;
   }
-  dbg("received %d bytes and decoded",pod_obj->pc->bytes);
+  dbg("data received and decoded");
   
   free(pdu);
   return doc;
@@ -223,12 +223,18 @@ int packedobjectsd_send(packedobjectsdObject *pod_obj, xmlDocPtr doc)
 
   pdu = packedobjects_encode(pod_obj->pc, doc);
   size =  pod_obj->pc->bytes;
-  
+  if (size == -1) {
+      fprintf(stderr, "Failed to encode with error %d.\n", pod_obj->pc->encode_error);
+      return size;
+    }
+
   if((rc = send_message(pod_obj->publisher_socket, pdu, size)) == -1) {
     alert("Error occurred while sending the message: %s", zmq_strerror (errno));
+    return rc;
   }
-  dbg("encoded to %d bytes and sent.",size);
-
+ 
+  dbg("data encoded and sent.");
+ 
   return rc;
 }
 

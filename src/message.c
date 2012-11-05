@@ -49,7 +49,7 @@ int send_message(void *socket, char *message, int message_length)
     alert("Error occurred during zmq_send(): %s", zmq_strerror (errno));
   }
   zmq_msg_close (&z_message);
-
+  dbg("size of message sent: %d bytes",message_length);
   return rc;
 }
 
@@ -80,7 +80,7 @@ char *receive_message(void *socket)
     zmq_msg_close (&z_message);
     message [size] = '\0';   
   }
- 
+  dbg("size of message received: %d bytes",size);
   return message;
 }
 

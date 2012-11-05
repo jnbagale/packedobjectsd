@@ -15,7 +15,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
-#include <packedobjectsd/packedobjectsd.h>
+#include "packedobjectsd.h"
 
 int main(int argc, char *argv [])
 { 
