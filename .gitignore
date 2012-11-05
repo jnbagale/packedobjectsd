@@ -28,7 +28,7 @@ examples/*.o
 examples/simple_server
 examples/simple_receiver
 examples/simple_searcher
-examples/multiple_client
+examples/multiple_receiver
 examples/multiple_server
 doc/tutorial.aux
 doc/tutorial.cp
