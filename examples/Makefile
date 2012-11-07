@@ -1,28 +1,17 @@
-INC=-I../src/ -I/usr/include/libxml2
-LIB= ../src/.libs/libpackedobjectsd.so 
+all: video_server.o video_searcher.o video_receiver.o 
+	gcc -o video_server video_server.o   -lpackedobjectsd 
+	gcc -o video_searcher video_searcher.o  -lpackedobjectsd 
+	gcc -o video_receiver video_receiver.o   -lpackedobjectsd
 
-all: simple_server.o simple_searcher.o simple_receiver.o multiple_server.o multiple_receiver.o
-	gcc -o simple_server simple_server.o   $(LIB) 
-	gcc -o simple_searcher simple_searcher.o  $(LIB) 
-	gcc -o simple_receiver simple_receiver.o   $(LIB)
-	gcc -o multiple_server multiple_server.o   $(LIB)
-	gcc -o multiple_receiver multiple_receiver.o   $(LIB)
-
-simple_server.o: simple_server.c
-	gcc -c simple_server.c  $(INC) 
-simple_searcher.o: simple_searcher.c
-	gcc -c simple_searcher.c  $(INC)
-simple_receiver.o: simple_receiver.c
-	gcc -c simple_receiver.c  $(INC)
-multiple_server.o: multiple_server.c
-	gcc -c multiple_server.c  $(INC) 
-multiple_receiver.o: multiple_receiver.c
-	gcc -c multiple_receiver.c  $(INC)
+video_server.o: video_server.c
+	gcc -c video_server.c  -lpackedobjectsd -I/usr/include/libxml2 
+video_searcher.o: video_searcher.c
+	gcc -c video_searcher.c  -lpackedobjectsd -I/usr/include/libxml2
+video_receiver.o: video_receiver.c
+	gcc -c video_receiver.c  -lpackedobjectsd -I/usr/include/libxml2
 
 clean:
 	rm -rf *.o
-	rm simple_server
-	rm simple_searcher
-	rm simple_receiver
-	rm multiple_receiver
-	rm multiple_server
+	rm video_server
+	rm video_searcher
+	rm video_receiver

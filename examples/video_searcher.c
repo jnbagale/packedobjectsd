@@ -10,12 +10,12 @@
 /* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the */
 /* GNU General Public License for more details. */
 
-/* A simple video library client example. The client will receive new video */
-/* releases for 'action' movies from server using packedobjectsd library */
+/* A simple video library searcher example. The searcher will send configuration e.g. frequency */
+/* to the server using packedobjectsd library */
 
 #include <stdio.h>
 #include <unistd.h>
-#include "packedobjectsd.h"
+#include <packedobjectsd/packedobjectsd.h>
 
 int main(int argc, char *argv [])
 { 
@@ -35,15 +35,13 @@ int main(int argc, char *argv [])
     exit(EXIT_FAILURE);
   }
 
-  while(1) {
   /* send search request to the video server */
   if(packedobjectsd_send(pod_obj, req) == -1){
     printf("message could not be sent\n");
     exit(EXIT_FAILURE);
   }
   printf("search request sent to the video server\n");
-  usleep(1000);
-  }
+
   /* free up memory */
   xmlFreeDoc(req);
   free_packedobjectsd(pod_obj);

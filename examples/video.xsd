@@ -44,7 +44,7 @@
 
   <xs:complexType name="searchType">
     <xs:sequence>
-      <xs:element name="title" type="string"/>
+      <xs:element name="frequency" type="integer"/>
     </xs:sequence>
   </xs:complexType>
 

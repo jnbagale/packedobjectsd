@@ -25,11 +25,9 @@ src/*.la
 src/*.lo
 src/packedobjectsdtest
 examples/*.o
-examples/simple_server
-examples/simple_receiver
-examples/simple_searcher
-examples/multiple_receiver
-examples/multiple_server
+examples/video_server
+examples/video_receiver
+examples/video_searcher
 doc/tutorial.aux
 doc/tutorial.cp
 doc/tutorial.cps

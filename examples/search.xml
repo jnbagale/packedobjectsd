@@ -2,7 +2,7 @@
 <video>
   <message>
     <search>
-      <title>any movie</title>
+      <frequency>10</frequency>
     </search>
   </message>
 </video>

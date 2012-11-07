@@ -11,11 +11,11 @@
 /* GNU General Public License for more details. */
 
 /* A simple video library client example. The client will receive new video */
-/* releases for 'action' movies from server using packedobjectsd library */
+/* releases for movies from server using packedobjectsd library */
 
 #include <stdio.h>
 #include <unistd.h>
-#include "packedobjectsd.h"
+#include <packedobjectsd/packedobjectsd.h>
 
 static int query_schema(xmlDocPtr req, xmlChar *xpath);
 
@@ -80,7 +80,7 @@ int main(int argc, char *argv [])
       }
       /* to ignore messages sent by the searcher program */
       if((query_schema(doc_received, "/video/message/response")) == 1) {
-	printf("video database is received\n");
+	printf("new release information is received\n");
 	packedobjects_dump_doc(doc_received);
       }
       xmlFreeDoc(doc_received);
@@ -88,7 +88,6 @@ int main(int argc, char *argv [])
     }
 
   /* free up memory but we should never reach here! */
-
   free_packedobjectsd(pod_obj);
 
   return EXIT_FAILURE;
