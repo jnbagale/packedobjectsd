@@ -2,18 +2,18 @@
 <video>
   <message>
     <response>
-      <title>skyfall</title>
-      <genre>action</genre>
-      <dateOfRelease>20121012</dateOfRelease>
-      <director>Sam Mendes</director>
-    </response>
-  </message>
-  <message>
-    <response>
-      <title>The dictator</title>
-      <genre>comedy</genre>
-      <dateOfRelease>20120515</dateOfRelease>
-      <director>Larry Charles</director>
+      <movie>
+	<title>skyfall</title>
+	<genre>action</genre>
+	<dateOfRelease>20121012</dateOfRelease>
+	<director>Sam Mendes</director>
+      </movie>
+      <movie>
+	<title>The dictator</title>
+	<genre>comedy</genre>
+	<dateOfRelease>20120515</dateOfRelease>
+	<director>Larry Charles</director>
+      </movie>
     </response>
   </message>
 </video>
