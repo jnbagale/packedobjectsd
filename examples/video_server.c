@@ -111,7 +111,7 @@ int main(int argc, char *argv [])
   while(1) 
     {     
       xmlDocPtr doc_sent = NULL;
-      if((doc_sent = packedobjects_new_doc(xml_file)) == NULL) {
+      if((doc_sent = init_xml_doc(xml_file)) == NULL) {
 	printf("did not find .xml file");
 	exit(EXIT_FAILURE);
       }

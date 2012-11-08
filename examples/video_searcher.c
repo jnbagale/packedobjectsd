@@ -30,7 +30,7 @@ int main(int argc, char *argv [])
     exit(EXIT_FAILURE);
   }
 
-  if((req = packedobjects_new_doc(request)) == NULL) {
+  if((req = init_xml_doc(request)) == NULL) {
     printf("did not find .xml file");
     exit(EXIT_FAILURE);
   }
