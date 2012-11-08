@@ -17,7 +17,8 @@
 #include <libxml/xmlschemas.h>
 #include <libxml/xmlschemastypes.h>
 
-char *xmlfile2hash(const char *schema_file); 
+xmlDoc *init_xml_doc(const char *file);
+char *xmlfile2hash(const char *file); 
 
 #endif
 /* End of xmlutils.h */
