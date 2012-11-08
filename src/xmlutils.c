@@ -18,11 +18,11 @@
 
 #include "xmlutils.h"
 
-static xmlChar *xmldoc2string(xmlDoc *doc, int *size);
+static xmlChar *xmldoc2string(xmlDocPtr doc, int *size);
 
-xmlDoc *init_xml_doc(const char *file)
+xmlDocPtr init_xml_doc(const char *file)
 {
-  xmlDoc *doc = NULL;
+  xmlDocPtr doc = NULL;
 
   xmlKeepBlanksDefault(0);
   doc = xmlReadFile(file, NULL, 0);
@@ -34,7 +34,7 @@ xmlDoc *init_xml_doc(const char *file)
   return doc;
 }
 
-xmlChar *xmldoc2string(xmlDoc *doc, int *size)
+xmlChar *xmldoc2string(xmlDocPtr doc, int *size)
 {
   xmlChar *xmlbuff;
 
@@ -49,7 +49,7 @@ char *xmlfile2hash(const char *file)
   int xml_size;
   char *xml_char;
   char *xml_hash;
-  xmlDoc *xml_doc;
+  xmlDocPtr xml_doc;
 
  /* Creating MD5 hash of the xml xml using crypt() function */
   xml_doc = init_xml_doc((char *)file); 
