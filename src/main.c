@@ -45,7 +45,6 @@ static void send_file(packedobjectsdObject *pod_obj, const char *xml_file)
   }
   send_count++;
   printf("message sent\n");
-  //packedobjects_dump_doc(doc_sent);
   xmlFreeDoc(doc_sent);
 }
 
@@ -58,7 +57,6 @@ static void receive_file(packedobjectsdObject *pod_obj)
   }
   receive_count++;
   printf("message received\n");
-  // packedobjects_dump_doc(doc_received);
   xmlFreeDoc(doc_received);
   
 }

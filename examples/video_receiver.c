@@ -81,7 +81,6 @@ int main(int argc, char *argv [])
       /* to ignore messages sent by the searcher program */
       if((query_schema(doc_received, "/video/message/response")) == 1) {
 	printf("new release information is received\n");
-	packedobjects_dump_doc(doc_received);
       }
       xmlFreeDoc(doc_received);
       usleep(1000);

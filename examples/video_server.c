@@ -121,7 +121,6 @@ int main(int argc, char *argv [])
 	exit(EXIT_FAILURE);
       }
       printf("new release information is sent\n");
-      //packedobjects_dump_doc(doc_sent);
       xmlFreeDoc(doc_sent);
   
       sleep(ret);
