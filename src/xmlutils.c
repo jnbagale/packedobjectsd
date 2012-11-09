@@ -34,6 +34,11 @@ xmlDocPtr init_xml_doc(const char *file)
   return doc;
 }
 
+void xml_dump_doc(xmlDocPtr doc)
+{
+  xmlSaveFormatFileEnc("-", doc, "UTF-8", 1);
+}
+
 xmlChar *xmldoc2string(xmlDocPtr doc, int *size)
 {
   xmlChar *xmlbuff;

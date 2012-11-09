@@ -21,7 +21,7 @@
 #ifdef DEBUG_MODE
 
 #define dbg(fmtstr, args...)					\
-  (printf(PROGNAME ":%s: " fmtstr "\n", __func__, ##args))
+  (printf("libpackedobjectsd" ":%s: " fmtstr "\n", __func__, ##args))
 #else
 #define dbg(dummy...)
 #endif
@@ -31,7 +31,7 @@
 #define alert(dummy...)
 #else
 #define alert(fmtstr, args...)						\
-  (fprintf(stderr, PROGNAME ":%s: " fmtstr "\n", __func__, ##args))
+  (fprintf(stderr, "libpackedobjectsd" ":%s: " fmtstr "\n", __func__, ##args))
 #endif
 
 int send_message(void *socket, char *message, int message_length) 
