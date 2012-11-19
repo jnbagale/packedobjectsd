@@ -15,6 +15,7 @@
 #include <string.h>     /* for strlen() */
 #include <stdlib.h>    /* for exit()   */
 #include <inttypes.h> /* for uint64_t */
+#include <zmq.h>  /* for ZeroMQ functions */
 
 #include "request.h"
 #include "xmlutils.h"
@@ -43,24 +44,28 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file)
 {
   char *schema_hash;
   packedobjectsdObject *pod_obj;
-
+ 
   if ((pod_obj = (packedobjectsdObject *) malloc(sizeof(packedobjectsdObject))) == NULL) {
     alert("failed to malloc packedobjectsdObject.");
     return NULL;
   }
 
   /* Initialise default values for initialisation */
+  pod_obj->error_code = 0;
   pod_obj->node_type = 'B';
   pod_obj->server_port = DEFAULT_SERVER_PORT ; 
   pod_obj->server_address = DEFAULT_SERVER_ADDRESS;
   pod_obj->pc = init_packedobjects(schema_file); 
   if(pod_obj->pc == NULL) {
-    alert("Failed to initialise libpackedobjects.");
+    // alert("Failed to initialise libpackedobjects.");
+    pod_obj->error_code = INIT_PO_FAILED;
     return NULL;
   }
 
   if((schema_hash = xmlfile2hash(schema_file)) == NULL) { /* Creat MD5 Hash of the XML schmea */
-    alert("Failed to create hash of the schema file.");
+    // alert("Failed to create hash of the schema file.");
+    pod_obj->error_code =  INVALID_SCHEMA_FILE;
+    return NULL;
   }
   dbg("schema_hash: %s", schema_hash);
  
@@ -68,7 +73,8 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file)
   case 'S':
     pod_obj = packedobjectsd_subscribe(pod_obj, schema_hash);
     if(pod_obj == NULL) {
-      alert("Failed to subscribe to packedobjectsd");
+      //alert("Failed to subscribe to packedobjectsd");
+      pod_obj->error_code =  SUBSCRIBE_FAILED;
       return NULL;
     }
     break;
@@ -76,7 +82,8 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file)
   case 'P':
     pod_obj = packedobjectsd_publish(pod_obj, schema_hash);
     if(pod_obj == NULL) {
-      alert("Failed to publish to packedobjectsd");
+      //alert("Failed to publish to packedobjectsd");
+      pod_obj->error_code = PUBLISH_FAILED;
       return NULL;
     }
     break;
@@ -84,17 +91,20 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file)
   case 'B':
     pod_obj = packedobjectsd_publish(pod_obj, schema_hash);
     if(pod_obj == NULL) {
-      alert("Failed to publish to packedobjectsd");
+      //alert("Failed to publish to packedobjectsd");
+      pod_obj->error_code = PUBLISH_FAILED;
       return NULL;
     }
     pod_obj = packedobjectsd_subscribe(pod_obj, schema_hash);
     if(pod_obj == NULL) {
-      alert("Failed to subscribe to packedobjectsd");
+      //alert("Failed to subscribe to packedobjectsd");
+      pod_obj->error_code =  SUBSCRIBE_FAILED;
       return NULL;
     }  
     break;
   default:
-    alert("Invalid node type."); /* Handle this properly */
+    //alert("Invalid node type."); /* Handle this properly */
+    pod_obj->error_code = INVALID_NODE_TYPE;
     return NULL;
   }
    
@@ -199,14 +209,19 @@ static packedobjectsdObject *packedobjectsd_publish(packedobjectsdObject *pod_ob
 xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj)
 {
   /* Reading the received message */
+  int size;
   char *pdu = NULL;
   xmlDocPtr doc = NULL;
 
-  pdu = receive_message(pod_obj->subscriber_socket);
-  doc = packedobjects_decode(pod_obj->pc, pdu);
+  if((pdu = receive_message(pod_obj->subscriber_socket, &size)) == NULL) {
+    pod_obj->error_code = RECEIVE_FAILED;
+    return NULL;
+  }
 
+  doc = packedobjects_decode(pod_obj->pc, pdu);
   if (pod_obj->pc->decode_error) {
-    alert("Failed to decode with error %d.", pod_obj->pc->decode_error);
+    // alert("Failed to decode with error %d.", pod_obj->pc->decode_error);
+    pod_obj->error_code = DECODE_FAILED;
     return NULL;
   }
   dbg("data received and decoded");
@@ -224,16 +239,18 @@ int packedobjectsd_send(packedobjectsdObject *pod_obj, xmlDocPtr doc)
   pdu = packedobjects_encode(pod_obj->pc, doc);
   size =  pod_obj->pc->bytes;
   if (size == -1) {
-      fprintf(stderr, "Failed to encode with error %d.\n", pod_obj->pc->encode_error);
+    // fprintf(stderr, "Failed to encode with error %d.\n", pod_obj->pc->encode_error);
+    pod_obj->error_code = ENCODE_FAILED;
       return size;
     }
 
   if((rc = send_message(pod_obj->publisher_socket, pdu, size)) == -1) {
-    alert("Error occurred while sending the message: %s", zmq_strerror (errno));
+    //alert("Error occurred while sending the message: %s", zmq_strerror (errno));
+    pod_obj->error_code = SEND_FAILED;
     return rc;
   }
  
-  dbg("data encoded and sent.");
+  dbg("data encoded and sent");
  
   return rc;
 }

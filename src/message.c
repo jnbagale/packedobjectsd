@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <string.h>    /* for  memcpy() & strlen() */
 #include <inttypes.h> /* for int64_t data type  */
+#include <zmq.h>  /* for ZeroMQ functions */
 
 #include "message.h"
 #include "config.h"
@@ -53,10 +54,11 @@ int send_message(void *socket, char *message, int message_length)
   return rc;
 }
 
-char *receive_message(void *socket) 
+char *receive_message(void *socket, int *message_length) 
 {
   int rc;
   int size;
+  *message_length = -1;
   char *message = NULL;
   zmq_msg_t z_message;
 
@@ -79,6 +81,7 @@ char *receive_message(void *socket)
     memcpy (message, zmq_msg_data (&z_message), size);
     zmq_msg_close (&z_message);
     message [size] = '\0';   
+    *message_length = size;
   }
   dbg("size of message received: %d bytes",size);
   return message;

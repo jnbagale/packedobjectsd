@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <string.h>     /* for strncat() & memcpy() */
 #include <stdlib.h>    /* for exit()   */
+#include <zmq.h>  /* for ZeroMQ functions */
 
 #include "request.h"
 #include "address.h"
@@ -156,7 +157,7 @@ char *get_broker_detail(char node_type, char *address, int port, char *schema_ha
     return NULL;
   }
 
-  if((buffer = receive_message(requester)) == NULL){
+  if((buffer = receive_message(requester, &size)) == NULL){
     alert("The received message is NULL\n");
     return NULL;
   }

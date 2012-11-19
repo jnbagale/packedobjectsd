@@ -114,11 +114,11 @@ $ ./packedobjectsdtest --schema foo.xsd --xml foo.xml
 There are only 4 main function calls which are made available by adding @code{#include <packedobjectsd/packedobjectsd.h>} to your code.
 @smallexample
 packedobjectsdObject *init_packedobjectsd(const char *schema_file);
-
+    It will return the packedobjectsdObject pointer on success and will return NULL on error and sets error_code as well
 int packedobjectsd_send(packedobjectsdObject *pod_obj, xmlDocPtr doc);
-
+    It will return number of bytes sent on success and will return -1 on error and sets error_code as well
 xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj);
-
+    It will return xmlDoc pointer on success and will return NULL on error and sets error_code as well           
 void free_packedobjectsd(packedobjectsdObject *pod_obj);
 
 @end smallexample
