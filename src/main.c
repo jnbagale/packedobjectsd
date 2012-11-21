@@ -28,7 +28,7 @@ static unsigned receive_count = 0;
 
 static void send_file(packedobjectsdObject *pod_obj, const char *xml_file);
 static void receive_file(packedobjectsdObject *pod_obj);
-static void exit_with_message(char *message);
+static void exit_with_message(const char *message);
 static void print_usage(void);
 
 static void send_file(packedobjectsdObject *pod_obj, const char *xml_file)
@@ -41,7 +41,7 @@ static void send_file(packedobjectsdObject *pod_obj, const char *xml_file)
   }
 
   if((ret = packedobjectsd_send(pod_obj, doc_sent)) == -1){
-    exit_with_message("message could not be sent\n");
+    exit_with_message(pod_strerror(pod_obj->error_code));
   }
   send_count++;
   printf("message sent\n");
@@ -53,7 +53,7 @@ static void receive_file(packedobjectsdObject *pod_obj)
   xmlDocPtr doc_received = NULL;
 
   if((doc_received = packedobjectsd_receive(pod_obj)) == NULL) {
-    exit_with_message("message could not be received\n");
+    exit_with_message(pod_strerror(pod_obj->error_code));
   }
   receive_count++;
   printf("message received\n");
@@ -61,7 +61,7 @@ static void receive_file(packedobjectsdObject *pod_obj)
   
 }
 
-static void exit_with_message(char *message)
+static void exit_with_message(const char *message)
 {
   printf("Failed to run: %s\n", message);
   exit(EXIT_FAILURE);
@@ -123,14 +123,14 @@ int main (int argc, char *argv [])
       }
   }
 
-  // do some simple checking
+  //do some simple checking
 
   if (!schema_file) exit_with_message("did not specify --schema file");
   if (!xml_file) exit_with_message("did not specify --xml file");
 
   /* Initialise packedobjectsd */
   if((pod_obj = init_packedobjectsd(schema_file)) == NULL) {
-    exit_with_message("failed to initialise libpackedobjectsd\n");
+    exit_with_message(pod_strerror(pod_obj->error_code));
   }
   sleep(1); /* Allow broker to start if it's not already running */
 
