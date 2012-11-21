@@ -18,7 +18,7 @@
 #include <libxml/xmlschemastypes.h>
 
 xmlDocPtr init_xml_doc(const char *file);
-void xml_dump_doc(xmlDocPtr doc);
+int xml_dump_doc(xmlDocPtr doc);
 char *xmlfile2hash(const char *file); 
 
 #endif

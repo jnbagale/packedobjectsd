@@ -17,6 +17,7 @@
 #include <inttypes.h> /* for uint64_t */
 #include <zmq.h>  /* for ZeroMQ functions */
 
+#include "config.h"
 #include "request.h"
 #include "xmlutils.h"
 #include "packedobjectsd.h"
