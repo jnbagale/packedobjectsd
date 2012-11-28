@@ -53,11 +53,13 @@ typedef struct {
   void *subscriber_context;
   void *publisher_socket;
   void *subscriber_socket;
-  char *schema_file;
+  char *schema_hash;
   char *server_address;
   char *publisher_endpoint;
   char *subscriber_endpoint;
   char node_type;    /* Subscriber 'S'; Publisher 'P'; Both 'B' */
+  int bytes_sent;
+  int bytes_received;
   int error_code;
   int server_port;
   packedobjectsContext *pc;

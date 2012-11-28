@@ -43,7 +43,6 @@ static packedobjectsdObject *packedobjectsd_publish(packedobjectsdObject *pod_ob
 
 packedobjectsdObject *init_packedobjectsd(const char *schema_file)
 {
-  char *schema_hash;
   packedobjectsdObject *pod_obj;
  
   if ((pod_obj = (packedobjectsdObject *) malloc(sizeof(packedobjectsdObject))) == NULL) {
@@ -63,16 +62,16 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file)
     return NULL;
   }
 
-  if((schema_hash = xmlfile2hash(schema_file)) == NULL) { /* Creat MD5 Hash of the XML schmea */
+  if((pod_obj->schema_hash = xml_to_md5hash(schema_file)) == NULL) { /* Creat MD5 Hash of the XML schmea */
     //alert("Failed to create hash of the schema file.");
     pod_obj->error_code =  INVALID_SCHEMA_FILE;
     return NULL;
   }
-  dbg("schema_hash: %s", schema_hash);
+  dbg("schema_hash: %s", pod_obj->schema_hash);
  
   switch (pod_obj->node_type) {
   case 'S':
-    pod_obj = packedobjectsd_subscribe(pod_obj, schema_hash);
+    pod_obj = packedobjectsd_subscribe(pod_obj, pod_obj->schema_hash);
     if(pod_obj == NULL) {
       //alert("Failed to subscribe to packedobjectsd");
       pod_obj->error_code =  SUBSCRIBE_FAILED;
@@ -81,7 +80,7 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file)
     break;
 
   case 'P':
-    pod_obj = packedobjectsd_publish(pod_obj, schema_hash);
+    pod_obj = packedobjectsd_publish(pod_obj, pod_obj->schema_hash);
     if(pod_obj == NULL) {
       //alert("Failed to publish to packedobjectsd");
       pod_obj->error_code = PUBLISH_FAILED;
@@ -90,13 +89,13 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file)
     break;
    
   case 'B':
-    pod_obj = packedobjectsd_publish(pod_obj, schema_hash);
+    pod_obj = packedobjectsd_publish(pod_obj, pod_obj->schema_hash);
     if(pod_obj == NULL) {
       //alert("Failed to publish to packedobjectsd");
       pod_obj->error_code = PUBLISH_FAILED;
       return NULL;
     }
-    pod_obj = packedobjectsd_subscribe(pod_obj, schema_hash);
+    pod_obj = packedobjectsd_subscribe(pod_obj, pod_obj->schema_hash);
     if(pod_obj == NULL) {
       //alert("Failed to subscribe to packedobjectsd");
       pod_obj->error_code =  SUBSCRIBE_FAILED;
@@ -218,6 +217,7 @@ xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj)
     pod_obj->error_code = RECEIVE_FAILED;
     return NULL;
   }
+  pod_obj->bytes_received = size;
 
   doc = packedobjects_decode(pod_obj->pc, pdu);
   if (pod_obj->pc->decode_error) {
@@ -244,6 +244,7 @@ int packedobjectsd_send(packedobjectsdObject *pod_obj, xmlDocPtr doc)
     pod_obj->error_code = ENCODE_FAILED;
       return size;
     }
+  pod_obj->bytes_sent = size;
 
   if((rc = send_message(pod_obj->publisher_socket, pdu, size)) == -1) {
     //alert("Error occurred while sending the message: %s", zmq_strerror (errno));
@@ -271,8 +272,9 @@ void free_packedobjectsd(packedobjectsdObject *pod_obj)
     }
 
     free_packedobjects(pod_obj->pc);
+    free(pod_obj->schema_hash);
     free(pod_obj);
-    dbg("freeing packedobjectsd is successful");
+    dbg("successfully freed packedobjectsd");
   }
 }
 

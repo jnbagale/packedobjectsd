@@ -74,7 +74,7 @@ char *receive_message(void *socket, int *message_length)
 
   size = zmq_msg_size (&z_message);
   if(size > 0) {
-    if((message = malloc(size)) == NULL){
+    if((message = malloc(size + 1)) == NULL){
       alert("Failed to allocated message");
       return NULL;
     }

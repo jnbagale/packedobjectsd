@@ -140,8 +140,8 @@ A very simple program demonstrating the API is as follows:
 int main ()
 {
   packedobjectsdObject *pod_obj = NULL;
-  xmlDocPtr doc_send = NULL;
-  xmlDocPtr doc_receive = NULL;
+  xmlDocPtr doc_sent = NULL;
+  xmlDocPtr doc_received = NULL;
 
   ///////////////////// Initialising ///////////////////
 
@@ -157,32 +157,36 @@ int main ()
   ////////////////////// Sending XML data //////////////////////
  
   /* create an XML DOM */
-  if((doc_send = init_xml_doc(XML_DATA)) == NULL) {
+  if((doc_sent = xml_new_doc(XML_DATA)) == NULL) {
     printf("did not find .xml file");
     exit(1);
   }
 
   /* send the XML DOM */
-  if(packedobjectsd_send(pod_obj, doc_send) == -1){
+  if(packedobjectsd_send(pod_obj, doc_sent) == -1){
     printf("failed to send with error %s", pod_strerror(pod_obj->error_code));
     exit(1);
   }
- 
+
+  printf("size of the original xml: %d bytes\n", xml_doc_size(doc_sent));
+  printf("size after the encoding: %d bytes\n", pod_obj->bytes_sent);
   /* free the XML DOM */
-  xmlFreeDoc(doc_send);
+  xmlFreeDoc(doc_sent);
  
   ////////////////////// Receiving XML data //////////////////////
  
-  if((doc_receive = packedobjectsd_receive(pod_obj)) == NULL) {
+  if((doc_received = packedobjectsd_receive(pod_obj)) == NULL) {
     printf("failed to receive with error %s", pod_strerror(pod_obj->error_code));
     exit(1);
   }
   
-  /* output the DOM for checking */
-  xml_dump_doc(doc_receive);
+  printf("size before the decoding: %d bytes\n", pod_obj->bytes_received);
+  printf("size of the decoced xml: %d bytes \n", xml_doc_size(doc_received));
 
+  /* output the DOM for checking */
+  xml_dump_doc(doc_received);
   /* free the XML DOM */
-  xmlFreeDoc(doc_receive);
+  xmlFreeDoc(doc_received);
 
   ////////////////////// Freeing //////////////////////
 
@@ -201,25 +205,15 @@ helloworld.xsd
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:include schemaLocation="http://zedstar.org/xml/schema/packedobjectsDataTypes.xsd"/>
-  <xs:element name="foo">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element name="bar" type="string"/>
-	        <xs:element name="baz" type="string"/>
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-</xs:schema>
+              <xs:element name="foo" type="string"/>
+</xs:schema>  
 @end smallexample
 
 @noindent
 helloworld.xml
 @smallexample
 <?xml version="1.0" encoding="UTF-8"?>
-<foo>
-  <bar>Hello</bar>
-  <baz>World!</baz>
-</foo>
+<foo>Hello World!</foo> 
 @end smallexample
 
     

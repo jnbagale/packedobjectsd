@@ -56,7 +56,7 @@ int serialize_request(char *buffer, Request *req) /* Add host to network order c
   offset = sizeof(req->node_type);
   memcpy(buffer + offset, req->schema_hash, strlen(req->schema_hash) + 1);
   offset = offset + strlen(req->schema_hash) + 1;
-  dbg("serialize offset:%d",offset);
+  dbg("serialize request offset:%d",offset);
 
   return offset;
 }
@@ -74,16 +74,14 @@ int deserialize_request(char *buffer, Request *req)  /* Add network to host orde
   offset = sizeof(req->node_type);
   memcpy(req->schema_hash, buffer + offset, strlen(buffer + offset) + 1);
   offset = offset + strlen(buffer + offset) + 1;
-  dbg("deserialize offset:%d",offset);
+  dbg("deserialize request offset:%d",offset);
 
   return offset;
 }
 
 void free_request_object(Request *req) 
 {
-  if(req->schema_hash != NULL) {
-    free(req->schema_hash);
-  }
+  free(req->schema_hash);
   free(req);
 }
 
@@ -151,11 +149,6 @@ char *get_broker_detail(char node_type, char *address, int port, char *schema_ha
     alert("Failed to send request structure to server: %s", zmq_strerror (errno));
     return NULL;
   }
-   
-  if((buffer = malloc(MAX_BUFFER_SIZE)) == NULL){
-    alert("Failed to allocate hash schema");
-    return NULL;
-  }
 
   if((buffer = receive_message(requester, &size)) == NULL){
     alert("The received message is NULL\n");
@@ -185,12 +178,12 @@ char *get_broker_detail(char node_type, char *address, int port, char *schema_ha
   }
     
   /* Freeing up context, socket and pointers */
+  free_request_object(req);
   free_address_object(addr);
   zmq_close(requester);
   zmq_term(context);
   free(endpoint);
   free(buffer);
-  free(req); 
   free(req_buffer);
 
   return broker_address;

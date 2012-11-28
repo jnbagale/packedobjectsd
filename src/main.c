@@ -36,7 +36,7 @@ static void send_file(packedobjectsdObject *pod_obj, const char *xml_file)
   int ret;
   xmlDocPtr doc_sent = NULL;
 
-  if((doc_sent = init_xml_doc(xml_file)) == NULL) {
+  if((doc_sent = xml_new_doc(xml_file)) == NULL) {
     exit_with_message("did not find .xml file");
   }
 

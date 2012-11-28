@@ -18,9 +18,9 @@
 
 #include "xmlutils.h"
 
-static xmlChar *xmldoc2string(xmlDocPtr doc, int *size);
+static xmlChar *xml_to_string(xmlDocPtr doc, int *size);
 
-xmlDocPtr init_xml_doc(const char *file)
+xmlDocPtr xml_new_doc(const char *file)
 {
   xmlDocPtr doc = NULL;
 
@@ -34,25 +34,33 @@ xmlDocPtr init_xml_doc(const char *file)
   return doc;
 }
 
-int xml_dump_doc(xmlDocPtr doc)
+int xml_doc_size(xmlDocPtr doc)
 {
-  int size;
-  size =  xmlSaveFormatFileEnc("-", doc, "UTF-8", 1);
-  //printf("size of xml in bytes: %d\n", size);
+  int size = -1;
+  xmlChar *xmlbuff;
+
+  xmlDocDumpFormatMemoryEnc(doc, &xmlbuff, &size,"UTF-8", 1);
+  free(xmlbuff);
+
   return size;
 }
 
-xmlChar *xmldoc2string(xmlDocPtr doc, int *size)
+void xml_dump_doc(xmlDocPtr doc)
 {
-  xmlChar *xmlbuff;
+  xmlSaveFormatFileEnc("-", doc, "UTF-8", 1);
+}
 
-  xmlDocDumpFormatMemory(doc, &xmlbuff, size, 0);
+xmlChar *xml_to_string(xmlDocPtr doc, int *size)
+{
+  xmlChar *xmlbuff; 
+
+  xmlDocDumpFormatMemory(doc, &xmlbuff, size, 0); /* xmlbuff to be freed with xmlFree() by the caller of this function */
   
   return xmlbuff;
 
 }
 
-char *xmlfile2hash(const char *file) 
+char *xml_to_md5hash(const char *file) 
 {
   int xml_size;
   char *xml_char;
@@ -60,19 +68,19 @@ char *xmlfile2hash(const char *file)
   xmlDocPtr xml_doc;
 
  /* Creating MD5 hash of the xml xml using crypt() function */
-  xml_doc = init_xml_doc((char *)file); 
+  xml_doc = xml_new_doc((char *)file); 
   if(xml_doc == NULL) {
     // printf("Could not create XML doc");
     return NULL;
   }
-  xml_char = (char *)xmldoc2string(xml_doc, &xml_size);
+  xml_char = (char *)xml_to_string(xml_doc, &xml_size);
   xml_hash = crypt(xml_char, "$1$"); /* $1$ is MD5 */
 
   /* Freeing up unused memory */
   free(xml_char);
   xmlFreeDoc(xml_doc);
 
-  return xml_hash;
+  return xml_hash; 
 }
 
 /* End of xmlutils.c */
