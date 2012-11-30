@@ -1,16 +1,4 @@
 
-/* Copyright (C) 2009-2011 The Clashing Rocks Team */
-
-/* This program is free software: you can redistribute it and/or modify */
-/* it under the terms of the GNU General Public License as published by */
-/* the Free Software Foundation, either version 3 of the License, or */
-/* (at your option) any later version. */
-
-/* This program is distributed in the hope that it will be useful, */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the */
-/* GNU General Public License for more details. */
-
 #include <stdio.h>
 #include <string.h>     /* for strlen() */
 #include <stdlib.h>    /* for exit()   */
@@ -53,6 +41,8 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file)
   /* Initialise default values for initialisation */
   pod_obj->error_code = 0;
   pod_obj->node_type = 'B';
+  pod_obj->bytes_sent = -1;
+  pod_obj->bytes_received = -1;
   pod_obj->server_port = DEFAULT_SERVER_PORT ; 
   pod_obj->server_address = DEFAULT_SERVER_ADDRESS;
   pod_obj->pc = init_packedobjects(schema_file); 

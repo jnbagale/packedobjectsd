@@ -1,15 +1,3 @@
-/* Copyright (C) 2009-2011 The Clashing Rocks Team */
-
-/* This program is free software: you can redistribute it and/or modify */
-/* it under the terms of the GNU General Public License as published by */
-/* the Free Software Foundation, either version 3 of the License, or */
-/* (at your option) any later version. */
-
-/* This program is distributed in the hope that it will be useful, */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the */
-/* GNU General Public License for more details. */
-
 /* A packedobjectsd test program which implements both publisher and subscriber */
 /* Subscriber connects to server and receives messages */
 /* Publisher connects to server and sends messages */
