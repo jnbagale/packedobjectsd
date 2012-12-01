@@ -23,7 +23,7 @@
 #define DEFAULT_SERVER_ADDRESS "ec2-107-20-219-103.compute-1.amazonaws.com" /* the default lookup server address */
 #define DEFAULT_SERVER_PORT 5555  /* the default lookup server port */
 
-enum ERROR_CODE {
+enum {
   INVALID_NODE_TYPE,
   INVALID_SCHEMA_FILE,
   SUBSCRIBE_FAILED,
@@ -33,7 +33,8 @@ enum ERROR_CODE {
   RECEIVE_FAILED,
   DECODE_FAILED,
   SEND_FAILED,
-  ENCODE_FAILED
+  ENCODE_FAILED,
+  UNDEFINED
 };
 
 typedef struct {
