@@ -1,7 +1,6 @@
 
 #include <stdio.h>
 #include <string.h>    /* for  memcpy() & strlen() */
-#include <inttypes.h> /* for int64_t data type  */
 #include <zmq.h>  /* for ZeroMQ functions */
 
 #include "message.h"

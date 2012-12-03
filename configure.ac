@@ -29,12 +29,6 @@ AC_TYPE_SIZE_T
 # Checks for library functions.
 AC_FUNC_MALLOC
 
-# Check for berkeley db library and header
-#AC_SEARCH_LIBS([db_create], [db], [have_libdb=yes])
-AC_CHECK_LIB(db, db_create, , AC_MSG_ERROR(*** berkeley db library not found))
-AC_CHECK_HEADERS(db.h)
-
-
 # Check for pthreads library and header
 AC_CHECK_LIB(pthread, pthread_create, , AC_MSG_ERROR(*** pthread library not found))
 AC_CHECK_HEADERS(pthread.h,, [AC_MSG_ERROR([pthread.h required])])
