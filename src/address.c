@@ -17,7 +17,7 @@ Address *make_address_object(void)
   return addr;
 }
 
-Address *create_address(Address *addr, char *address, int port_in, int port_out, long pid ) 
+Address *create_address(Address *addr, char *address, int port_in, int port_out, int pid) 
 {
   addr->pid = pid;
   addr->port_in = port_in;
