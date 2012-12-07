@@ -30,7 +30,7 @@ int main(int argc, char *argv [])
     exit(EXIT_FAILURE);
   }
 
-  if((req = init_xml_doc(request)) == NULL) {
+  if((req = xml_new_doc(request)) == NULL) {
     printf("did not find .xml file");
     exit(EXIT_FAILURE);
   }
