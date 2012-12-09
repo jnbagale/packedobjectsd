@@ -56,12 +56,7 @@ static int get_frequency(xmlDocPtr req, xmlChar *xpath)
   }
 
   xmlNodePtr cur = xmlDocGetRootElement(req);
-  /* if (xmlStrcmp(cur->name, (const xmlChar *) "video")) { */
-  /*   fprintf(stderr,"document of the wrong type, root node != video"); */
-  /*   xmlFreeDoc(req); */
-  /*   return -1; */
-  /* } */
-
+ 
   while(cur != NULL)
     {
       if(!(xmlStrcmp(cur->name, (const xmlChar *)"frequency")))
@@ -120,7 +115,7 @@ int main(int argc, char *argv [])
 	printf("message could not be sent\n");
 	exit(EXIT_FAILURE);
       }
-      printf("new release information is sent\n");
+      // printf("new release information is sent\n");
       xmlFreeDoc(doc_sent);
   
       sleep(ret);
