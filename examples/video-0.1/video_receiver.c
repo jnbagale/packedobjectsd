@@ -14,6 +14,7 @@
 /* releases for movies from server using packedobjectsd library */
 
 #include <stdio.h>
+#include <time.h>
 #include <unistd.h>
 #include <packedobjectsd/packedobjectsd.h>
 
@@ -61,8 +62,10 @@ static int query_schema(xmlDocPtr req, xmlChar *xpath)
 
 int main(int argc, char *argv [])
 { 
+  int count = 0;
   packedobjectsdObject *pod_obj = NULL;
   const char *schema_file = "video.xsd";
+  
 
   /* Initialise packedobjectsd */
   if((pod_obj = init_packedobjectsd(schema_file)) == NULL) {
@@ -80,7 +83,9 @@ int main(int argc, char *argv [])
       }
       /* to ignore messages sent by the searcher program */
       if((query_schema(doc_received, "/video/message/response")) == 1) {
-	printf("new release information is received\n");
+	count++;
+	
+	printf("new video release information is received at %d\n", count);
 	xml_dump_doc(doc_received);
       }
       xmlFreeDoc(doc_received);

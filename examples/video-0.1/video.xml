@@ -14,6 +14,12 @@
 	<dateOfRelease>20120515</dateOfRelease>
 	<director>Larry Charles</director>
       </movie>
+      <movie>
+	<title>Madagascar 3</title>
+	<genre>comedy</genre>
+	<dateOfRelease>20120515</dateOfRelease>
+	<director>i don't know </director>
+      </movie>
     </response>
   </message>
 </video>
