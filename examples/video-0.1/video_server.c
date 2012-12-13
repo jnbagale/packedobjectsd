@@ -88,7 +88,7 @@ void *process_searcher(void *pod_obj)
 
   while(1)
     {
-      if((req = packedobjectsd_receive(pod_obj)) == NULL) {
+      if((req = packedobjectsd_receive(pod_object)) == NULL) {
 	printf("message could not be received\n");
 	exit(EXIT_FAILURE);
       }
@@ -115,7 +115,7 @@ void *process_receiver( void *pod_obj)
 	exit(EXIT_FAILURE);
       }  
 
-      if(packedobjectsd_send(pod_obj, doc_sent) == -1){
+      if(packedobjectsd_send(pod_object, doc_sent) == -1){
 	printf("message could not be sent\n");
 	exit(EXIT_FAILURE);
       }

@@ -29,13 +29,15 @@ examples/video_server
 examples/video_receiver
 examples/video_searcher
 examples/*.o
+examples/helloworld-0.1/*.o
 examples/helloworld-0.1/helloworld
 examples/video-0.1/*.o
 examples/video-0.1/video_server
 examples/video-0.1/video_receiver
 examples/video-0.1/video_searcher
-examples/helloworld-0.1/*.o
-examples/helloworld-0.1/helloworld
+examples/video-0.2/*.o
+examples/video-0.2/video_client
+examples/video-0.2/video_searcher
 doc/tutorial.aux
 doc/tutorial.cp
 doc/tutorial.cps
