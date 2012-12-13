@@ -19,10 +19,33 @@
 #include <string.h>
 #include <packedobjectsd/packedobjectsd.h>
 
+/* global variables */
 static const char *search_file = "search.xml";
 static  const char *schema_file = "video.xsd";
 
-void broadcast_search( packedobjectsdObject *pod_obj)
+/* function prototypes */
+void receive_response(packedobjectsdObject *pod_obj);
+void broadcast_search(packedobjectsdObject *pod_obj);
+
+/* function definitions */
+void receive_response(packedobjectsdObject *pod_obj)
+{
+  while(1)
+    {
+      printf("waiting for search response...\n");
+      xmlDocPtr doc_response = NULL;
+      if((doc_response = packedobjectsd_receive(pod_obj)) == NULL) {
+	printf("message could not be received\n");
+	exit(EXIT_FAILURE);
+      }
+
+      printf("search response received...\n");
+      xml_dump_doc(doc_response);
+      xmlFreeDoc(doc_response);
+    }
+}
+
+void broadcast_search(packedobjectsdObject *pod_obj)
 {
   xmlDocPtr doc_sent = NULL;
   printf("sending  search broadcast...\n");
@@ -42,6 +65,7 @@ void broadcast_search( packedobjectsdObject *pod_obj)
   xmlFreeDoc(doc_sent);
 }
 
+/* main function */
 int main(int argc, char *argv [])
 { 
   packedobjectsdObject *pod_obj = NULL;
@@ -54,6 +78,9 @@ int main(int argc, char *argv [])
 
   /* call function to send search broadcast */
   broadcast_search(pod_obj);
+
+  /* call function to receive search response */
+  receive_response(pod_obj);
 
   free_packedobjectsd(pod_obj);
   return EXIT_SUCCESS;

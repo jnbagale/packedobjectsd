@@ -25,18 +25,19 @@ static const char *xml_file = "database.xml";
 static  const char *schema_file = "video.xsd";
 
 /* function prototypes */
-static int retrieve_details(xmlDocPtr search, xmlChar *xpath);
+void send_response(packedobjectsdObject *pod_obj, char *client_id, char *movie_title, double price, char *sender_id);
+void process_response(packedobjectsdObject *pod_obj, char *sender_id, char *movie_title, double max_price);
 void process_search(packedobjectsdObject *pod_obj);
-void process_response(char *sender_id, char *movie_title, double max_price);
-void send_response(char *client_id, char *movie_title, double price, char *sender_id);
+int retrieve_details(packedobjectsdObject *pod_obj, xmlDocPtr search, xmlChar *xpath);
+
 
 /* function definitions */
-void send_response(char *client_id, char *movie_title, double price, char *sender_id)
+void send_response(packedobjectsdObject *pod_obj, char *client_id, char *movie_title, double price, char *sender_id)
 {
   /* create xml doc to send to the searcher */
   char price_string[50];
   sprintf(price_string,"%g", price);
-  printf("price %g, price_string %s:", price, price_string);
+ 
   xmlDocPtr doc_response = NULL;
   xmlNodePtr video_node = NULL, message_node = NULL, response_node = NULL;
   
@@ -58,11 +59,22 @@ void send_response(char *client_id, char *movie_title, double price, char *sende
   xmlNewChild(response_node, NULL, BAD_CAST "price", BAD_CAST price_string);
 
   printf("created xml doc to send to the searcher\n");  
-  xml_dump_doc(doc_response);
+  //xml_dump_doc(doc_response);
+
+  /* send the response doc to the searcher as broadcast */
+  printf("sending  search response broadcast...\n");
+
+  if(packedobjectsd_send(pod_obj, doc_response) == -1){
+    printf("message could not be sent\n");
+    exit(EXIT_FAILURE);
+  }
+  printf("search response broadcast sent...\n");
+
+  xmlFreeDoc(doc_response);
 
 }
 
-void process_response(char *sender_id, char *movie_title, double max_price)
+void process_response(packedobjectsdObject *pod_obj, char *sender_id, char *movie_title, double max_price)
 {
   double price;
   char *client_id = NULL;
@@ -100,6 +112,7 @@ void process_response(char *sender_id, char *movie_title, double max_price)
 		  title = strdup((char *)key);
 		  xmlFree(key);	  
 		}
+
 	      if(!(xmlStrcmp(cur->name, (const xmlChar *)"price"))) {
 		xmlChar *key;
 		key = xmlNodeListGetString(doc_database, cur->xmlChildrenNode, 1);
@@ -121,7 +134,7 @@ void process_response(char *sender_id, char *movie_title, double max_price)
     if(price <= max_price) {
       printf("the movie exists on the database and matches price limit\n");
       // send response to searcher
-      send_response(client_id, movie_title, price, sender_id);
+      send_response(pod_obj, client_id, movie_title, price, sender_id);
     }
     else {
       printf("the movie exists on the database but does not match price limit\n");
@@ -136,7 +149,7 @@ void process_response(char *sender_id, char *movie_title, double max_price)
   xmlFreeDoc(doc_database);
 }
 
-static int retrieve_details(xmlDocPtr doc_search, xmlChar *xpath)
+int retrieve_details(packedobjectsdObject *pod_obj, xmlDocPtr doc_search, xmlChar *xpath)
 {
   double max_price;
   char *sender_id = NULL;
@@ -166,7 +179,7 @@ static int retrieve_details(xmlDocPtr doc_search, xmlChar *xpath)
     xmlXPathFreeContext(xpathp);
     return -1;
   }
-
+  /* xml doc does not match video/message/search */
   if(xmlXPathNodeSetIsEmpty(result->nodesetval)) {
     xmlXPathFreeObject(result); 
     xmlXPathFreeContext(xpathp);
@@ -210,7 +223,8 @@ static int retrieve_details(xmlDocPtr doc_search, xmlChar *xpath)
 	  printf("              max price: %g\n\n", max_price);
 
 	  /* checking if search request matches data on the database */
-	  process_response(sender_id, movie_title, max_price);
+	  process_response(pod_obj, sender_id, movie_title, max_price);
+
 	  free(sender_id);
 	  free(movie_title);
 	  break;
@@ -239,9 +253,10 @@ void process_search(packedobjectsdObject *pod_obj)
 	exit(EXIT_FAILURE);
       }
       printf("search request received and started processing...\n");
-      ret = retrieve_details(doc_search, "/video/message/search");
+      // xml_dump_doc(doc_search);
+      ret = retrieve_details(pod_obj, doc_search, "/video/message/search");
       if(ret != -1) {
-	printf("search request processed\n");
+	printf("search request processed successfully\n");
       }
       xmlFreeDoc(doc_search);
     }
