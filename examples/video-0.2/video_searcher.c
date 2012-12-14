@@ -20,16 +20,132 @@
 #include <packedobjectsd/packedobjectsd.h>
 
 /* global variables */
-static const char *search_file = "search.xml";
-static  const char *schema_file = "video.xsd";
+#define XML_DATA "search.xml"
+#define XML_SCHEMA "video.xsd"
 
 /* function prototypes */
+int process_response(xmlDocPtr doc_response, xmlChar *xpath);
 void receive_response(packedobjectsdObject *pod_obj);
 void broadcast_search(packedobjectsdObject *pod_obj);
 
 /* function definitions */
-void receive_response(packedobjectsdObject *pod_obj)
+int process_response(xmlDocPtr doc_response, xmlChar *xpath)
 {
+  /* Declare variables */
+  char *sender_id = NULL;
+  xmlXPathContextPtr xpathp = NULL;
+  xmlXPathObjectPtr result = NULL;
+
+  ///////////////////// Initialising XPATH ///////////////////
+
+  /* setup xpath context */
+  xpathp = xmlXPathNewContext(doc_response);
+  if (xpathp == NULL) {
+    printf("Error in xmlXPathNewContext.");
+    xmlXPathFreeContext(xpathp);
+    return -1;
+  }
+
+  if(xmlXPathRegisterNs(xpathp, (const xmlChar *)NSPREFIX, (const xmlChar *)NSURL) != 0) {
+    printf("Error: unable to register NS.");
+    xmlXPathFreeContext(xpathp);
+    return -1;
+  }
+
+  ///////////////////// Evaluating XPATH expression ///////////////////
+
+  /* evaluate xpath expression */
+  result = xmlXPathEvalExpression(xpath, xpathp);
+  if (result == NULL) {
+    printf("Error in xmlXPathEvalExpression.");
+    xmlXPathFreeObject(result); 
+    xmlXPathFreeContext(xpathp);
+    return -1;
+  }
+
+  /* check if  xml doc matches "/video/message/response" */
+  if(xmlXPathNodeSetIsEmpty(result->nodesetval)) {
+    xmlXPathFreeObject(result); 
+    xmlXPathFreeContext(xpathp);
+    return -1;
+  }
+
+  ///////////////////// Processing XML document ///////////////////
+
+  /* the xml doc matches "/video/message/response" */
+  xmlNodePtr cur = xmlDocGetRootElement(doc_response);
+  while(cur != NULL)
+    {
+      if(!(xmlStrcmp(cur->name, (const xmlChar *)"sender-id")))
+	{
+	  while(cur != NULL) 
+	    {
+	      if(!(xmlStrcmp(cur->name, (const xmlChar *)"sender-id")))
+		{
+		  xmlChar *key;
+		  key = xmlNodeListGetString(doc_response, cur->xmlChildrenNode, 1);
+		  sender_id = strdup((char *)key);
+		  xmlFree(key);	  
+		}
+	      
+	      cur = cur->next; /* traverse to the next XML element */
+	    }
+	  printf("sender id %s\n", sender_id);
+
+	  if((strcmp(sender_id, "21081203") == 0)) {
+	    free(sender_id);
+	    return 1;
+	  }
+	  break; /* exit while loop */
+	}
+      cur = cur->xmlChildrenNode; /* traverse to next xml node */
+
+    }
+
+  ///////////////////// Freeing ///////////////////
+
+  xmlXPathFreeObject(result); 
+  xmlXPathFreeContext(xpathp);
+  
+  return -1;
+}
+
+/* main function */
+int main(int argc, char *argv [])
+{ 
+  /* Declare variables */
+  int ret;
+  packedobjectsdObject *pod_obj = NULL;
+  
+  ///////////////////// Initialising packedobjectsd ///////////////////
+
+  /* Initialise packedobjectsd */
+  if((pod_obj = init_packedobjectsd(XML_SCHEMA)) == NULL) {
+    printf("failed to initialise libpackedobjectsd\n");
+    exit(EXIT_FAILURE);
+  }
+
+  ///////////////////// Sending search broadcast ///////////////////
+  
+  /* initialising search XML document */
+  xmlDocPtr doc_sent = NULL;
+  if((doc_sent = xml_new_doc(XML_DATA)) == NULL) {
+    printf("did not find .xml file");
+    exit(EXIT_FAILURE);
+  }  
+
+  /* sending search XML document */
+  if(packedobjectsd_send(pod_obj, doc_sent) == -1){
+    printf("message could not be sent\n");
+    exit(EXIT_FAILURE);
+  }
+  printf("search broadcast sent...\n");
+  xml_dump_doc(doc_sent);
+  /* freeing */
+  xmlFreeDoc(doc_sent);
+ 
+  ///////////////////// Receiving search response ///////////////////
+
   while(1)
     {
       printf("waiting for search response...\n");
@@ -38,50 +154,19 @@ void receive_response(packedobjectsdObject *pod_obj)
 	printf("message could not be received\n");
 	exit(EXIT_FAILURE);
       }
-
-      printf("search response received...\n");
       xml_dump_doc(doc_response);
+
+      /* ignore if sender-id doesn't match its own id */
+      ret = process_response(doc_response, "/video/message/response");
+      if(ret == 1) {
+      	printf("search response received...\n");
+      	xml_dump_doc(doc_response);
+      }
       xmlFreeDoc(doc_response);
     }
-}
 
-void broadcast_search(packedobjectsdObject *pod_obj)
-{
-  xmlDocPtr doc_sent = NULL;
-  printf("sending  search broadcast...\n");
-
-  if((doc_sent = xml_new_doc(search_file)) == NULL) {
-    printf("did not find .xml file");
-    exit(EXIT_FAILURE);
-  }  
-
-  if(packedobjectsd_send(pod_obj, doc_sent) == -1){
-    printf("message could not be sent\n");
-    exit(EXIT_FAILURE);
-  }
-  printf("search broadcast sent...\n");
-  xml_dump_doc(doc_sent);
-
-  xmlFreeDoc(doc_sent);
-}
-
-/* main function */
-int main(int argc, char *argv [])
-{ 
-  packedobjectsdObject *pod_obj = NULL;
-  
-  /* Initialise packedobjectsd */
-  if((pod_obj = init_packedobjectsd(schema_file)) == NULL) {
-    printf("failed to initialise libpackedobjectsd\n");
-    exit(EXIT_FAILURE);
-  }
-
-  /* call function to send search broadcast */
-  broadcast_search(pod_obj);
-
-  /* call function to receive search response */
-  receive_response(pod_obj);
-
+  ///////////////////// Freeing ///////////////////
+ 
   free_packedobjectsd(pod_obj);
   return EXIT_SUCCESS;
 }
