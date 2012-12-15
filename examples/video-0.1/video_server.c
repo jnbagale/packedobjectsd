@@ -33,7 +33,7 @@ void *process_receiver(void *pod_obj);
 static int get_frequency(xmlDocPtr doc_search, xmlChar *xpath)
 {
   /* Declare variables */
-  int frequency = -1; 
+  int ret; 
   xmlXPathContextPtr xpathp = NULL;
   xmlXPathObjectPtr result = NULL;
   
@@ -81,7 +81,7 @@ static int get_frequency(xmlDocPtr doc_search, xmlChar *xpath)
 	  xmlChar *key;
 	  key = xmlNodeListGetString(doc_search, cur->xmlChildrenNode, 1);
 	  //printf("Frequency: %s\n", key);
-	  frequency = atoi((char *)key);
+	  ret = atoi((char *)key);
 	  xmlFree(key);	  
 	}
       cur = cur->xmlChildrenNode;
@@ -92,7 +92,7 @@ static int get_frequency(xmlDocPtr doc_search, xmlChar *xpath)
   xmlXPathFreeObject(result); 
   xmlXPathFreeContext(xpathp);
   
-  return frequency;
+  return ret;
 }
 
 void *process_searcher(void *pod_obj)

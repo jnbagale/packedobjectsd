@@ -26,7 +26,7 @@
 /* function prototypes */
 void send_response(packedobjectsdObject *pod_obj, char *client_id, char *movie_title, double price, char *sender_id);
 void process_response(packedobjectsdObject *pod_obj, char *sender_id, char *movie_title, double max_price);
-int retrieve_details(packedobjectsdObject *pod_obj, xmlDocPtr search, xmlChar *xpath);
+int process_search(packedobjectsdObject *pod_obj, xmlDocPtr search, xmlChar *xpath);
 
 /* function definitions */
 void send_response(packedobjectsdObject *pod_obj, char *client_id, char *movie_title, double price, char *sender_id)
@@ -135,6 +135,9 @@ void process_response(packedobjectsdObject *pod_obj, char *sender_id, char *movi
   if( (strcmp(movie_title, title) == 0)) {
     if(price <= max_price) {
       printf("the movie exists on the database and matches price limit\n");
+      
+      ///////////////////// Sending  search response ///////////////////
+
       /* send response to searcher */
       send_response(pod_obj, client_id, movie_title, price, sender_id);
     }
@@ -153,7 +156,7 @@ void process_response(packedobjectsdObject *pod_obj, char *sender_id, char *movi
   xmlFreeDoc(doc_database);
 }
 
-int retrieve_details(packedobjectsdObject *pod_obj, xmlDocPtr doc_search, xmlChar *xpath)
+int process_search(packedobjectsdObject *pod_obj, xmlDocPtr doc_search, xmlChar *xpath)
 {
   /* Declare variables */
   double max_price;
@@ -196,7 +199,7 @@ int retrieve_details(packedobjectsdObject *pod_obj, xmlDocPtr doc_search, xmlCha
     return -1;
   }
 
-  ///////////////////// Processing XML document ///////////////////
+  ///////////////////// Processing search broadcast ///////////////////
 
   /* the xml doc matches "/video/message/search" */
   xmlNodePtr cur = xmlDocGetRootElement(doc_search);
@@ -234,6 +237,8 @@ int retrieve_details(packedobjectsdObject *pod_obj, xmlDocPtr doc_search, xmlCha
 	  printf("              sender id: %s \n", sender_id);
 	  printf("              movie title: %s \n", movie_title);
 	  printf("              max price: %g\n\n", max_price);
+
+	  ///////////////////// Checking on database ///////////////////
 
 	  /* checking if search broadcast matches record on the database */
 	  process_response(pod_obj, sender_id, movie_title, max_price);  
@@ -279,10 +284,14 @@ int main(int argc, char *argv [])
 	printf("message could not be received\n");
 	exit(EXIT_FAILURE);
       }
+ 
       usleep(100000); /* Allow searcher program some time to prepare receiving */
       // xml_dump_doc(doc_search);
+
+      ///////////////////// Processing search broadcast ///////////////////
+
       /* process search broadcast to retrieve search details */
-      ret = retrieve_details(pod_obj, doc_search, "/video/message/search");
+      ret = process_search(pod_obj, doc_search, "/video/message/search");
       if(ret == 1) {
 	printf("search broadcast processed...\n");
       }
