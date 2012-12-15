@@ -2,15 +2,16 @@
 #include <stdio.h>
 #include <string.h>     /* for strncat() & memcpy() */
 #include <stdlib.h>    /* for exit()   */
-#include <zmq.h>  /* for ZeroMQ functions */
+#include <libxml/tree.h>
+#include <libxml/parser.h>
 
-#include "request.h"
-#include "address.h"
 #include "config.h"
+#include "request.h"
+#include "packedobjectsd.h"
 
 #ifdef DEBUG_MODE
 
-#define dbg(fmtstr, args...)					\
+#define dbg(fmtstr, args...)						\
   (printf("libpackedobjectsd" ":%s: " fmtstr "\n", __func__, ##args))
 #else
 #define dbg(dummy...)
@@ -24,157 +25,112 @@
   (fprintf(stderr, "libpackedobjectsd" ":%s: " fmtstr "\n", __func__, ##args))
 #endif
 
-Request *make_request_object() 
+xmlDocPtr create_request(char *user_id, char *schema_hash, char *nodetype)
 {
-  Request *req;
+  xmlDocPtr doc = NULL;
+  xmlNodePtr pod_node = NULL, message_node = NULL, request_node = NULL;
   
-  if ((req = (Request *) malloc(sizeof(Request))) == NULL) {
-    alert("Failed to allocate Request structure.");
-    return NULL;
-  }
-   
-  return req;
+  LIBXML_TEST_VERSION;
+
+  doc = xmlNewDoc(BAD_CAST "1.0");
+
+  /* create pod node as root node */
+  pod_node = xmlNewNode(NULL, BAD_CAST "pod");
+  xmlDocSetRootElement(doc, pod_node);
+
+  message_node = xmlNewChild(pod_node, NULL, BAD_CAST "message", BAD_CAST NULL);
+  request_node = xmlNewChild(message_node, NULL, BAD_CAST "request", BAD_CAST NULL);
+    
+  /* create nodes to hold data */
+  xmlNewChild(request_node, NULL, BAD_CAST "user-id", BAD_CAST user_id);
+  xmlNewChild(request_node, NULL, BAD_CAST "schema-hash", BAD_CAST schema_hash);
+  xmlNewChild(request_node, NULL, BAD_CAST "node-type", BAD_CAST nodetype);
+  // xml_dump_doc(doc);
+    
+  return doc; /* doc to be freed by calling function */
 }
 
-int serialize_request(char *buffer, Request *req) /* Add host to network order code for port numbers */
+int process_request(xmlDocPtr request_doc, char *user_id, char *schema_hash, char *node_type)
 {
-  size_t offset = 0;
+  xmlNodePtr cur = xmlDocGetRootElement(request_doc);
 
-  memcpy(buffer, &req->node_type, sizeof(req->node_type));
-  offset = sizeof(req->node_type);
-  memcpy(buffer + offset, req->schema_hash, strlen(req->schema_hash) + 1);
-  offset = offset + strlen(req->schema_hash) + 1;
-  dbg("serialize request offset:%d",offset);
+  while(cur != NULL) /* traverse to the next XML nodes to read schema-hash and node-type data */
+    {
+      if(!(xmlStrcmp(cur->name, (const xmlChar *)"user-id")))
+       	{
+	  while(cur != NULL) /* traverse to the next XML element */
+	    {
+	      if(!(xmlStrcmp(cur->name, (const xmlChar *)"user-id"))) {
+		xmlChar *key;
+		key = xmlNodeListGetString(request_doc, cur->xmlChildrenNode, 1);
+		user_id = strcpy(user_id, (char*)key); 
+		xmlFree(key);
+	      }
 
-  return offset;
-}
+	      if(!(xmlStrcmp(cur->name, (const xmlChar *)"schema-hash"))) {
+		xmlChar *key;
+		key = xmlNodeListGetString(request_doc, cur->xmlChildrenNode, 1);
+		schema_hash = strcpy(schema_hash, (char*)key);  
+		xmlFree(key);
+	      }   
 
-int deserialize_request(char *buffer, Request *req)  /* Add network to host order code for port numbers */
-{
-  size_t offset = 0;
-   
-  if ((req->schema_hash = malloc(MAX_HASH_SIZE)) == NULL) {
-    printf("Failed to allocate schema_hash!\n");
+	      if(!(xmlStrcmp(cur->name, (const xmlChar *)"node-type"))) {
+		xmlChar *key;
+		key = xmlNodeListGetString(request_doc, cur->xmlChildrenNode, 1);
+		node_type = strcpy(node_type, (char*)key);  
+		xmlFree(key);
+	      }   
+	      cur = cur->next;	  
+	    }
+	  // printf("%s %s %s\n", user_id, schema_hash, node_type);
+	  break;
+	}
+      cur = cur->xmlChildrenNode;
+      }
+
+  if((user_id == NULL) ||(schema_hash == NULL) || (node_type == NULL)) {
     return -1;
   }
 
-  memcpy(&req->node_type, buffer, sizeof(req->node_type));
-  offset = sizeof(req->node_type);
-  memcpy(req->schema_hash, buffer + offset, strlen(buffer + offset) + 1);
-  offset = offset + strlen(buffer + offset) + 1;
-  dbg("deserialize request offset:%d",offset);
-
-  return offset;
+  return 1;
 }
 
-void free_request_object(Request *req) 
+char *encode_request(char *user_id, char *schema_hash, char node_type, int *request_size)
 {
-  free(req->schema_hash);
-  free(req);
-}
+  xmlDocPtr doc;
+  char *pdu = NULL;
+  char *nodetype = NULL;
+  packedobjectsContext *pc;
 
-char *get_broker_detail(char node_type, char *address, int port, char *schema_hash)
-{
-  int rc;
-  int ret;
-  int size;
-  int buffer_size; 
-  char *endpoint;
-  char *buffer = NULL;
-  char *req_buffer = NULL;
-  char *broker_address = NULL;
-  void *context;
-  void *requester;
-  Address *addr;
-  Request *req;
+  nodetype = which_node(node_type);
 
-  size = strlen(address) + sizeof (int) + 7;  /* 7 bytes for 'tcp://' and ':' */
-  endpoint = malloc(size + 1);
-  sprintf(endpoint, "tcp://%s:%d", address, port);
-  dbg("Connecting %s to the server at %s",which_node (node_type), endpoint); 
+  pc = init_packedobjects("../schema/packedobjectsd.xsd");
+  doc = create_request(user_id, schema_hash, nodetype);
 
-  /* Initialise the zeromq context and socket address */ 
-  if((context = zmq_init (1)) == NULL) {
-    alert("Failed to initialize zeromq context");
-  }
-
-  /* Create socket to connect to look up server*/
-  if((requester = zmq_socket (context, ZMQ_REQ)) == NULL){
-    alert("Failed to create zeromq socket: %s", zmq_strerror (errno));
+  pdu = packedobjects_encode(pc, doc);
+  *request_size =  pc->bytes;
+  if (*request_size == -1) {
+    alert("Failed to encode with error %d.\n", pc->encode_error);
     return NULL;
   }
+
+  return pdu;
+}
+
+xmlDocPtr decode_request(char *pdu)
+{
+  xmlDocPtr doc = NULL;
+  packedobjectsContext *pc;
+
+  pc = init_packedobjects("../schema/packedobjectsd.xsd");
   
-  if((rc = zmq_connect (requester, endpoint)) == -1){
-    alert("Failed to create zeromq connection: %s", zmq_strerror (errno));
-    return NULL;
-  }
- 
-  if((req_buffer = malloc(MAX_BUFFER_SIZE)) == NULL) {
-    alert("Failed to allocate request buffer");
-  }
-
-  if( (req = make_request_object()) == NULL) {
-    alert("Failed to create request object");
+  doc = packedobjects_decode(pc, pdu);
+  if (pc->decode_error) {
+    alert("Failed to decode with error %d.", pc->decode_error);
     return NULL;
   }
 
-  size = strlen(schema_hash);
-  dbg("schema hash length:%d",size);
-
-  if((req->schema_hash = malloc(size + 1)) == NULL) {
-    alert("Failed to allocate hash schema");
-    return NULL;
-  }
-  sprintf(req->schema_hash, "%s", schema_hash);
-  req->node_type = node_type;
- 
-  if((ret = serialize_request(req_buffer, req)) == 0) {
-    alert("Failed to serialize request structure");
-    return NULL;
-  }
-
-  if((rc = send_message(requester, req_buffer, ret)) == -1) {
-    alert("Failed to send request structure to server: %s", zmq_strerror (errno));
-    return NULL;
-  }
-
-  if((buffer = receive_message(requester, &size)) == NULL){
-    alert("The received message is NULL\n");
-    return NULL;
-  }
-
-  if((addr = make_address_object()) == NULL){
-    alert("Failed to create address object");
-    return NULL;
-  }
-
-  if((buffer_size = deserialize_address(buffer, addr)) <= 0) {
-    alert("The received address structure could not be decoded.");
-    return NULL;
-  }
-   
-  size = strlen(addr->address) + sizeof (int) + 7;  /* 7 bytes for 'tcp://' and ':' */
-  if((broker_address = malloc(size + 1)) == NULL){
-    alert("Failed to allocate broker address");
-  }
-
-  if(node_type == 'P') {
-    sprintf(broker_address, "tcp://%s:%d", addr->address, addr->port_in);
-  }
-  else if(node_type == 'S') {
-    sprintf(broker_address, "tcp://%s:%d", addr->address, addr->port_out);
-  }
-    
-  /* Freeing up context, socket and pointers */
-  free_request_object(req);
-  free_address_object(addr);
-  zmq_close(requester);
-  zmq_term(context);
-  free(endpoint);
-  free(buffer);
-  free(req_buffer);
-
-  return broker_address;
+  return doc;
 }
 
 /* End of request.c */

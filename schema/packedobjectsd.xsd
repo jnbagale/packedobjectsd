@@ -16,20 +16,20 @@
       <xs:element name="broker-address">
 	<xs:simpleType>
 	  <xs:restriction base="string">
-	    <xs:maxLength value="200"/>
+	    <xs:maxLength value="500"/>
 	  </xs:restriction>
 	</xs:simpleType>
       </xs:element>
       <xs:element name="port-in" type="integer"/>
       <xs:element name="port-out" type="integer"/>
-      <xs:element name="process-d" type="integer"/>
+      <xs:element name="process-id" type="integer"/>
     </xs:sequence>
   </xs:complexType>
 
   <xs:complexType name="requestType">
     <xs:sequence>
-      <xs:element name="user-id" type="hex-string"/>
-      <xs:element name="schema-hash" type="hex-string"/>
+      <xs:element name="user-id" type="string"/>
+      <xs:element name="schema-hash" type="string"/>
       <xs:element name="node-type" type="nodeType"/>
     </xs:sequence>
   </xs:complexType>

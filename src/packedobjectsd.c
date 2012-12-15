@@ -6,13 +6,13 @@
 #include <zmq.h>  /* for ZeroMQ functions */
 
 #include "config.h"
-#include "request.h"
+#include "broker.h"
 #include "xmlutils.h"
 #include "packedobjectsd.h"
 
 #ifdef DEBUG_MODE
 
-#define dbg(fmtstr, args...)					\
+#define dbg(fmtstr, args...)						\
   (printf("libpackedobjectsd" ":%s: " fmtstr "\n", __func__, ##args))
 #else
 #define dbg(dummy...)
@@ -49,13 +49,14 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file)
   pod_obj->pc = init_packedobjects(schema_file); 
   if(pod_obj->pc == NULL) {
     alert("Failed to initialise libpackedobjects.");
-    pod_obj->error_code = INIT_PO_FAILED;
+    //pod_obj->error_code = INIT_PO_FAILED;
     return NULL;
   }
 
-  if((pod_obj->schema_hash = xml_to_md5hash(schema_file)) == NULL) { /* Creat MD5 Hash of the XML schmea */
+  /* Create MD5 Hash of the XML schmea */
+  if((pod_obj->schema_hash = xml_to_md5hash(schema_file)) == NULL) {
     alert("Failed to create hash of the schema file.");
-    pod_obj->error_code =  INVALID_SCHEMA_FILE;
+    // pod_obj->error_code =  INVALID_SCHEMA_FILE;
     return NULL;
   }
   dbg("schema_hash: %s", pod_obj->schema_hash);
@@ -65,7 +66,7 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file)
     ret = packedobjectsd_subscribe(pod_obj, pod_obj->schema_hash);
     if(ret == -1) {
       alert("Failed to subscribe to packedobjectsd");
-      pod_obj->error_code =  SUBSCRIBE_FAILED;
+      // pod_obj->error_code =  SUBSCRIBE_FAILED;
       return NULL;
     }
     break;
@@ -74,7 +75,7 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file)
     ret = packedobjectsd_publish(pod_obj, pod_obj->schema_hash);
     if(ret == -1) {
       alert("Failed to publish to packedobjectsd");
-      pod_obj->error_code = PUBLISH_FAILED;
+      // pod_obj->error_code = PUBLISH_FAILED;
       return NULL;
     }
     break;
@@ -83,19 +84,19 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file)
     ret = packedobjectsd_publish(pod_obj, pod_obj->schema_hash);
     if(ret == -1) {
       alert("Failed to publish to packedobjectsd");
-      pod_obj->error_code = PUBLISH_FAILED;
+      //  pod_obj->error_code = PUBLISH_FAILED;
       return NULL;
     }
     ret = packedobjectsd_subscribe(pod_obj, pod_obj->schema_hash);
     if(ret == -1) {
       alert("Failed to subscribe to packedobjectsd");
-      pod_obj->error_code =  SUBSCRIBE_FAILED;
+      //  pod_obj->error_code =  SUBSCRIBE_FAILED;
       return NULL;
     }  
     break;
   default:
     alert("Invalid node type."); 
-    pod_obj->error_code = INVALID_NODE_TYPE;
+    // pod_obj->error_code = INVALID_NODE_TYPE;
     return NULL;
   }
    
@@ -104,7 +105,7 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file)
 
 static int packedobjectsd_subscribe(packedobjectsdObject *pod_obj, char *schema_hash)
 {
-   int rc;
+  int rc;
   uint64_t hwm = 100;
   
   /* Retrieve broker's address details from lookup server using the schema */
@@ -233,8 +234,8 @@ int packedobjectsd_send(packedobjectsdObject *pod_obj, xmlDocPtr doc)
   if (size == -1) {
     //fprintf(stderr, "Failed to encode with error %d.\n", pod_obj->pc->encode_error);
     pod_obj->error_code = ENCODE_FAILED;
-      return size;
-    }
+    return size;
+  }
   pod_obj->bytes_sent = size;
 
   if((rc = send_message(pod_obj->publisher_socket, pdu, size)) == -1) {

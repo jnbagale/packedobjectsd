@@ -120,7 +120,7 @@ int main (int argc, char *argv [])
 
   /* Initialise packedobjectsd */
   if((pod_obj = init_packedobjectsd(schema_file)) == NULL) {
-    exit_with_message(pod_strerror(pod_obj->error_code));
+    exit_with_message("failed to init packedobjectsd");
   }
   sleep(1); /* Allow broker to start if it's not already running */
 
