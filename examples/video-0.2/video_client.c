@@ -279,7 +279,7 @@ int main(int argc, char *argv [])
 	printf("message could not be received\n");
 	exit(EXIT_FAILURE);
       }
-      usleep(100000);
+      usleep(100000); /* Allow searcher program some time to prepare receiving */
       // xml_dump_doc(doc_search);
       /* process search broadcast to retrieve search details */
       ret = retrieve_details(pod_obj, doc_search, "/video/message/search");

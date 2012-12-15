@@ -1,4 +1,4 @@
-/* Copyright (C) 2009-2011 The Clashing Rocks Team */
+/* Copyright (C) 2009-2012 The Clashing Rocks Team */
 
 /* This program is free software: you can redistribute it and/or modify */
 /* it under the terms of the GNU General Public License as published by */
@@ -19,19 +19,28 @@
 #include <pthread.h>  
 #include <packedobjectsd/packedobjectsd.h>
 
-static int frequency = 5;
-static const char *xml_file = "video.xml";
-static  const char *schema_file = "video.xsd";
-static int get_frequency(xmlDocPtr req, xmlChar *xpath);
+/* global variables */
+#define XML_DATA "video.xml"
+#define XML_SCHEMA "video.xsd"
 
-static int get_frequency(xmlDocPtr req, xmlChar *xpath)
+static int frequency = 10;
+
+/* function prototype */
+static int get_frequency(xmlDocPtr doc_search, xmlChar *xpath);
+void *process_receiver(void *pod_obj);
+
+/* function definitions */
+static int get_frequency(xmlDocPtr doc_search, xmlChar *xpath)
 {
+  /* Declare variables */
   int frequency = -1; 
   xmlXPathContextPtr xpathp = NULL;
   xmlXPathObjectPtr result = NULL;
+  
+  ///////////////////// Initialising XPATH ///////////////////
 
   /* setup xpath context */
-  xpathp = xmlXPathNewContext(req);
+  xpathp = xmlXPathNewContext(doc_search);
   if (xpathp == NULL) {
     printf("Error in xmlXPathNewContext.");
     xmlXPathFreeContext(xpathp);
@@ -44,7 +53,9 @@ static int get_frequency(xmlDocPtr req, xmlChar *xpath)
     return -1;
   }
 
-  /* Evaluate xpath expression */
+  ///////////////////// Evaluating XPATH expression ///////////////////
+
+  /* evaluate xpath expression */
   result = xmlXPathEvalExpression(xpath, xpathp);
   if (result == NULL) {
     printf("Error in xmlXPathEvalExpression.");
@@ -53,26 +64,30 @@ static int get_frequency(xmlDocPtr req, xmlChar *xpath)
     return -1;
   }
 
+  /* check if the xml doc matches "/video/message/search" */
   if(xmlXPathNodeSetIsEmpty(result->nodesetval)) {
     xmlXPathFreeObject(result); 
     xmlXPathFreeContext(xpathp);
     return -1;
   }
 
-  xmlNodePtr cur = xmlDocGetRootElement(req);
- 
+  ///////////////////// Processing XML document ///////////////////
+
+  xmlNodePtr cur = xmlDocGetRootElement(doc_search);
   while(cur != NULL)
     {
       if(!(xmlStrcmp(cur->name, (const xmlChar *)"frequency")))
 	{
 	  xmlChar *key;
-	  key = xmlNodeListGetString(req, cur->xmlChildrenNode, 1);
+	  key = xmlNodeListGetString(doc_search, cur->xmlChildrenNode, 1);
 	  //printf("Frequency: %s\n", key);
-	  frequency = atoi(key);
+	  frequency = atoi((char *)key);
 	  xmlFree(key);	  
 	}
       cur = cur->xmlChildrenNode;
     }
+
+  ///////////////////// Freeing ///////////////////
 
   xmlXPathFreeObject(result); 
   xmlXPathFreeContext(xpathp);
@@ -83,38 +98,45 @@ static int get_frequency(xmlDocPtr req, xmlChar *xpath)
 void *process_searcher(void *pod_obj)
 {
   int ret;
-  xmlDocPtr req = NULL;
+  xmlDocPtr doc_search = NULL;
   packedobjectsdObject *pod_object =  (packedobjectsdObject *) pod_obj;
+
+  ///////////////////// Receiving frequency ///////////////////
 
   while(1)
     {
-      if((req = packedobjectsd_receive(pod_object)) == NULL) {
+      /* waiting for new frequency from searcher */
+      if((doc_search = packedobjectsd_receive(pod_object)) == NULL) {
 	printf("message could not be received\n");
 	exit(EXIT_FAILURE);
       }
 
       /* to ignore messages sent by itself */
-      ret = get_frequency(req, "/video/message/search");
+      ret = get_frequency(doc_search, "/video/message/search");
       if(ret != -1) {
 	printf("search request received with frequency %d\n",ret);
 	frequency = ret;
       }
     }
-  xmlFreeDoc(req);
+  xmlFreeDoc(doc_search);
 }
 
-void *process_receiver( void *pod_obj)
+void *process_receiver(void *pod_obj)
 {
+  xmlDocPtr doc_sent = NULL;
   packedobjectsdObject *pod_object =  (packedobjectsdObject *) pod_obj;
+  
+  ///////////////////// Sending ///////////////////
 
   while(1) 
     {     
-      xmlDocPtr doc_sent = NULL;
-      if((doc_sent = xml_new_doc(xml_file)) == NULL) {
+      /* initialise new xml document */
+      if((doc_sent = xml_new_doc(XML_DATA)) == NULL) {
 	printf("did not find .xml file");
 	exit(EXIT_FAILURE);
       }  
 
+      /* send video xml document to receiver */
       if(packedobjectsd_send(pod_object, doc_sent) == -1){
 	printf("message could not be sent\n");
 	exit(EXIT_FAILURE);
@@ -125,46 +147,55 @@ void *process_receiver( void *pod_obj)
     }
 }
 
+/* main function */
 int main(int argc, char *argv [])
 { 
+  /* Declare variables */
   pthread_t thread_receiver;
   pthread_t thread_searcher;
   packedobjectsdObject *pod_obj = NULL;
   
+  ///////////////////// Initialising ///////////////////
+
   /* Initialise packedobjectsd */
-  if((pod_obj = init_packedobjectsd(schema_file)) == NULL) {
+  if((pod_obj = init_packedobjectsd(XML_SCHEMA)) == NULL) {
     printf("failed to initialise libpackedobjectsd\n");
     exit(EXIT_FAILURE);
   }
 
   printf("waiting for search request...\n");
- 
   /* initialise thread to execute start_searcher() function */
   if (pthread_create( &thread_searcher, NULL, process_searcher,(void *) pod_obj)) {
     fprintf(stderr, "Error creating searcher thread \n");
     exit(EXIT_FAILURE);
   }
 
- /* initialise thread to execute start_searcher() function */
+  /* initialise thread to execute start_searcher() function */
   if (pthread_create( &thread_receiver, NULL, process_receiver,(void *) pod_obj)) {
     fprintf(stderr, "Error creating receiver thread \n");
     exit(EXIT_FAILURE);
   }
 
-  /* Join the thread to start the server */
+  ///////////////////// Listening to searcher ///////////////////
+
+  /* Join the thread to listen to searcher  */
   if(pthread_join( thread_searcher, NULL)) {
     fprintf(stderr, "Error joining searcher thread \n");
     exit(EXIT_FAILURE);
   }
- 
-  /* Join the thread to start the server */
+   
+  ///////////////////// Sending video releases ///////////////////
+
+  /* Join the thread to send video to receiver */
   if(pthread_join( thread_receiver, NULL)) {
     fprintf(stderr, "Error joining searcher thread \n");
     exit(EXIT_FAILURE);
   }
- 
-  /* free up memory but we should never reach here! */
+
+  ///////////////////// Freeing ///////////////////
+
+  /* free up memory created by packedobjectsd but we should never reach here! */
   free_packedobjectsd(pod_obj);
 
-  return EXIT_SUCCESS;
+  return EXIT_FAILURE;
 }

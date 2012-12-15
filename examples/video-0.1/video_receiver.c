@@ -1,4 +1,4 @@
-/* Copyright (C) 2009-2011 The Clashing Rocks Team */
+/* Copyright (C) 2009-2012 The Clashing Rocks Team */
 
 /* This program is free software: you can redistribute it and/or modify */
 /* it under the terms of the GNU General Public License as published by */
@@ -18,12 +18,18 @@
 #include <unistd.h>
 #include <packedobjectsd/packedobjectsd.h>
 
+/* global variables */
+#define XML_SCHEMA "video.xsd"
+
 static int query_schema(xmlDocPtr req, xmlChar *xpath);
 
 static int query_schema(xmlDocPtr req, xmlChar *xpath)
 {
+  /* Declare variables */
   xmlXPathContextPtr xpathp = NULL;
   xmlXPathObjectPtr result = NULL;
+
+  ///////////////////// Initialising XPATH ///////////////////
 
   /* setup xpath context */
   xpathp = xmlXPathNewContext(req);
@@ -39,7 +45,9 @@ static int query_schema(xmlDocPtr req, xmlChar *xpath)
     return -1;
   }
 
-  /* Evaluate xpath expression */
+  ///////////////////// Evaluating XPATH expression ///////////////////
+
+  /* evaluate xpath expression */
   result = xmlXPathEvalExpression(xpath, xpathp);
   if (result == NULL) {
     printf("Error in xmlXPathEvalExpression.");
@@ -48,11 +56,14 @@ static int query_schema(xmlDocPtr req, xmlChar *xpath)
     return -1;
   }
 
+  /*check if xml doc matches "/video/message/response" */
   if(xmlXPathNodeSetIsEmpty(result->nodesetval)) {
     xmlXPathFreeObject(result); 
     xmlXPathFreeContext(xpathp);
     return -1;
   }
+
+  ///////////////////// Freeing ///////////////////
 
   xmlXPathFreeObject(result); 
   xmlXPathFreeContext(xpathp);
@@ -60,39 +71,46 @@ static int query_schema(xmlDocPtr req, xmlChar *xpath)
   return 1;
 }
 
+/* main function */
 int main(int argc, char *argv [])
 { 
+  /* Declare variables */
   int count = 0;
+  xmlDocPtr doc_received = NULL;
   packedobjectsdObject *pod_obj = NULL;
-  const char *schema_file = "video.xsd";
-  
+    
+  ///////////////////// Initialising ///////////////////
 
   /* Initialise packedobjectsd */
-  if((pod_obj = init_packedobjectsd(schema_file)) == NULL) {
+  if((pod_obj = init_packedobjectsd(XML_SCHEMA)) == NULL) {
     printf("failed to initialise libpackedobjectsd\n");
     exit(EXIT_FAILURE);
   }
 
+  ///////////////////// Receiving video releases ///////////////////
+
   printf("listening to the video server ...\n");
   while(1) 
     {       
-      xmlDocPtr doc_received = NULL;
+      /* waiting to receive message */
       if((doc_received = packedobjectsd_receive(pod_obj)) == NULL){
 	printf("message could not be received\n");
 	exit(EXIT_FAILURE);
       }
+
       /* to ignore messages sent by the searcher program */
       if((query_schema(doc_received, "/video/message/response")) == 1) {
 	count++;
-	
-	printf("new video release information is received at %d\n", count);
+	printf("new video release information is received # %d\n", count);
 	xml_dump_doc(doc_received);
       }
       xmlFreeDoc(doc_received);
       usleep(1000);
     }
 
-  /* free up memory but we should never reach here! */
+  ///////////////////// Freeing ///////////////////
+
+  /* free up memory created by  packedobjectsd but we should never reach here! */
   free_packedobjectsd(pod_obj);
 
   return EXIT_FAILURE;
