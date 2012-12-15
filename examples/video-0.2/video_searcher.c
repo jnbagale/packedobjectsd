@@ -25,8 +25,6 @@
 
 /* function prototypes */
 int process_response(xmlDocPtr doc_response, xmlChar *xpath);
-void receive_response(packedobjectsdObject *pod_obj);
-void broadcast_search(packedobjectsdObject *pod_obj);
 
 /* function definitions */
 int process_response(xmlDocPtr doc_response, xmlChar *xpath)
@@ -90,8 +88,7 @@ int process_response(xmlDocPtr doc_response, xmlChar *xpath)
 	      
 	      cur = cur->next; /* traverse to the next XML element */
 	    }
-	  printf("sender id %s\n", sender_id);
-
+	  
 	  if((strcmp(sender_id, "21081203") == 0)) {
 	    free(sender_id);
 	    return 1;
@@ -99,7 +96,6 @@ int process_response(xmlDocPtr doc_response, xmlChar *xpath)
 	  break; /* exit while loop */
 	}
       cur = cur->xmlChildrenNode; /* traverse to next xml node */
-
     }
 
   ///////////////////// Freeing ///////////////////
@@ -115,6 +111,8 @@ int main(int argc, char *argv [])
 { 
   /* Declare variables */
   int ret;
+  xmlDocPtr doc_sent = NULL;
+  xmlDocPtr doc_response = NULL;
   packedobjectsdObject *pod_obj = NULL;
   
   ///////////////////// Initialising packedobjectsd ///////////////////
@@ -128,7 +126,6 @@ int main(int argc, char *argv [])
   ///////////////////// Sending search broadcast ///////////////////
   
   /* initialising search XML document */
-  xmlDocPtr doc_sent = NULL;
   if((doc_sent = xml_new_doc(XML_DATA)) == NULL) {
     printf("did not find .xml file");
     exit(EXIT_FAILURE);
@@ -140,22 +137,20 @@ int main(int argc, char *argv [])
     exit(EXIT_FAILURE);
   }
   printf("search broadcast sent...\n");
-  xml_dump_doc(doc_sent);
+  //xml_dump_doc(doc_sent);
   /* freeing */
   xmlFreeDoc(doc_sent);
  
   ///////////////////// Receiving search response ///////////////////
-
+  
   while(1)
     {
       printf("waiting for search response...\n");
-      xmlDocPtr doc_response = NULL;
       if((doc_response = packedobjectsd_receive(pod_obj)) == NULL) {
 	printf("message could not be received\n");
 	exit(EXIT_FAILURE);
       }
-      xml_dump_doc(doc_response);
-
+      
       /* ignore if sender-id doesn't match its own id */
       ret = process_response(doc_response, "/video/message/response");
       if(ret == 1) {
@@ -163,6 +158,7 @@ int main(int argc, char *argv [])
       	xml_dump_doc(doc_response);
       }
       xmlFreeDoc(doc_response);
+      usleep(1000);
     }
 
   ///////////////////// Freeing ///////////////////

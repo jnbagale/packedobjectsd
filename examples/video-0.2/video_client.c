@@ -269,7 +269,7 @@ int main(int argc, char *argv [])
     exit(EXIT_FAILURE);
   }
 
-  ///////////////////// Sending search broadcast ///////////////////
+  ///////////////////// Receiving search broadcast ///////////////////
 
   while(1)
     {
@@ -279,7 +279,7 @@ int main(int argc, char *argv [])
 	printf("message could not be received\n");
 	exit(EXIT_FAILURE);
       }
-
+      usleep(100000);
       // xml_dump_doc(doc_search);
       /* process search broadcast to retrieve search details */
       ret = retrieve_details(pod_obj, doc_search, "/video/message/search");
@@ -287,6 +287,7 @@ int main(int argc, char *argv [])
 	printf("search broadcast processed...\n");
       }
       xmlFreeDoc(doc_search);
+      usleep(1000);
     }
 
   ///////////////////// Freeing ///////////////////
