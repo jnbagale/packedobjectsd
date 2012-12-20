@@ -24,10 +24,10 @@
 #define XML_SCHEMA "video.xsd"
 
 /* function prototypes */
-int process_response(xmlDocPtr doc_response, xmlChar *xpath);
+int read_response(xmlDocPtr doc_response, xmlChar *xpath);
 
 /* function definitions */
-int process_response(xmlDocPtr doc_response, xmlChar *xpath)
+int read_response(xmlDocPtr doc_response, xmlChar *xpath)
 {
   /* Declare variables */
   char *sender_id = NULL;
@@ -152,7 +152,7 @@ int main(int argc, char *argv [])
       }
       
       /* ignore if sender-id doesn't match its own id */
-      ret = process_response(doc_response, "/video/message/response");
+      ret = read_response(doc_response, "/video/message/response");
       if(ret == 1) {
       	printf("search response received...\n");
       	xml_dump_doc(doc_response);

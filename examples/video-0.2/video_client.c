@@ -25,7 +25,7 @@
 
 /* function prototypes */
 void send_response(packedobjectsdObject *pod_obj, char *client_id, char *movie_title, double price, char *sender_id);
-void process_response(packedobjectsdObject *pod_obj, char *sender_id, char *movie_title, double max_price);
+void prepare_response(packedobjectsdObject *pod_obj, char *sender_id, char *movie_title, double max_price);
 int process_search(packedobjectsdObject *pod_obj, xmlDocPtr search, xmlChar *xpath);
 
 /* function definitions */
@@ -71,7 +71,7 @@ void send_response(packedobjectsdObject *pod_obj, char *client_id, char *movie_t
   xmlFreeDoc(doc_response);
 }
 
-void process_response(packedobjectsdObject *pod_obj, char *sender_id, char *movie_title, double max_price)
+void prepare_response(packedobjectsdObject *pod_obj, char *sender_id, char *movie_title, double max_price)
 {
   /* Declare variables */
   double price;
@@ -241,7 +241,7 @@ int process_search(packedobjectsdObject *pod_obj, xmlDocPtr doc_search, xmlChar 
 	  ///////////////////// Checking on database ///////////////////
 
 	  /* checking if search broadcast matches record on the database */
-	  process_response(pod_obj, sender_id, movie_title, max_price);  
+	  prepare_response(pod_obj, sender_id, movie_title, max_price);  
 	  break; /* exit the while loop */
 	}
       
