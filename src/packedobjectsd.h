@@ -59,5 +59,6 @@ int packedobjectsd_send(packedobjectsdObject *pod_obj, xmlDocPtr doc);
 xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj);
 void free_packedobjectsd(packedobjectsdObject *pod_obj);
 const char *pod_strerror(int error_code);
+
 #endif
 /* End of packedobjectsd.h */

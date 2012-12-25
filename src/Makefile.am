@@ -13,6 +13,10 @@ library_includedir = $(includedir)/packedobjectsd
 
 library_include_HEADERS = packedobjectsd.h message.h broker.h request.h response.h xmlutils.h config.h
 
+library_datadirdir = $(datadir)/packedobjectsd
+
+library_datadir_DATA = $(top_builddir)/schema/packedobjectsd.xsd
+
 check_PROGRAMS = packedobjectsdtest
 
 packedobjectsdtest_SOURCES = main.c

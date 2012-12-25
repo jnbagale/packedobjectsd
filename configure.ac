@@ -4,6 +4,7 @@ AC_CONFIG_SRCDIR([src/])
 AM_CONFIG_HEADER([src/config.h])
 
 AC_DEFINE([PROGNAME],["libpackedobjectsd"],["lightweight XML messaging library"])
+AC_DEFINE([POD_SCHEMA],["/usr/local/share/packedobjectsd/packedobjectsd.xsd"],["schema used for initialisation to server"])
 
 # --enable-debug flag
 AC_ARG_ENABLE(debug,
