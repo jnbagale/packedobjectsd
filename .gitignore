@@ -38,6 +38,9 @@ examples/video-0.1/video_searcher
 examples/video-0.2/*.o
 examples/video-0.2/video_client
 examples/video-0.2/video_searcher
+examples/video-0.3/*.o
+examples/video-0.3/video_client
+examples/video-0.3/video_searcher
 doc/tutorial.aux
 doc/tutorial.cp
 doc/tutorial.cps
