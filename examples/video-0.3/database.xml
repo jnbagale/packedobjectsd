@@ -3,11 +3,18 @@
   <message>
     <database>
         <movie>
-	<title>skyfall</title>
-	<genre>action</genre>
-	<dateOfRelease>20121012</dateOfRelease>
-	<director>Sam Mendes</director>
-	<price>4.99</price>
+	  <title>skyfall</title>
+	  <genre>action</genre>
+	  <dateOfRelease>20121012</dateOfRelease>
+	  <director>Sam Mendes</director>
+	  <price>4.99</price>
+      </movie>
+      <movie>
+	<title>avatar</title>
+	<genre>sci-fi</genre>
+	<dateOfRelease>20111012</dateOfRelease>
+	<director>James Cameroon</director>
+	<price>5.99</price>
       </movie>
     </database>
   </message>

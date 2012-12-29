@@ -17,7 +17,7 @@
 
   <xs:complexType name="databaseType">
     <xs:sequence>
-      <xs:element name="movie">
+      <xs:element name="movie" maxOccurs="unbounded">
 	<xs:complexType> 
 	  <xs:sequence>
 	    <xs:element name="title">

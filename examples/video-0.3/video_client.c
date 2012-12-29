@@ -78,6 +78,7 @@ void prepare_response(packedobjectsdObject *pod_obj, char *sender_id, char *movi
   /* Declare variables */
   double price;
   char *title = NULL;
+  char xpath_exp[1000];
   xmlDocPtr doc_database = NULL;
 
   printf("checking video database...\n");
@@ -86,7 +87,66 @@ void prepare_response(packedobjectsdObject *pod_obj, char *sender_id, char *movi
   if((doc_database = xml_new_doc(XML_DATA)) == NULL) {
     printf("did not find database.xml file");
     exit(EXIT_FAILURE);
-  }  
+  }
+  
+  xmlXPathContextPtr xpathp = NULL;
+  xmlXPathObjectPtr result = NULL;
+
+  ///////////////////// Initialising XPATH ///////////////////
+
+  /* setup xpath context */
+  xpathp = xmlXPathNewContext(doc_database);
+  if (xpathp == NULL) {
+    printf("Error in xmlXPathNewContext.");
+    xmlXPathFreeContext(xpathp);
+    return;
+  }
+
+  if(xmlXPathRegisterNs(xpathp, (const xmlChar *)NSPREFIX, (const xmlChar *)NSURL) != 0) {
+    printf("Error: unable to register NS.");
+    xmlXPathFreeContext(xpathp);
+    return;
+  }
+
+  ///////////////////// Evaluating XPATH expression ///////////////////
+  sprintf(xpath_exp, "/video/message/database/movie[title='%s']/price", movie_title);
+  printf("xpath expression: %s", xpath_exp);
+  
+  /* Evaluate xpath expression */
+  result = xmlXPathEvalExpression(xpath_exp, xpathp);
+  if (result == NULL) {
+    printf("Error in xmlXPathEvalExpression.");
+    xmlXPathFreeObject(result); 
+    xmlXPathFreeContext(xpathp);
+    return;
+  }
+
+  /* check if xml doc matches "/video/message/database" */
+  if(xmlXPathNodeSetIsEmpty(result->nodesetval)) {
+    xmlXPathFreeObject(result); 
+    xmlXPathFreeContext(xpathp);
+    printf("movie doesn't exist");
+    //  return -1;
+  }
+  else {
+    printf("movie exists");
+    double price;
+    xmlNodePtr cur;
+    while(cur != NULL) 
+      {
+	printf("cur name %s\n", cur->name);
+	if(!(xmlStrcmp(cur->name, (const xmlChar *)"price")))
+	  {
+	    xmlChar *key;
+	    key = xmlNodeListGetString(doc_database, cur->xmlChildrenNode, 1);
+	    price = atof((char *)key);
+	    xmlFree(key);	  
+	    printf("Price of movie %s is %g\n", movie_title, price);
+	  }
+
+	cur = cur->next;
+      }
+  }
 
   ///////////////////// Processing XML document ///////////////////
 
@@ -95,8 +155,9 @@ void prepare_response(packedobjectsdObject *pod_obj, char *sender_id, char *movi
     {
       if(!(xmlStrcmp(cur->name, (const xmlChar *)"title")))
 	{
-	  while(cur != NULL)
+	  while((xmlStrcmp(cur->name, (const xmlChar *)"price")))
 	    {
+	      printf("cur: %s", cur->name);
 	      if(!(xmlStrcmp(cur->name, (const xmlChar *)"title")))
 		{
 		  xmlChar *key;
@@ -114,7 +175,7 @@ void prepare_response(packedobjectsdObject *pod_obj, char *sender_id, char *movi
 	      cur = cur->next;  /* traverse to the next XML element */
 	    }
 	  // printf("client id %s movie title %s price %g\n",client_id, title, price);
-	  break; /* exit while loop */
+	  //break; /* exit while loop */
 	}	     
       cur = cur->xmlChildrenNode;  /* traverse to next xml node */
     }
