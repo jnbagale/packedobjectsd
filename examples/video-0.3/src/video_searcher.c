@@ -18,6 +18,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <uuid/uuid.h>
+#include <pthread.h>
 #include <packedobjectsd/packedobjectsd.h>
 
 /* global variables */
@@ -25,7 +26,7 @@
 static char user_id[36];
 
 /* function prototypes */
-int read_response(xmlDocPtr doc_response, xmlChar *xpath);
+int read_response(xmlDocPtr doc_response, char *xpathExpr);
 xmlDocPtr create_search(packedobjectsdObject *pod_obj, char *user_id, char *movie_title, char *max_price);
 void *receive_response(void *pod_obj);
 void *send_search(void *pod_obj);
@@ -61,44 +62,44 @@ xmlDocPtr create_search(packedobjectsdObject *pod_obj, char *user_id, char *movi
   return doc_search;
 }
 
-int read_response(xmlDocPtr doc_response, xmlChar *xpath)
+int read_response(xmlDocPtr doc_response, char *xpathExpr)
 {
   /* Declare variables */
   char *sender_id = NULL;
-  xmlXPathContextPtr xpathp = NULL;
-  xmlXPathObjectPtr result = NULL;
+  xmlXPathContextPtr xpathCtxPtr = NULL;
+  xmlXPathObjectPtr xpathObjPtr = NULL;
 
   ///////////////////// Initialising XPATH ///////////////////
 
   /* setup xpath context */
-  xpathp = xmlXPathNewContext(doc_response);
-  if (xpathp == NULL) {
+  xpathCtxPtr = xmlXPathNewContext(doc_response);
+  if (xpathCtxPtr == NULL) {
     printf("Error in xmlXPathNewContext.");
-    xmlXPathFreeContext(xpathp);
+    xmlXPathFreeContext(xpathCtxPtr);
     return -1;
   }
 
-  if(xmlXPathRegisterNs(xpathp, (const xmlChar *)NSPREFIX, (const xmlChar *)NSURL) != 0) {
+  if(xmlXPathRegisterNs(xpathCtxPtr, (const xmlChar *)NSPREFIX, (const xmlChar *)NSURL) != 0) {
     printf("Error: unable to register NS.");
-    xmlXPathFreeContext(xpathp);
+    xmlXPathFreeContext(xpathCtxPtr);
     return -1;
   }
 
   ///////////////////// Evaluating XPATH expression ///////////////////
 
   /* evaluate xpath expression */
-  result = xmlXPathEvalExpression(xpath, xpathp);
-  if (result == NULL) {
+  xpathObjPtr = xmlXPathEvalExpression((const xmlChar*)xpathExpr, xpathCtxPtr);
+  if (xpathObjPtr == NULL) {
     printf("Error in xmlXPathEvalExpression.");
-    xmlXPathFreeObject(result); 
-    xmlXPathFreeContext(xpathp);
+    xmlXPathFreeObject(xpathObjPtr); 
+    xmlXPathFreeContext(xpathCtxPtr);
     return -1;
   }
 
   /* check if  xml doc matches "/video/message/response" */
-  if(xmlXPathNodeSetIsEmpty(result->nodesetval)) {
-    xmlXPathFreeObject(result); 
-    xmlXPathFreeContext(xpathp);
+  if(xmlXPathNodeSetIsEmpty(xpathObjPtr->nodesetval)) {
+    xmlXPathFreeObject(xpathObjPtr); 
+    xmlXPathFreeContext(xpathCtxPtr);
     return -1;
   }
 
@@ -133,8 +134,8 @@ int read_response(xmlDocPtr doc_response, xmlChar *xpath)
 
   ///////////////////// Freeing ///////////////////
 
-  xmlXPathFreeObject(result); 
-  xmlXPathFreeContext(xpathp);
+  xmlXPathFreeObject(xpathObjPtr); 
+  xmlXPathFreeContext(xpathCtxPtr);
   
   return -1;
 }
@@ -166,7 +167,6 @@ void *receive_response(void *pod_obj)
 
 void *send_search(void *pod_obj)
 {
-  int ret;
   int quit = 0;
   char quit_str[10];
   char movie_title[500];
@@ -187,9 +187,13 @@ void *send_search(void *pod_obj)
 	case 1:
 	  printf("Please enter your search details below\n");
 	  printf("Please enter the video title\n");
-	  gets(movie_title);
+	  if(gets(movie_title) == NULL) {
+	    printf("Title input unsuccessful\n");
+	  }
 	  printf("Please enter the maximum price\n");
-	  gets(max_price);
+	  if(gets(max_price) == NULL) {
+	    printf("Price input unsuccessful\n");
+	  }	    
 
 	  if(doc_search != NULL) {
 	    xmlFreeDoc(doc_search); // free xml doc pointer if used
@@ -220,6 +224,7 @@ void *send_search(void *pod_obj)
 	  break;
 	}
     }
+  return pod_object;
 }
 
 /* main function */

@@ -24,47 +24,47 @@
 #define XML_SCHEMA "video.xsd"
 
 /* function prototypes */
-int read_response(xmlDocPtr doc_response, xmlChar *xpath);
+int read_response(xmlDocPtr doc_response, char *xpathExpr);
 
 /* function definitions */
-int read_response(xmlDocPtr doc_response, xmlChar *xpath)
+int read_response(xmlDocPtr doc_response, char *xpathExpr)
 {
   /* Declare variables */
   char *sender_id = NULL;
-  xmlXPathContextPtr xpathp = NULL;
-  xmlXPathObjectPtr result = NULL;
+  xmlXPathContextPtr xpathCtxPtr = NULL;
+  xmlXPathObjectPtr xpathObjPtr = NULL;
 
   ///////////////////// Initialising XPATH ///////////////////
 
   /* setup xpath context */
-  xpathp = xmlXPathNewContext(doc_response);
-  if (xpathp == NULL) {
+  xpathCtxPtr = xmlXPathNewContext(doc_response);
+  if (xpathCtxPtr == NULL) {
     printf("Error in xmlXPathNewContext.");
-    xmlXPathFreeContext(xpathp);
+    xmlXPathFreeContext(xpathCtxPtr);
     return -1;
   }
 
-  if(xmlXPathRegisterNs(xpathp, (const xmlChar *)NSPREFIX, (const xmlChar *)NSURL) != 0) {
+  if(xmlXPathRegisterNs(xpathCtxPtr, (const xmlChar *)NSPREFIX, (const xmlChar *)NSURL) != 0) {
     printf("Error: unable to register NS.");
-    xmlXPathFreeContext(xpathp);
+    xmlXPathFreeContext(xpathCtxPtr);
     return -1;
   }
 
   ///////////////////// Evaluating XPATH expression ///////////////////
 
   /* evaluate xpath expression */
-  result = xmlXPathEvalExpression(xpath, xpathp);
-  if (result == NULL) {
+  xpathObjPtr = xmlXPathEvalExpression((const xmlChar*)xpathExpr, xpathCtxPtr);
+  if (xpathObjPtr == NULL) {
     printf("Error in xmlXPathEvalExpression.");
-    xmlXPathFreeObject(result); 
-    xmlXPathFreeContext(xpathp);
+    xmlXPathFreeObject(xpathObjPtr); 
+    xmlXPathFreeContext(xpathCtxPtr);
     return -1;
   }
 
   /* check if  xml doc matches "/video/message/response" */
-  if(xmlXPathNodeSetIsEmpty(result->nodesetval)) {
-    xmlXPathFreeObject(result); 
-    xmlXPathFreeContext(xpathp);
+  if(xmlXPathNodeSetIsEmpty(xpathObjPtr->nodesetval)) {
+    xmlXPathFreeObject(xpathObjPtr); 
+    xmlXPathFreeContext(xpathCtxPtr);
     return -1;
   }
 
@@ -100,8 +100,8 @@ int read_response(xmlDocPtr doc_response, xmlChar *xpath)
 
   ///////////////////// Freeing ///////////////////
 
-  xmlXPathFreeObject(result); 
-  xmlXPathFreeContext(xpathp);
+  xmlXPathFreeObject(xpathObjPtr); 
+  xmlXPathFreeContext(xpathCtxPtr);
   
   return -1;
 }

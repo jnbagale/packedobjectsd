@@ -23,51 +23,51 @@
 #define XML_DATA "video.xml"
 #define XML_SCHEMA "video.xsd"
 
-static int frequency = 10;
+static int frequency = 10; /* static variable to be used for controlling sleep timing */
 
 /* function prototype */
-static int get_frequency(xmlDocPtr doc_search, xmlChar *xpath);
+static int get_frequency(xmlDocPtr doc_search, char *xpathExpr);
 void *process_receiver(void *pod_obj);
 
 /* function definitions */
-static int get_frequency(xmlDocPtr doc_search, xmlChar *xpath)
+static int get_frequency(xmlDocPtr doc_search, char *xpathExpr)
 {
   /* Declare variables */
   int ret; 
-  xmlXPathContextPtr xpathp = NULL;
-  xmlXPathObjectPtr result = NULL;
+  xmlXPathContextPtr xpathCtrPtr = NULL;
+  xmlXPathObjectPtr xpathObjPtr = NULL;
   
   ///////////////////// Initialising XPATH ///////////////////
 
   /* setup xpath context */
-  xpathp = xmlXPathNewContext(doc_search);
-  if (xpathp == NULL) {
+  xpathCtrPtr = xmlXPathNewContext(doc_search);
+  if (xpathCtrPtr == NULL) {
     printf("Error in xmlXPathNewContext.");
-    xmlXPathFreeContext(xpathp);
+    xmlXPathFreeContext(xpathCtrPtr);
     return -1;
   }
 
-  if(xmlXPathRegisterNs(xpathp, (const xmlChar *)NSPREFIX, (const xmlChar *)NSURL) != 0) {
+  if(xmlXPathRegisterNs(xpathCtrPtr, (const xmlChar *)NSPREFIX, (const xmlChar *)NSURL) != 0) {
     printf("Error: unable to register NS.");
-    xmlXPathFreeContext(xpathp);
+    xmlXPathFreeContext(xpathCtrPtr);
     return -1;
   }
 
   ///////////////////// Evaluating XPATH expression ///////////////////
 
   /* evaluate xpath expression */
-  result = xmlXPathEvalExpression(xpath, xpathp);
-  if (result == NULL) {
+  xpathObjPtr = xmlXPathEvalExpression((const xmlChar*)xpathExpr, xpathCtrPtr);
+  if (xpathObjPtr == NULL) {
     printf("Error in xmlXPathEvalExpression.");
-    xmlXPathFreeObject(result); 
-    xmlXPathFreeContext(xpathp);
+    xmlXPathFreeObject(xpathObjPtr); 
+    xmlXPathFreeContext(xpathCtrPtr);
     return -1;
   }
 
   /* check if the xml doc matches "/video/message/search" */
-  if(xmlXPathNodeSetIsEmpty(result->nodesetval)) {
-    xmlXPathFreeObject(result); 
-    xmlXPathFreeContext(xpathp);
+  if(xmlXPathNodeSetIsEmpty(xpathObjPtr->nodesetval)) {
+    xmlXPathFreeObject(xpathObjPtr); 
+    xmlXPathFreeContext(xpathCtrPtr);
     return -1;
   }
 
@@ -89,8 +89,8 @@ static int get_frequency(xmlDocPtr doc_search, xmlChar *xpath)
 
   ///////////////////// Freeing ///////////////////
 
-  xmlXPathFreeObject(result); 
-  xmlXPathFreeContext(xpathp);
+  xmlXPathFreeObject(xpathObjPtr); 
+  xmlXPathFreeContext(xpathCtrPtr);
   
   return ret;
 }
@@ -114,7 +114,7 @@ void *process_searcher(void *pod_obj)
       /* to ignore messages sent by itself */
       ret = get_frequency(doc_search, "/video/message/search");
       if(ret != -1) {
-	printf("search request received with frequency %d\n",ret);
+	printf("search request received with frequency %d\n", ret);
 	frequency = ret;
       }
     }
