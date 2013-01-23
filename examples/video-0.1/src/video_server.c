@@ -87,6 +87,12 @@ static int get_frequency(xmlDocPtr doc_search, char *xpathExpr)
       cur = cur->xmlChildrenNode;
     }
 
+  /* reset frequency */
+  if(ret > 0) {
+    printf("search request received with frequency %d\n", ret);
+    frequency = ret;
+  }
+
   ///////////////////// Freeing ///////////////////
 
   xmlXPathFreeObject(xpathObjPtr); 
@@ -97,7 +103,6 @@ static int get_frequency(xmlDocPtr doc_search, char *xpathExpr)
 
 void *process_searcher(void *pod_obj)
 {
-  int ret;
   xmlDocPtr doc_search = NULL;
   packedobjectsdObject *pod_object =  (packedobjectsdObject *) pod_obj;
 
@@ -112,11 +117,7 @@ void *process_searcher(void *pod_obj)
       }
 
       /* to ignore messages sent by itself */
-      ret = get_frequency(doc_search, "/video/message/search");
-      if(ret != -1) {
-	printf("search request received with frequency %d\n", ret);
-	frequency = ret;
-      }
+      get_frequency(doc_search, "/video/message/search");
     }
   xmlFreeDoc(doc_search);
 }
