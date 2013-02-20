@@ -106,8 +106,7 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file)
 static int packedobjectsd_subscribe(packedobjectsdObject *pod_obj, char *schema_hash)
 {
   int rc;
-  uint64_t hwm = 100;
-  
+   
   /* Retrieve broker's address details from lookup server using the schema */
   pod_obj->subscriber_endpoint = get_broker_detail('S', pod_obj->server_address, pod_obj->server_port, schema_hash);
 
@@ -120,19 +119,13 @@ static int packedobjectsd_subscribe(packedobjectsdObject *pod_obj, char *schema_
   }
  
   /* Prepare the zeromq subscriber context and socket */
-  if ((pod_obj->subscriber_context = zmq_init(1)) == NULL){
+  if ((pod_obj->subscriber_context = zmq_ctx_new()) == NULL){
     alert("Failed to initialise zeromq context for subscriber: %s", zmq_strerror (errno));
     return -1;
   }
 
   if((pod_obj->subscriber_socket = zmq_socket (pod_obj->subscriber_context, ZMQ_SUB)) == NULL) {
     alert("Failed to create zeromq socket for subscriber: %s", zmq_strerror (errno));
-    return -1;
-  }
-
-  /* Set high water mark to control number of messages buffered by subscriber */
-  if((rc = zmq_setsockopt (pod_obj->subscriber_socket, ZMQ_HWM, &hwm, sizeof (hwm))) == -1) {
-    alert("Failed to set zeromq socket options for subscriber: %s", zmq_strerror (errno));
     return -1;
   }
 
@@ -158,8 +151,7 @@ static int packedobjectsd_subscribe(packedobjectsdObject *pod_obj, char *schema_
 static int packedobjectsd_publish(packedobjectsdObject *pod_obj, char *schema_hash)
 {
   int rc; 
-  uint64_t hwm = 100;
-  
+    
   /* Retrieve broker's address details from lookup server using the schema */
   pod_obj->publisher_endpoint = get_broker_detail('P', pod_obj->server_address, pod_obj->server_port, schema_hash);
 
@@ -179,11 +171,6 @@ static int packedobjectsd_publish(packedobjectsdObject *pod_obj, char *schema_ha
 
   if((pod_obj->publisher_socket = zmq_socket (pod_obj->publisher_context, ZMQ_PUB)) == NULL){ 
     alert("Failed to create zeromq socket for publisher: %s", zmq_strerror (errno));
-    return -1;
-  }
-
-  if((rc = zmq_setsockopt (pod_obj->publisher_socket, ZMQ_HWM, &hwm, sizeof (hwm))) == -1){
-    alert("Failed to set zeromq socket options for publisher: %s", zmq_strerror (errno));
     return -1;
   }
 

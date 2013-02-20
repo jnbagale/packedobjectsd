@@ -33,7 +33,7 @@ int send_message(void *socket, char *message, int message_length)
   }
 
   memcpy (zmq_msg_data (&z_message), message, message_length);
-  if((rc = zmq_send (socket, &z_message, 0)) == -1){
+  if((rc = zmq_msg_send (&z_message, socket, 0)) == -1){
     alert("Error occurred during zmq_send(): %s", zmq_strerror (errno));
   }
   zmq_msg_close (&z_message);
@@ -54,7 +54,7 @@ char *receive_message(void *socket, int *message_length)
     return NULL;
   }
 
-  if((rc = zmq_recv(socket, &z_message, 0)) == -1){
+  if((rc = zmq_msg_recv(&z_message, socket, 0)) == -1){
     alert("Error occurred during zmq_recv(): %s", zmq_strerror (errno));
     return NULL;
   }

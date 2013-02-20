@@ -5,7 +5,7 @@ includedir=${exec_prefix}/include
 
 Name: libpackedobjectsd
 Description: A light-weight  xml messaging library.
-Requires: libzmq >= 2.1.11 libxml-2.0 >= 2.7.8 libpackedobjects
+Requires: libzmq >= 3.0 libxml-2.0 >= 2.7.8 libpackedobjects
 Version: 1.0.0
 Libs: -lpackedobjectsd
 Cflags: -I${includedir}/packedobjectsd 
