@@ -10,25 +10,27 @@
 /* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the */
 /* GNU General Public License for more details. */
 
-/* A simple video library example. The searcher will receive new video */
-/* releases for movies from clients using packedobjectsd library */
+/* A simple video library example. The client will broadcast new movie */
+/* releases to subscribed searchers using packedobjectsd library */
 
 #include <stdio.h>
-#include <time.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <packedobjectsd/packedobjectsd.h>
 
 /* global variables */
+#define XML_DATA "database.xml"
 #define XML_SCHEMA "video.xsd"
+
+static int frequency = 30; /* static variable to be used for controlling sending interval */
 
 /* main function */
 int main(int argc, char *argv [])
 { 
   /* Declare variables */
-  int count = 0;
-  xmlDocPtr doc_received = NULL;
+  xmlDocPtr doc_sent = NULL;
   packedobjectsdObject *pod_obj = NULL;
-    
+  
   ///////////////////// Initialising ///////////////////
 
   /* Initialise packedobjectsd */
@@ -37,27 +39,30 @@ int main(int argc, char *argv [])
     exit(EXIT_FAILURE);
   }
 
-  ///////////////////// Receiving video releases ///////////////////
+  ///////////////////// Sending ///////////////////
 
-  printf("listening to the video clients ...\n");
   while(1) 
-    {       
-      /* waiting to receive message */
-      if((doc_received = packedobjectsd_receive(pod_obj)) == NULL){
-	printf("message could not be received\n");
+    {     
+      /* initialise new xml document */
+      if((doc_sent = xml_new_doc(XML_DATA)) == NULL) {
+	printf("did not find .xml file");
+	exit(EXIT_FAILURE);
+      }  
+
+      /* send video xml document to receiver */
+      if(packedobjectsd_send(pod_obj, doc_sent) == -1){
+	printf("message could not be sent\n");
 	exit(EXIT_FAILURE);
       }
-
-      /* Display the received XML data */
-      xml_dump_doc(doc_received);
-    
-      xmlFreeDoc(doc_received);
-      usleep(1000);
+      printf("video database is sent\n");
+      xmlFreeDoc(doc_sent);
+      sleep(frequency);
     }
+
 
   ///////////////////// Freeing ///////////////////
 
-  /* free up memory created by  packedobjectsd but we should never reach here! */
+  /* free up memory created by packedobjectsd but we should never reach here! */
   free_packedobjectsd(pod_obj);
 
   return EXIT_FAILURE;

@@ -25,6 +25,7 @@ src/*.la
 src/*.lo
 src/packedobjectsdtest
 
+examples/helloworld-0.1/helloworld-0.1.tar.gz
 examples/helloworld-0.1/Makefile
 examples/helloworld-0.1/Makefile.in
 examples/helloworld-0.1/aclocal.m4
@@ -49,6 +50,7 @@ examples/helloworld-0.1/src/.libs/
 examples/helloworld-0.1/src/helloworld
 examples/helloworld-0.1/src/*.o
 
+examples/helloworld-0.2/helloworld-0.2.tar.gz
 examples/helloworld-0.2/Makefile
 examples/helloworld-0.2/Makefile.in
 examples/helloworld-0.2/aclocal.m4
@@ -73,6 +75,7 @@ examples/helloworld-0.2/src/.libs/
 examples/helloworld-0.2/src/helloworld
 examples/helloworld-0.2/src/*.o
 
+examples/video-0.1/video-0.1.tar.gz
 examples/video-0.1/Makefile
 examples/video-0.1/Makefile.in
 examples/video-0.1/aclocal.m4
@@ -94,11 +97,13 @@ examples/video-0.1/src/config.h
 examples/video-0.1/src/config.h.in
 examples/video-0.1/src/stamp-h1
 examples/video-0.1/src/.libs/
+examples/video-0.1/src/video_client
 examples/video-0.1/src/video_receiver
 examples/video-0.1/src/video_searcher
 examples/video-0.1/src/video_server
 examples/video-0.1/src/*.o
 
+examples/video-0.2/video-0.2.tar.gz
 examples/video-0.2/Makefile
 examples/video-0.2/Makefile.in
 examples/video-0.2/aclocal.m4
@@ -124,6 +129,7 @@ examples/video-0.2/src/video_client
 examples/video-0.2/src/video_searcher
 examples/video-0.2/src/*.o
 
+examples/video-0.3/video-0.3.tar.gz
 examples/video-0.3/Makefile
 examples/video-0.3/Makefile.in
 examples/video-0.3/aclocal.m4
