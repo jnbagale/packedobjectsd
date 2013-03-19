@@ -37,27 +37,41 @@ enum ERR_CODE {
   UNDEFINED
 };
 
+enum NODE_TYPE {
+  PUBLISHER,
+  SUBSCRIBER,
+  PUBSUB,
+  SEARCHER,
+  RESPONDER,
+  SEARES
+};
+
 typedef struct {
   void *publisher_context;
   void *subscriber_context;
   void *publisher_socket;
   void *subscriber_socket;
+  char *sub_topic;
+  char *pub_topic;
+  char unique_id[50];
   char *schema_hash;
   char *server_address;
   char *publisher_endpoint;
   char *subscriber_endpoint;
-  char node_type;    /* Subscriber 'S'; Publisher 'P'; Both 'B' */
   int bytes_sent;
   int bytes_received;
   int error_code;
   int server_port;
+  int node_type;
   packedobjectsContext *pc;
 } packedobjectsdObject;
 
-packedobjectsdObject *init_packedobjectsd(const char *schema_file);
+packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type);
 int packedobjectsd_send(packedobjectsdObject *pod_obj, xmlDocPtr doc);
 xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj);
 void free_packedobjectsd(packedobjectsdObject *pod_obj);
+int packedobjectsd_send_search(packedobjectsdObject *pod_obj, xmlDocPtr doc);
+xmlDocPtr packedobjectsd_receive_search(packedobjectsdObject *pod_obj);
 const char *pod_strerror(int error_code);
 
 #endif

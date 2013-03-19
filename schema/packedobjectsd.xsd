@@ -8,6 +8,10 @@
     <xs:restriction base="enumerated">
       <xs:enumeration value="PUBLISHER"/>
       <xs:enumeration value="SUBSCRIBER"/>
+      <xs:enumeration value="PUBSUB"/>
+      <xs:enumeration value="SEARCHER"/>
+      <xs:enumeration value="RESPONDER"/>
+      <xs:enumeration value="SEARES"/>
     </xs:restriction>
   </xs:simpleType>
 

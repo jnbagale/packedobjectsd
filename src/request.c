@@ -45,7 +45,7 @@ xmlDocPtr create_request(char *user_id, char *schema_hash, char *nodetype)
   xmlNewChild(request_node, NULL, BAD_CAST "user-id", BAD_CAST user_id);
   xmlNewChild(request_node, NULL, BAD_CAST "schema-hash", BAD_CAST schema_hash);
   xmlNewChild(request_node, NULL, BAD_CAST "node-type", BAD_CAST nodetype);
-  // xml_dump_doc(doc);
+  //xml_dump_doc(doc);
     
   return doc; /* doc to be freed by calling function */
 }
@@ -95,14 +95,11 @@ int process_request(xmlDocPtr request_doc, char *user_id, char *schema_hash, cha
   return 1;
 }
 
-char *encode_request(char *user_id, char *schema_hash, char node_type, int *request_size)
+char *encode_request(char *user_id, char *schema_hash, char *nodetype, int *request_size)
 {
   xmlDocPtr doc;
   char *pdu = NULL;
-  char *nodetype = NULL;
   packedobjectsContext *pc;
-
-  nodetype = which_node(node_type);
 
   pc = init_packedobjects(POD_SCHEMA);
   doc = create_request(user_id, schema_hash, nodetype);

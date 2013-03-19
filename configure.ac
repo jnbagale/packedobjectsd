@@ -38,6 +38,9 @@ AC_CHECK_HEADERS(pthread.h,, [AC_MSG_ERROR([pthread.h required])])
 AC_CHECK_LIB([crypt], [crypt], [LIBS="$LIBS -lcrypt"])
 AC_CHECK_HEADERS(crypt.h,, [AC_MSG_ERROR([crypt.h required])])
 
+# check for uuid
+PKG_CHECK_MODULES(UUID, [uuid])
+
 # check for zeromq
 PKG_CHECK_MODULES(LIBZMQ, [libzmq])
 

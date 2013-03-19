@@ -22,7 +22,7 @@
   (fprintf(stderr, "libpackedobjectsd" ":%s: " fmtstr "\n", __func__, ##args))
 #endif
 
-int send_message(void *socket, char *message, int message_length) 
+int send_message(void *socket, char *message, int message_length, int more) 
 {
   int rc;
   zmq_msg_t z_message;
@@ -33,7 +33,7 @@ int send_message(void *socket, char *message, int message_length)
   }
 
   memcpy (zmq_msg_data (&z_message), message, message_length);
-  if((rc = zmq_msg_send (&z_message, socket, 0)) == -1){
+  if((rc = zmq_msg_send (&z_message, socket, more)) == -1){
     alert("Error occurred during zmq_send(): %s", zmq_strerror (errno));
   }
   zmq_msg_close (&z_message);

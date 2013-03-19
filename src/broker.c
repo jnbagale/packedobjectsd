@@ -26,7 +26,7 @@
   (fprintf(stderr, "libpackedobjectsd" ":%s: " fmtstr "\n", __func__, ##args))
 #endif
 
-char *get_broker_detail(char node_type, char *address, int port, char *schema_hash)
+int get_broker_detail(packedobjectsdObject *pod_obj)
 {
   int rc;
   int portin;
@@ -40,14 +40,16 @@ char *get_broker_detail(char node_type, char *address, int port, char *schema_ha
   char *endpoint;
   char *request_pdu;
   char *response_pdu;
-  char *broker_address;
+  char *nodetype;
   char broker_hostname[MAX_ADDRESS_SIZE];
   xmlDocPtr response_doc = NULL;
  
-  address_size = strlen(address) + sizeof (int) + 7;  /* 7 bytes for 'tcp://' and ':' */
+  address_size = strlen(pod_obj->server_address) + sizeof (int) + 7;  /* 7 bytes for 'tcp://' and ':' */
   endpoint = malloc(address_size + 1);
-  sprintf(endpoint, "tcp://%s:%d", address, port);
-  dbg("Connecting %s to the server at %s",which_node (node_type), endpoint); 
+  sprintf(endpoint, "tcp://%s:%d", pod_obj->server_address, pod_obj->server_port);
+
+  nodetype =  which_node(pod_obj->node_type);
+  dbg("Connecting %s to the server at %s", nodetype, endpoint); 
 
   /* Initialise the zeromq context and socket address */ 
   if((context = zmq_init (1)) == NULL) {
@@ -57,48 +59,52 @@ char *get_broker_detail(char node_type, char *address, int port, char *schema_ha
   /* Create socket to connect to look up server*/
   if((requester = zmq_socket (context, ZMQ_REQ)) == NULL){
     alert("Failed to create zeromq socket: %s", zmq_strerror (errno));
-    return NULL;
+    return -1;
   }
   
   if((rc = zmq_connect (requester, endpoint)) == -1){
     alert("Failed to create zeromq connection: %s", zmq_strerror (errno));
-    return NULL;
+    return -1;
   }
 
-  if((request_pdu = encode_request(schema_hash, schema_hash, node_type, &request_size)) == NULL) {
-    return NULL;
+  if((request_pdu = encode_request(pod_obj->unique_id, pod_obj->schema_hash, nodetype, &request_size)) == NULL) {
+    return -1;
   }
 
-  if((rc = send_message(requester, request_pdu, request_size)) == -1) {
+  if((rc = send_message(requester, request_pdu, request_size, 0)) == -1) {
     alert("Failed to send request structure to server: %s", zmq_strerror (errno));
-    return NULL;
+    return -1;
   }
 
   if((response_pdu = receive_message(requester, &response_size)) == NULL){
     alert("The received message is NULL\n");
-    return NULL;
+    return -1;
   }
 
   if((response_doc = decode_response(response_pdu)) == NULL) {
-    return NULL;
+    return -1;
   }
   
   if((process_response(response_doc, broker_hostname, &portin, &portout, &processid)) == -1) {
-    return NULL;
+    return -1;
   }
  
-  if((broker_address = malloc(MAX_PDU_SIZE)) == NULL){
-    alert("Failed to allocate broker address");
+  if (pod_obj->node_type == PUBLISHER || pod_obj->node_type == PUBSUB) {
+    if((pod_obj->publisher_endpoint = malloc(MAX_PDU_SIZE)) == NULL){
+      alert("Failed to allocate memory for publisher endpoint");
+      return -1;
+    }
+    sprintf(pod_obj->publisher_endpoint, "tcp://%s:%d", broker_hostname, portin);
+    dbg("broker endpoint for publisher %s", pod_obj->publisher_endpoint);
   }
 
-  if(node_type == 'P') {
-    sprintf(broker_address, "tcp://%s:%d",broker_hostname, portin);
-    dbg("broker endpoint for publisher %s", broker_address);
-  }
-
-  if(node_type == 'S') {
-    sprintf(broker_address, "tcp://%s:%d",broker_hostname, portout);
-    dbg("broker endpoint for subscriber %s", broker_address);
+  if (pod_obj->node_type == SUBSCRIBER || pod_obj->node_type == PUBSUB) {
+    if((pod_obj->subscriber_endpoint = malloc(MAX_PDU_SIZE)) == NULL){
+      alert("Failed to allocate memory for subscriber endpoint");
+      return -1;
+    }
+    sprintf(pod_obj->subscriber_endpoint, "tcp://%s:%d", broker_hostname, portout);
+    dbg("broker endpoint for subscriber %s", pod_obj->subscriber_endpoint);
   }
 
   /* Freeing up zeromq context, socket and pointers */
@@ -107,7 +113,7 @@ char *get_broker_detail(char node_type, char *address, int port, char *schema_ha
   zmq_close(requester);
   zmq_term(context);
 
-  return broker_address;
+  return 0;
 }
 
 /* End of broker.c */
