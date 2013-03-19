@@ -107,6 +107,22 @@ int get_broker_detail(packedobjectsdObject *pod_obj)
     dbg("broker endpoint for subscriber %s", pod_obj->subscriber_endpoint);
   }
 
+  if (pod_obj->node_type == SEARCHER || pod_obj->node_type == RESPONDER || pod_obj->node_type == SEARES) {
+    if((pod_obj->publisher_endpoint = malloc(MAX_PDU_SIZE)) == NULL){
+      alert("Failed to allocate memory for publisher endpoint");
+      return -1;
+    }
+    sprintf(pod_obj->publisher_endpoint, "tcp://%s:%d", broker_hostname, portin);
+    dbg("broker endpoint for publisher %s", pod_obj->publisher_endpoint);
+
+    if((pod_obj->subscriber_endpoint = malloc(MAX_PDU_SIZE)) == NULL){
+      alert("Failed to allocate memory for subscriber endpoint");
+      return -1;
+    }
+    sprintf(pod_obj->subscriber_endpoint, "tcp://%s:%d", broker_hostname, portout);
+    dbg("broker endpoint for subscriber %s", pod_obj->subscriber_endpoint);
+  }
+
   /* Freeing up zeromq context, socket and pointers */
   free(endpoint);
   free(response_pdu);

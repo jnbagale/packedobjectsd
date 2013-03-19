@@ -97,6 +97,9 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
     break;
    
   case PUBSUB:
+  case SEARCHER:
+  case RESPONDER:
+  case SEARES:
     ret = packedobjectsd_publish(pod_obj, pod_obj->schema_hash);
     if(ret == -1) {
       alert("Failed to publish to packedobjectsd");
@@ -110,8 +113,6 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
       return NULL;
     }  
     break;
-
-    //case SEARCHER:
   
   default:
     alert("Invalid node type."); 
