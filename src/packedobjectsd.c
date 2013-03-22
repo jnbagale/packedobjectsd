@@ -27,7 +27,7 @@
   (fprintf(stderr, "libpackedobjectsd" ":%s: " fmtstr "\n", __func__, ##args))
 #endif
 
-static int packedobjectsd_subscribe(packedobjectsdObject *pod_obj, char *schema_hash);
+static int packedobjectsd_subscribe(packedobjectsdObject *pod_obj, char *schema_hash, char filter[10]);
 static int packedobjectsd_publish(packedobjectsdObject *pod_obj, char *schema_hash);
 
 packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type)
@@ -79,7 +79,7 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
 
   switch (pod_obj->node_type) {
   case SUBSCRIBER:
-    ret = packedobjectsd_subscribe(pod_obj, pod_obj->schema_hash);
+    ret = packedobjectsd_subscribe(pod_obj, pod_obj->schema_hash, "");
     if(ret == -1) {
       alert("Failed to subscribe to packedobjectsd");
       // pod_obj->error_code =  SUBSCRIBE_FAILED;
@@ -97,16 +97,43 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
     break;
    
   case PUBSUB:
-  case SEARCHER:
-  case RESPONDER:
-  case SEARES:
     ret = packedobjectsd_publish(pod_obj, pod_obj->schema_hash);
     if(ret == -1) {
       alert("Failed to publish to packedobjectsd");
       //  pod_obj->error_code = PUBLISH_FAILED;
       return NULL;
     }
-    ret = packedobjectsd_subscribe(pod_obj, pod_obj->schema_hash);
+    ret = packedobjectsd_subscribe(pod_obj, pod_obj->schema_hash, "");
+    if(ret == -1) {
+      alert("Failed to subscribe to packedobjectsd");
+      //  pod_obj->error_code =  SUBSCRIBE_FAILED;
+      return NULL;
+    }  
+    break;
+
+  case SEARCHER:
+    ret = packedobjectsd_publish(pod_obj, pod_obj->schema_hash);
+    if(ret == -1) {
+      alert("Failed to publish to packedobjectsd");
+      //  pod_obj->error_code = PUBLISH_FAILED;
+      return NULL;
+    }
+    ret = packedobjectsd_subscribe(pod_obj, pod_obj->schema_hash, "s");
+    if(ret == -1) {
+      alert("Failed to subscribe to packedobjectsd");
+      //  pod_obj->error_code =  SUBSCRIBE_FAILED;
+      return NULL;
+    }  
+    break;
+    
+  case RESPONDER:
+    ret = packedobjectsd_publish(pod_obj, pod_obj->schema_hash);
+    if(ret == -1) {
+      alert("Failed to publish to packedobjectsd");
+      //  pod_obj->error_code = PUBLISH_FAILED;
+      return NULL;
+    }
+    ret = packedobjectsd_subscribe(pod_obj, pod_obj->schema_hash, "r");
     if(ret == -1) {
       alert("Failed to subscribe to packedobjectsd");
       //  pod_obj->error_code =  SUBSCRIBE_FAILED;
@@ -114,6 +141,27 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
     }  
     break;
   
+  case SEARES:
+    ret = packedobjectsd_publish(pod_obj, pod_obj->schema_hash);
+    if(ret == -1) {
+      alert("Failed to publish to packedobjectsd");
+      //  pod_obj->error_code = PUBLISH_FAILED;
+      return NULL;
+    }
+    ret = packedobjectsd_subscribe(pod_obj, pod_obj->schema_hash, "r");
+    if(ret == -1) {
+      alert("Failed to subscribe to packedobjectsd");
+      //  pod_obj->error_code =  SUBSCRIBE_FAILED;
+      return NULL;
+    } 
+
+    ret = zmq_setsockopt (pod_obj->subscriber_socket, ZMQ_SUBSCRIBE, "s", 1);
+    if (ret == -1){
+      alert("Failed to set subscribe filter for searcher: %s", zmq_strerror (errno));
+      return -1;
+    } 
+    break;
+
   default:
     alert("Invalid node type."); 
     // pod_obj->error_code = INVALID_NODE_TYPE;
@@ -123,7 +171,7 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
   return pod_obj;
 }
 
-static int packedobjectsd_subscribe(packedobjectsdObject *pod_obj, char *schema_hash)
+static int packedobjectsd_subscribe(packedobjectsdObject *pod_obj, char *schema_hash, char filter[10])
 {
   int rc;
    
@@ -134,7 +182,7 @@ static int packedobjectsd_subscribe(packedobjectsdObject *pod_obj, char *schema_
   else {
     dbg("Broker address receieved for subscriber: %s", pod_obj->subscriber_endpoint);
   }
- 
+
   /* Prepare the zeromq subscriber context and socket */
   if ((pod_obj->subscriber_context = zmq_ctx_new()) == NULL){
     alert("Failed to initialise zeromq context for subscriber: %s", zmq_strerror (errno));
@@ -151,14 +199,14 @@ static int packedobjectsd_subscribe(packedobjectsdObject *pod_obj, char *schema_
     return -1;
   }
   
-  /* Podscribe to group by filtering the received data*/
-  rc = zmq_setsockopt (pod_obj->subscriber_socket, ZMQ_SUBSCRIBE, "", 0);
+  /* Subscribe to group by filtering the received data*/
+  rc = zmq_setsockopt (pod_obj->subscriber_socket, ZMQ_SUBSCRIBE, filter, strlen(filter));
   if (rc == -1){
     alert("Failed to set subscribe filter for subscriber: %s", zmq_strerror (errno));
     return -1;
   }
   else {
-    dbg("Subscriber is ready to receive data from broker %s",pod_obj->subscriber_endpoint);
+    dbg("Subscriber is ready to receive data from broker %s", pod_obj->subscriber_endpoint);
   }
 
   free(pod_obj->subscriber_endpoint); /* Free up subscriber endpoint pointer */
@@ -242,17 +290,11 @@ xmlDocPtr packedobjectsd_receive_search(packedobjectsdObject *pod_obj)
   char data[size];
 
   if(pod_obj->subscriber_socket == NULL) {
-    alert("packedobjectsd isn't initialised to receive message");
+    alert("packedobjectsd isn't initialised to receive search message");
     pod_obj->error_code = RECEIVE_FAILED;
     return NULL;
   }
 
-  /* Unsubscribe from empty subscription filter */
-  zmq_setsockopt(pod_obj->subscriber_socket, ZMQ_UNSUBSCRIBE, "", 0);
-
-  /* Subscribe using new subscription filter */
-  zmq_setsockopt(pod_obj->subscriber_socket, ZMQ_SUBSCRIBE, "s", 1);
- 
   if((pdu = receive_message(pod_obj->subscriber_socket, &size)) == NULL) {
     pod_obj->error_code = RECEIVE_FAILED;
     return NULL;

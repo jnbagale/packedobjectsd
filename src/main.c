@@ -123,13 +123,24 @@ int main (int argc, char *argv [])
     exit_with_message("failed to init packedobjectsd");
   }
   sleep(1); /* Allow broker to start if it's not already running */
-
   while(loop) {
-    send_file(pod_obj, xml_file);
-    receive_file(pod_obj);
-    usleep(1000); /* Do nothing for 1 ms */
+    xmlDocPtr doc_received = NULL;
+    xmlDocPtr doc_sent =  xml_new_doc(xml_file);
+    packedobjectsd_send_search(pod_obj, doc_sent);
+    xmlFreeDoc(doc_sent);
+
+    doc_received = packedobjectsd_receive_search(pod_obj);
+    usleep(1000);
+    xmlFreeDoc(doc_received);
     loop--;
   }
+  /* while(loop) { */
+  /*   send_file(pod_obj, xml_file); */
+  /*   receive_file(pod_obj); */
+  /*   usleep(1000); /\* Do nothing for 1 ms *\/ */
+  /*   loop--; */
+  /* } */
+
   printf("\nTotal messages sent = %d \nTotal messages received = %d\n", send_count, receive_count);
   /* free packedobjectsd */
   free_packedobjectsd(pod_obj);
