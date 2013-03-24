@@ -284,29 +284,27 @@ xmlDocPtr packedobjectsd_receive_search(packedobjectsdObject *pod_obj)
   int rc;
   int size;
   int64_t more;
-  size_t more_size = sizeof more;
+  size_t more_size = sizeof(more);
   char *pdu;
-  char topic[50];
-  char data[size];
-
+  
   if(pod_obj->subscriber_socket == NULL) {
     alert("packedobjectsd isn't initialised to receive search message");
     pod_obj->error_code = RECEIVE_FAILED;
     return NULL;
   }
-
+ 
   if((pdu = receive_message(pod_obj->subscriber_socket, &size)) == NULL) {
     pod_obj->error_code = RECEIVE_FAILED;
     return NULL;
   }
-  
+    
   dbg("topic:- %s", pdu);
-  if((rc = zmq_getsockopt (pod_obj->subscriber_socket, ZMQ_RCVMORE, &more, &more_size)) == -1) {
+  if((rc = zmq_getsockopt(pod_obj->subscriber_socket, ZMQ_RCVMORE, &more, &more_size)) == -1) {
     alert("Failed to get socket option");
   }
 
   if(more) {
-    xmlDocPtr doc;
+    xmlDocPtr doc = NULL;
     doc = packedobjectsd_receive(pod_obj);
     dbg("Received message with topic search");
     return doc;
@@ -371,7 +369,7 @@ int packedobjectsd_send_search(packedobjectsdObject *pod_obj, xmlDocPtr doc)
     return rc;
   } 
 
-  pod_obj->bytes_sent = rc + 1;
+  pod_obj->bytes_sent++;
 
   return 0;
 }
