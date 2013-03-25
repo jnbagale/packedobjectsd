@@ -28,15 +28,24 @@ static void send_file(packedobjectsdObject *pod_obj, const char *xml_file)
     exit_with_message("did not find .xml file");
   }
 
-  /* send a search message */
+  /* Enable this send function when node type is SEARCHER or SEARES */
+  /* send a search message */ 
   if((ret = packedobjectsd_send_search(pod_obj, doc_sent)) == -1){
     exit_with_message(pod_strerror(pod_obj->error_code));
   }
+
+  /* Enable this send function when node type is RESPONDER or SEARES */
+  /* send a response message */
+  if((ret = packedobjectsd_send_response(pod_obj, doc_sent)) == -1){
+    exit_with_message(pod_strerror(pod_obj->error_code));
+  }
+
+  /* Enable this send function when node type is PUBLISHER or PUBSUB */
   /* send a normal pub message */
   /* if((ret = packedobjectsd_send(pod_obj, doc_sent)) == -1){ */
   /*   exit_with_message(pod_strerror(pod_obj->error_code)); */
   /* } */
-
+  
   send_count++;
   printf("message sent\n");
   //xml_dump_doc(doc_sent);
@@ -47,11 +56,19 @@ static void receive_file(packedobjectsdObject *pod_obj)
 { 
   xmlDocPtr doc_received = NULL;
 
+  /* Enable this receive function when node type is SEARCHER or SEARES */
   /* receive a search message */
   if((doc_received = packedobjectsd_receive_search(pod_obj)) == NULL) {
     exit_with_message(pod_strerror(pod_obj->error_code));
   }
-
+  
+  /* Enable this receive function when node type is RESPONDER or SEARES */
+  /* receive a response message */
+  if((doc_received = packedobjectsd_receive_response(pod_obj)) == NULL) {
+    exit_with_message(pod_strerror(pod_obj->error_code));
+  }
+  
+  /* Enable this receive function when node type is PUBLISHER or PUBSUB */
   /* receive a normal pub message */
   /* if((doc_received = packedobjectsd_receive(pod_obj)) == NULL) { */
   /*   exit_with_message(pod_strerror(pod_obj->error_code)); */
@@ -142,9 +159,6 @@ int main (int argc, char *argv [])
     usleep(1000); /* Do nothing for 1 ms */
     loop--;
   }
-
-  packedobjectsd_send_response(pod_obj, xml_new_doc(xml_file));
-  packedobjectsd_receive_response(pod_obj);
 
   printf("\nTotal messages sent = %d \nTotal messages received = %d\n", send_count, receive_count);
   /* free packedobjectsd */

@@ -72,6 +72,8 @@ xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj);
 void free_packedobjectsd(packedobjectsdObject *pod_obj);
 int packedobjectsd_send_search(packedobjectsdObject *pod_obj, xmlDocPtr doc);
 xmlDocPtr packedobjectsd_receive_search(packedobjectsdObject *pod_obj);
+int packedobjectsd_send_response(packedobjectsdObject *pod_obj, xmlDocPtr doc);
+xmlDocPtr packedobjectsd_receive_response(packedobjectsdObject *pod_obj);
 const char *pod_strerror(int error_code);
 
 #endif

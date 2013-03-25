@@ -425,7 +425,7 @@ int packedobjectsd_send_response(packedobjectsdObject *pod_obj, xmlDocPtr doc)
     return rc;
   }
 
-  dbg("topic:- s [search]");
+  dbg("topic:- r [response]");
 
   if((rc = packedobjectsd_send(pod_obj, doc)) == -1) {
     return rc;
