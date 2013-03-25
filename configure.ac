@@ -1,4 +1,4 @@
-AC_INIT(libpackedobjectsd, 0.1, jnbagale@gmail.com)
+AC_INIT(libpackedobjectsd, 0.2, jnbagale@gmail.com)
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([src/])
 AM_CONFIG_HEADER([src/config.h])
