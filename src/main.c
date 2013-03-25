@@ -147,10 +147,10 @@ int main (int argc, char *argv [])
   if (!schema_file) exit_with_message("did not specify --schema file");
   if (!xml_file) exit_with_message("did not specify --xml file");
 
-  /* Initialise packedobjectsd */
+  /* Initialise packedobjectsd with schema file and a flag to specify node type */
   if((pod_obj = init_packedobjectsd(schema_file, SEARES)) == NULL) {
     exit_with_message("failed to init packedobjectsd");
-  }
+  } 
   sleep(1); /* Allow broker to start if it's not already running */
  
   while(loop) {

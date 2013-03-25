@@ -118,7 +118,7 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
       //  pod_obj->error_code = PUBLISH_FAILED;
       return NULL;
     }
-    ret = packedobjectsd_subscribe(pod_obj, pod_obj->schema_hash, "s");
+    ret = packedobjectsd_subscribe(pod_obj, pod_obj->schema_hash, "r"); /* to receive message sent by responder */
     if(ret == -1) {
       alert("Failed to subscribe to packedobjectsd");
       //  pod_obj->error_code =  SUBSCRIBE_FAILED;
@@ -133,7 +133,7 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
       //  pod_obj->error_code = PUBLISH_FAILED;
       return NULL;
     }
-    ret = packedobjectsd_subscribe(pod_obj, pod_obj->schema_hash, "r");
+    ret = packedobjectsd_subscribe(pod_obj, pod_obj->schema_hash, "s");  /* to receive message sent by searcher */
     if(ret == -1) {
       alert("Failed to subscribe to packedobjectsd");
       //  pod_obj->error_code =  SUBSCRIBE_FAILED;

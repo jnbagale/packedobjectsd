@@ -32,7 +32,7 @@ int main(int argc, char *argv [])
   ///////////////////// Initialising ///////////////////
 
   /* Initialise packedobjectsd */
-  if((pod_obj = init_packedobjectsd(XML_SCHEMA)) == NULL) {
+  if((pod_obj = init_packedobjectsd(XML_SCHEMA, SEARCHER)) == NULL) {
     printf("failed to initialise libpackedobjectsd\n");
     exit(EXIT_FAILURE);
   }
@@ -43,7 +43,7 @@ int main(int argc, char *argv [])
   while(1) 
     {       
       /* waiting to receive message */
-      if((doc_received = packedobjectsd_receive(pod_obj)) == NULL){
+      if((doc_received = packedobjectsd_receive_response(pod_obj)) == NULL){
 	printf("message could not be received\n");
 	exit(EXIT_FAILURE);
       }
