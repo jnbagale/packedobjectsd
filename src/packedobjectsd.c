@@ -286,7 +286,7 @@ xmlDocPtr packedobjectsd_receive_search(packedobjectsdObject *pod_obj)
   int64_t more;
   size_t more_size = sizeof(more);
   char *pdu;
-  
+
   if(pod_obj->subscriber_socket == NULL) {
     alert("packedobjectsd isn't initialised to receive search message");
     pod_obj->error_code = RECEIVE_FAILED;
@@ -311,6 +311,42 @@ xmlDocPtr packedobjectsd_receive_search(packedobjectsdObject *pod_obj)
   }
   else {
     dbg("Could not receive with topic search");
+    return NULL;
+  }
+}
+
+xmlDocPtr packedobjectsd_receive_response(packedobjectsdObject *pod_obj)
+{
+  int rc;
+  int size;
+  int64_t more;
+  size_t more_size = sizeof(more);
+  char *pdu;
+  
+  if(pod_obj->subscriber_socket == NULL) {
+    alert("packedobjectsd isn't initialised to receive response message");
+    pod_obj->error_code = RECEIVE_FAILED;
+    return NULL;
+  }
+ 
+  if((pdu = receive_message(pod_obj->subscriber_socket, &size)) == NULL) {
+    pod_obj->error_code = RECEIVE_FAILED;
+    return NULL;
+  }
+    
+  dbg("topic:- %s", pdu);
+  if((rc = zmq_getsockopt(pod_obj->subscriber_socket, ZMQ_RCVMORE, &more, &more_size)) == -1) {
+    alert("Failed to get socket option");
+  }
+
+  if(more) {
+    xmlDocPtr doc = NULL;
+    doc = packedobjectsd_receive(pod_obj);
+    dbg("Received message with topic response");
+    return doc;
+  }
+  else {
+    dbg("Could not receive with topic response");
     return NULL;
   }
 }
@@ -358,6 +394,32 @@ int packedobjectsd_send_search(packedobjectsdObject *pod_obj, xmlDocPtr doc)
   }
 
   if((rc = send_message(pod_obj->publisher_socket, "s", 1, ZMQ_SNDMORE)) == -1) {
+    alert("Error occurred while sending the message: %s", zmq_strerror (errno));
+    pod_obj->error_code = SEND_FAILED;
+    return rc;
+  }
+
+  dbg("topic:- s [search]");
+
+  if((rc = packedobjectsd_send(pod_obj, doc)) == -1) {
+    return rc;
+  } 
+
+  pod_obj->bytes_sent++;
+
+  return 0;
+}
+
+int packedobjectsd_send_response(packedobjectsdObject *pod_obj, xmlDocPtr doc)
+{
+  int rc;
+ 
+  if(pod_obj->publisher_socket == NULL) {
+    alert("packedobjectsd isn't initialised properly");
+    return -1;
+  }
+
+  if((rc = send_message(pod_obj->publisher_socket, "r", 1, ZMQ_SNDMORE)) == -1) {
     alert("Error occurred while sending the message: %s", zmq_strerror (errno));
     pod_obj->error_code = SEND_FAILED;
     return rc;

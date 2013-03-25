@@ -28,9 +28,15 @@ static void send_file(packedobjectsdObject *pod_obj, const char *xml_file)
     exit_with_message("did not find .xml file");
   }
 
-  if((ret = packedobjectsd_send(pod_obj, doc_sent)) == -1){
+  /* send a search message */
+  if((ret = packedobjectsd_send_search(pod_obj, doc_sent)) == -1){
     exit_with_message(pod_strerror(pod_obj->error_code));
   }
+  /* send a normal pub message */
+  /* if((ret = packedobjectsd_send(pod_obj, doc_sent)) == -1){ */
+  /*   exit_with_message(pod_strerror(pod_obj->error_code)); */
+  /* } */
+
   send_count++;
   printf("message sent\n");
   //xml_dump_doc(doc_sent);
@@ -41,9 +47,15 @@ static void receive_file(packedobjectsdObject *pod_obj)
 { 
   xmlDocPtr doc_received = NULL;
 
-  if((doc_received = packedobjectsd_receive(pod_obj)) == NULL) {
+  /* receive a search message */
+  if((doc_received = packedobjectsd_receive_search(pod_obj)) == NULL) {
     exit_with_message(pod_strerror(pod_obj->error_code));
   }
+
+  /* receive a normal pub message */
+  /* if((doc_received = packedobjectsd_receive(pod_obj)) == NULL) { */
+  /*   exit_with_message(pod_strerror(pod_obj->error_code)); */
+  /* } */
   receive_count++;
   printf("message received\n");
   //xml_dump_doc(doc_received);
@@ -123,23 +135,16 @@ int main (int argc, char *argv [])
     exit_with_message("failed to init packedobjectsd");
   }
   sleep(1); /* Allow broker to start if it's not already running */
+ 
   while(loop) {
-    xmlDocPtr doc_received = NULL;
-    xmlDocPtr doc_sent =  xml_new_doc(xml_file);
-    packedobjectsd_send_search(pod_obj, doc_sent);
-    xmlFreeDoc(doc_sent);
-
-    doc_received = packedobjectsd_receive_search(pod_obj);
-    usleep(1000);
-    xmlFreeDoc(doc_received);
+    send_file(pod_obj, xml_file);
+    receive_file(pod_obj);
+    usleep(1000); /* Do nothing for 1 ms */
     loop--;
   }
-  /* while(loop) { */
-  /*   send_file(pod_obj, xml_file); */
-  /*   receive_file(pod_obj); */
-  /*   usleep(1000); /\* Do nothing for 1 ms *\/ */
-  /*   loop--; */
-  /* } */
+
+  packedobjectsd_send_response(pod_obj, xml_new_doc(xml_file));
+  packedobjectsd_receive_response(pod_obj);
 
   printf("\nTotal messages sent = %d \nTotal messages received = %d\n", send_count, receive_count);
   /* free packedobjectsd */
