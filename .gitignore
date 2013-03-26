@@ -97,6 +97,7 @@ examples/video-0.1/src/config.h
 examples/video-0.1/src/config.h.in
 examples/video-0.1/src/stamp-h1
 examples/video-0.1/src/.libs/
+examples/video-0.1/src/video_responder
 examples/video-0.1/src/video_client
 examples/video-0.1/src/video_receiver
 examples/video-0.1/src/video_searcher
@@ -125,6 +126,7 @@ examples/video-0.2/src/config.h
 examples/video-0.2/src/config.h.in
 examples/video-0.2/src/stamp-h1
 examples/video-0.2/src/.libs/
+examples/video-0.2/src/video_responder
 examples/video-0.2/src/video_client
 examples/video-0.2/src/video_searcher
 examples/video-0.2/src/*.o
@@ -151,6 +153,7 @@ examples/video-0.3/src/config.h
 examples/video-0.3/src/config.h.in
 examples/video-0.3/src/stamp-h1
 examples/video-0.3/src/.libs/
+examples/video-0.3/src/video_responder
 examples/video-0.3/src/video_client
 examples/video-0.3/src/video_searcher
 examples/video-0.3/src/*.o

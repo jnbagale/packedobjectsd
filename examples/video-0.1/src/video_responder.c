@@ -10,8 +10,8 @@
 /* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the */
 /* GNU General Public License for more details. */
 
-/* A simple video library example. The client will broadcast new movie */
-/* releases to subscribed searchers using packedobjectsd library */
+/* A simple mobile search program for video data. The responder will send video data */
+/* to searchers at regular interval using packedobjectsd library */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,10 +19,10 @@
 #include <packedobjectsd/packedobjectsd.h>
 
 /* global variables */
-#define XML_DATA "database.xml"
+#define XML_DATA "video.xml"
 #define XML_SCHEMA "video.xsd"
 
-static int frequency = 30; /* static variable to be used for controlling sending interval */
+static int frequency = 30; /* static variable in seconds used as sending frequency */
 
 /* main function */
 int main(int argc, char *argv [])
@@ -30,7 +30,8 @@ int main(int argc, char *argv [])
   /* Declare variables */
   xmlDocPtr doc_sent = NULL;
   packedobjectsdObject *pod_obj = NULL;
-  
+    
+  printf(" ///////////////////// VIDEO RESPONDER VERSION-0.1 ////////////////// \n");
   ///////////////////// Initialising ///////////////////
 
   /* Initialise packedobjectsd */
@@ -40,9 +41,11 @@ int main(int argc, char *argv [])
   }
 
   ///////////////////// Sending ///////////////////
-
+  printf("sending video data to the video searcher ...\n");
   while(1) 
     {     
+      sleep(frequency);
+      
       /* initialise new xml document */
       if((doc_sent = xml_new_doc(XML_DATA)) == NULL) {
 	printf("did not find .xml file");
@@ -56,7 +59,6 @@ int main(int argc, char *argv [])
       }
       printf("video database is sent\n");
       xmlFreeDoc(doc_sent);
-      sleep(frequency);
     }
 
 

@@ -36,9 +36,9 @@ static void send_file(packedobjectsdObject *pod_obj, const char *xml_file)
 
   /* Enable this send function when node type is RESPONDER or SEARES */
   /* send a response message */
-  if((ret = packedobjectsd_send_response(pod_obj, doc_sent)) == -1){
-    exit_with_message(pod_strerror(pod_obj->error_code));
-  }
+  /* if((ret = packedobjectsd_send_response(pod_obj, doc_sent)) == -1){ */
+  /*   exit_with_message(pod_strerror(pod_obj->error_code)); */
+  /* } */
 
   /* Enable this send function when node type is PUBLISHER or PUBSUB */
   /* send a normal pub message */
@@ -64,9 +64,9 @@ static void receive_file(packedobjectsdObject *pod_obj)
   
   /* Enable this receive function when node type is RESPONDER or SEARES */
   /* receive a response message */
-  if((doc_received = packedobjectsd_receive_response(pod_obj)) == NULL) {
-    exit_with_message(pod_strerror(pod_obj->error_code));
-  }
+  /* if((doc_received = packedobjectsd_receive_response(pod_obj)) == NULL) { */
+  /*   exit_with_message(pod_strerror(pod_obj->error_code)); */
+  /* } */
   
   /* Enable this receive function when node type is PUBLISHER or PUBSUB */
   /* receive a normal pub message */
@@ -154,8 +154,18 @@ int main (int argc, char *argv [])
   sleep(1); /* Allow broker to start if it's not already running */
  
   while(loop) {
+    int ret;
     send_file(pod_obj, xml_file);
     receive_file(pod_obj);
+  
+    /* send a response message */
+    if((ret = packedobjectsd_send_response(pod_obj, xml_new_doc(xml_file))) == -1){
+      exit_with_message(pod_strerror(pod_obj->error_code));
+    }
+    /* receive a response message */
+    if((packedobjectsd_receive_response(pod_obj)) == NULL) {
+      exit_with_message(pod_strerror(pod_obj->error_code));
+    }
     usleep(1000); /* Do nothing for 1 ms */
     loop--;
   }

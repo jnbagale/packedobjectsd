@@ -54,6 +54,7 @@ typedef struct {
   char *sub_topic;
   char *pub_topic;
   char unique_id[50];
+  char *last_searcher_id;
   char *schema_hash;
   char *server_address;
   char *publisher_endpoint;

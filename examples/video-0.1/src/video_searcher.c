@@ -10,8 +10,8 @@
 /* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the */
 /* GNU General Public License for more details. */
 
-/* A simple video library example. The searcher will receive new video */
-/* releases for movies from clients using packedobjectsd library */
+/* A simple mobile search program for video data. The searcher will receive video data */
+/* from responders at regular interval using packedobjectsd library */
 
 #include <stdio.h>
 #include <time.h>
@@ -25,9 +25,10 @@
 int main(int argc, char *argv [])
 { 
   /* Declare variables */
-  int count = 0;
   xmlDocPtr doc_received = NULL;
   packedobjectsdObject *pod_obj = NULL;
+  
+  printf(" ///////////////////// VIDEO SEARCHER VERSION-0.1 ////////////////// \n");
     
   ///////////////////// Initialising ///////////////////
 
@@ -38,8 +39,7 @@ int main(int argc, char *argv [])
   }
 
   ///////////////////// Receiving video releases ///////////////////
-
-  printf("listening to the video clients ...\n");
+  printf("listening to the video responder ...\n");
   while(1) 
     {       
       /* waiting to receive message */

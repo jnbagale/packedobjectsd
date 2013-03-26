@@ -10,8 +10,8 @@
 /* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the */
 /* GNU General Public License for more details. */
 
-/* A simple program to broadcast video search to connected clients.  */
-/* Clients interested in the video then respond to this searcher     */
+/* A simple mobile search program for video data. The searcher will send search request
+/* to responders and will receive back video data from responders */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -115,10 +115,11 @@ int main(int argc, char *argv [])
   xmlDocPtr doc_response = NULL;
   packedobjectsdObject *pod_obj = NULL;
   
+  printf(" ///////////////////// VIDEO SEARCHER VERSION-0.2 ////////////////// \n");
   ///////////////////// Initialising packedobjectsd ///////////////////
 
   /* Initialise packedobjectsd */
-  if((pod_obj = init_packedobjectsd(XML_SCHEMA)) == NULL) {
+  if((pod_obj = init_packedobjectsd(XML_SCHEMA, SEARCHER)) == NULL) {
     printf("failed to initialise libpackedobjectsd\n");
     exit(EXIT_FAILURE);
   }
@@ -132,7 +133,7 @@ int main(int argc, char *argv [])
   }  
 
   /* sending search XML document */
-  if(packedobjectsd_send(pod_obj, doc_sent) == -1){
+  if(packedobjectsd_send_search(pod_obj, doc_sent) == -1){
     printf("message could not be sent\n");
     exit(EXIT_FAILURE);
   }
@@ -146,7 +147,7 @@ int main(int argc, char *argv [])
   while(1)
     {
       printf("waiting for search response...\n");
-      if((doc_response = packedobjectsd_receive(pod_obj)) == NULL) {
+      if((doc_response = packedobjectsd_receive_response(pod_obj)) == NULL) {
 	printf("message could not be received\n");
 	exit(EXIT_FAILURE);
       }

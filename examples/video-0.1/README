@@ -1,3 +1,7 @@
-A simple video library system using packedobjectsd library. The client broadcasts new video release information to subscribed searchers at default frequency. The client will init_packedobjectsd using the video.xsd schema and responder flag. The searcher will init_packedobjectsd using the video.xsd schema and searcher flag. The searcher will wait for data from clients.
+Video example version 0.1
 
-To run the program, first compile and install the packedobjectsd library using autoconf tools and then compile this program using autoconf tools. Run video_searcher and then video_client.
+A simple mobile search program for video data built using libpackedobjects and libpackedobjectsd library. The responder will init_packedobjectsd using the video.xsd schema and responder flag. The searcher will init_packedobjectsd using the video.xsd schema and the searcher flag. The video data is in XML format and will be encoded using libpackedobjects with the help of XML schema before being sent to the searcher.
+
+ In this version, the searcher will receive video data from responder without sending any search requests. The responder sends video data  to searchers at pre-defined frequency. The searcher just displays the data as XML without processsing it. A single searcher can receive data from multiple responders and also a single responder can send data to multiple searchers.
+
+To run the program, first compile and install the packedobjectsd library using autoconf tools and then compile video-0.1 using autoconf tools. Run video_searcher and then video_responder.

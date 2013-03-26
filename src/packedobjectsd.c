@@ -34,6 +34,7 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
 {
   int ret;
   uuid_t buf;
+  char resp_filter[100];
   packedobjectsdObject *pod_obj;
  
   if ((pod_obj = (packedobjectsdObject *) malloc(sizeof(packedobjectsdObject))) == NULL) {
@@ -62,6 +63,9 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
   uuid_generate_random(buf);
   uuid_unparse(buf, pod_obj->unique_id);
   dbg("unique id created successfully: %s", pod_obj->unique_id);
+
+  /* create custom subscribe filter for searchers using their own unique id */
+  sprintf(resp_filter, "r##%s", pod_obj->unique_id);
 
   /* create MD5 Hash of the XML schmea */
   if((pod_obj->schema_hash = xml_to_md5hash(schema_file)) == NULL) {
@@ -118,7 +122,7 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
       //  pod_obj->error_code = PUBLISH_FAILED;
       return NULL;
     }
-    ret = packedobjectsd_subscribe(pod_obj, pod_obj->schema_hash, "r"); /* to receive message sent by responder */
+    ret = packedobjectsd_subscribe(pod_obj, pod_obj->schema_hash, resp_filter); /* to receive message sent by responder */
     if(ret == -1) {
       alert("Failed to subscribe to packedobjectsd");
       //  pod_obj->error_code =  SUBSCRIBE_FAILED;
@@ -148,7 +152,7 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
       //  pod_obj->error_code = PUBLISH_FAILED;
       return NULL;
     }
-    ret = packedobjectsd_subscribe(pod_obj, pod_obj->schema_hash, "r");
+    ret = packedobjectsd_subscribe(pod_obj, pod_obj->schema_hash, resp_filter);
     if(ret == -1) {
       alert("Failed to subscribe to packedobjectsd");
       //  pod_obj->error_code =  SUBSCRIBE_FAILED;
@@ -158,8 +162,9 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
     ret = zmq_setsockopt (pod_obj->subscriber_socket, ZMQ_SUBSCRIBE, "s", 1);
     if (ret == -1){
       alert("Failed to set subscribe filter for searcher: %s", zmq_strerror (errno));
-      return -1;
+      return NULL;
     } 
+    dbg("Subscription filter:- s");
     break;
 
   default:
@@ -207,6 +212,7 @@ static int packedobjectsd_subscribe(packedobjectsdObject *pod_obj, char *schema_
   }
   else {
     dbg("Subscriber is ready to receive data from broker %s", pod_obj->subscriber_endpoint);
+    dbg("Subscription filter:- %s", filter);
   }
 
   free(pod_obj->subscriber_endpoint); /* Free up subscriber endpoint pointer */
@@ -301,6 +307,18 @@ xmlDocPtr packedobjectsd_receive_search(packedobjectsdObject *pod_obj)
   dbg("topic:- %s", pdu);
   if((rc = zmq_getsockopt(pod_obj->subscriber_socket, ZMQ_RCVMORE, &more, &more_size)) == -1) {
     alert("Failed to get socket option");
+  }
+
+  if(more) {
+    if((pod_obj->last_searcher_id = receive_message(pod_obj->subscriber_socket, &size)) == NULL) {
+    pod_obj->error_code = RECEIVE_FAILED;
+    return NULL;
+    }
+    dbg("searcher id:- %s", pod_obj->last_searcher_id);
+  }
+  else {
+    dbg("Could not receive the searcher id");
+    return NULL;
   }
 
   if(more) {
@@ -401,6 +419,14 @@ int packedobjectsd_send_search(packedobjectsdObject *pod_obj, xmlDocPtr doc)
 
   dbg("topic:- s [search]");
 
+  if((rc = send_message(pod_obj->publisher_socket, pod_obj->unique_id, strlen(pod_obj->unique_id), ZMQ_SNDMORE)) == -1) {
+    alert("Error occurred while sending the message: %s", zmq_strerror (errno));
+    pod_obj->error_code = SEND_FAILED;
+    return rc;
+  }
+
+  dbg("searcher id:- %s", pod_obj->unique_id);
+
   if((rc = packedobjectsd_send(pod_obj, doc)) == -1) {
     return rc;
   } 
@@ -413,19 +439,27 @@ int packedobjectsd_send_search(packedobjectsdObject *pod_obj, xmlDocPtr doc)
 int packedobjectsd_send_response(packedobjectsdObject *pod_obj, xmlDocPtr doc)
 {
   int rc;
- 
+  char resp_topic[100];
+
   if(pod_obj->publisher_socket == NULL) {
     alert("packedobjectsd isn't initialised properly");
     return -1;
   }
 
-  if((rc = send_message(pod_obj->publisher_socket, "r", 1, ZMQ_SNDMORE)) == -1) {
+  /* create responder topic using searcher id */
+  if(pod_obj->last_searcher_id == NULL) {
+    alert("last searcher id is not known. response may not sent properly");
+    //return -1;
+  }
+  sprintf(resp_topic, "r##%s", pod_obj->last_searcher_id);
+
+  if((rc = send_message(pod_obj->publisher_socket, resp_topic, strlen(resp_topic), ZMQ_SNDMORE)) == -1) {
     alert("Error occurred while sending the message: %s", zmq_strerror (errno));
     pod_obj->error_code = SEND_FAILED;
     return rc;
   }
 
-  dbg("topic:- r [response]");
+  dbg("topic:- %s", resp_topic);
 
   if((rc = packedobjectsd_send(pod_obj, doc)) == -1) {
     return rc;
