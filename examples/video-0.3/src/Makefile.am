@@ -1,12 +1,12 @@
 
 INCLUDES = -Wall -g $(LIBPACKEDOBJECTSD_CFLAGS) $(UUID_CFLAGS)
 
-bin_PROGRAMS = video_searcher video_client
+bin_PROGRAMS = video_searcher video_responder
 
 video_searcher_SOURCES = video_searcher.c video.xsd
 
 video_searcher_LDADD = $(LIBPACKEDOBJECTSD_LIBS) $(UUID_LIBS)
 
-video_client_SOURCES = video_client.c video.xsd database.xml
+video_responder_SOURCES = video_responder.c video.xsd video.xml
 
-video_client_LDADD = $(LIBPACKEDOBJECTSD_LIBS) $(UUID_LIBS)
+video_responder_LDADD = $(LIBPACKEDOBJECTSD_LIBS) $(UUID_LIBS)

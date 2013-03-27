@@ -17,7 +17,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <uuid/uuid.h>
 #include <pthread.h>
 #include <packedobjectsd/packedobjectsd.h>
 
@@ -27,12 +26,12 @@ static char user_id[36];
 
 /* function prototypes */
 int read_response(xmlDocPtr doc_response, char *xpathExpr);
-xmlDocPtr create_search(packedobjectsdObject *pod_obj, char *user_id, char *movie_title, char *max_price);
+xmlDocPtr create_search(packedobjectsdObject *pod_obj, char *movie_title, char *max_price);
 void *receive_response(void *pod_obj);
 void *send_search(void *pod_obj);
 
 /* function definitions */
-xmlDocPtr create_search(packedobjectsdObject *pod_obj, char *user_id, char *movie_title, char *max_price)
+xmlDocPtr create_search(packedobjectsdObject *pod_obj, char *movie_title, char *max_price)
 {
   /* Declare variables */
   xmlDocPtr doc_search = NULL;
@@ -54,7 +53,6 @@ xmlDocPtr create_search(packedobjectsdObject *pod_obj, char *user_id, char *movi
   ///////////////////// Creating child elements inside response node ///////////////////
   
   /* create child elements to hold data */
-  xmlNewChild(search_node, NULL, BAD_CAST "sender-id", BAD_CAST user_id);
   xmlNewChild(search_node, NULL, BAD_CAST "movie-title", BAD_CAST movie_title);
   xmlNewChild(search_node, NULL, BAD_CAST "max-price", BAD_CAST max_price);
 
@@ -106,38 +104,38 @@ int read_response(xmlDocPtr doc_response, char *xpathExpr)
   ///////////////////// Processing XML document ///////////////////
 
   /* the xml doc matches "/video/message/response" */
-  xmlNodePtr cur = xmlDocGetRootElement(doc_response);
-  while(cur != NULL)
-    {
-      if(!(xmlStrcmp(cur->name, (const xmlChar *)"sender-id")))
-	{
-	  while(cur != NULL) 
-	    {
-	      if(!(xmlStrcmp(cur->name, (const xmlChar *)"sender-id")))
-		{
-		  xmlChar *key;
-		  key = xmlNodeListGetString(doc_response, cur->xmlChildrenNode, 1);
-		  sender_id = strdup((char *)key);
-		  xmlFree(key);	  
-		}
-	      cur = cur->next; /* traverse to the next XML element */
-	    }
+  /* xmlNodePtr cur = xmlDocGetRootElement(doc_response); */
+  /* while(cur != NULL) */
+  /*   { */
+  /*     if(!(xmlStrcmp(cur->name, (const xmlChar *)"sender-id"))) */
+  /* 	{ */
+  /* 	  while(cur != NULL)  */
+  /* 	    { */
+  /* 	      if(!(xmlStrcmp(cur->name, (const xmlChar *)"sender-id"))) */
+  /* 		{ */
+  /* 		  xmlChar *key; */
+  /* 		  key = xmlNodeListGetString(doc_response, cur->xmlChildrenNode, 1); */
+  /* 		  sender_id = strdup((char *)key); */
+  /* 		  xmlFree(key);	   */
+  /* 		} */
+  /* 	      cur = cur->next; /\* traverse to the next XML element *\/ */
+  /* 	    } */
 	  
-	  if((strcmp(sender_id, user_id) == 0)) {
-	    free(sender_id);
-	    return 1;
-	  }
-	  break; /* exit while loop */
-	}
-      cur = cur->xmlChildrenNode; /* traverse to next xml node */
-    }
+  /* 	  if((strcmp(sender_id, user_id) == 0)) { */
+  /* 	    free(sender_id); */
+  /* 	    return 1; */
+  /* 	  } */
+  /* 	  break; /\* exit while loop *\/ */
+  /* 	} */
+  /*     cur = cur->xmlChildrenNode; /\* traverse to next xml node *\/ */
+  /*   } */
 
   ///////////////////// Freeing ///////////////////
 
   xmlXPathFreeObject(xpathObjPtr); 
   xmlXPathFreeContext(xpathCtxPtr);
   
-  return -1;
+  return 1;
 }
 
 void *receive_response(void *pod_obj)
@@ -149,17 +147,20 @@ void *receive_response(void *pod_obj)
   ///////////////////// Receiving search response ///////////////////
   while(1)
     {
-      if((doc_response = packedobjectsd_receive(pod_object)) == NULL) {
+      if((doc_response = packedobjectsd_receive_response(pod_object)) == NULL) {
 	printf("message could not be received\n");
 	exit(EXIT_FAILURE);
       }
       
       /* ignore if sender-id doesn't match its own id */
-      ret = read_response(doc_response, "/video/message/response");
-      if(ret == 1) {
+      if((ret = read_response(doc_response, "/video/message/response")) == 1) {
       	printf("search response received...\n");
       	xml_dump_doc(doc_response);
       }
+      else {
+	printf("search response could not be processed /n");
+      }
+
       xmlFreeDoc(doc_response);
       usleep(1000);
     }
@@ -198,7 +199,7 @@ void *send_search(void *pod_obj)
 	  if(doc_search != NULL) {
 	    xmlFreeDoc(doc_search); // free xml doc pointer if used
 	  }
-	  doc_search = create_search(pod_object, user_id, movie_title, max_price);
+	  doc_search = create_search(pod_object, movie_title, max_price);
 	  //xml_dump_doc(doc_search);
 	  break;
 	case 2:
@@ -207,8 +208,9 @@ void *send_search(void *pod_obj)
 	    printf("Please create a search request using option 1 first\n");
 	    break;
 	  }
+
 	  ///////////////////// Sending search request broadcast ///////////////////
-	  if(packedobjectsd_send(pod_object, doc_search) == -1){
+	  if(packedobjectsd_send_search(pod_object, doc_search) == -1){
 	    printf("message could not be sent\n");
 	    exit(EXIT_FAILURE);
 	  }
@@ -231,7 +233,6 @@ void *send_search(void *pod_obj)
 int main(int argc, char *argv [])
 { 
   /* Declare variables */
-  uuid_t buffer;
   pthread_t thread_receiver;
   pthread_t thread_searcher;
   packedobjectsdObject *pod_obj = NULL;
@@ -239,17 +240,10 @@ int main(int argc, char *argv [])
   ///////////////////// Initialising packedobjectsd ///////////////////
 
   /* Initialise packedobjectsd */
-  if((pod_obj = init_packedobjectsd(XML_SCHEMA)) == NULL) {
+  if((pod_obj = init_packedobjectsd(XML_SCHEMA, SEARCHER)) == NULL) {
     printf("failed to initialise libpackedobjectsd\n");
     exit(EXIT_FAILURE);
   }
-
-  ///////////////////// Generating unique id ///////////////////
-
-  uuid_generate_random(buffer);
-  uuid_unparse(buffer, user_id);
-  printf("searcher's unique user id: %s\n", user_id);
-
 
   ///////////////////// Initialising threads ///////////////////
 

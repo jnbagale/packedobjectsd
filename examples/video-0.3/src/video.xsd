@@ -51,7 +51,6 @@
 
   <xs:complexType name="searchType">
     <xs:sequence>
-      <xs:element name="sender-id" type="string"/>
       <xs:element name="movie-title" type="string"/>
       <xs:element name="max-price" type="decimal"/>
     </xs:sequence>
@@ -59,8 +58,6 @@
 
   <xs:complexType name="responseType">
     <xs:sequence>
-      <xs:element name="sender-id" type="string"/>
-      <xs:element name="client-id" type="string"/>
       <xs:element name="movie-title" type="string"/>
       <xs:element name="price" type="decimal"/>
     </xs:sequence>
