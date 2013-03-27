@@ -27,24 +27,11 @@ static void send_file(packedobjectsdObject *pod_obj, const char *xml_file)
   if((doc_sent = xml_new_doc(xml_file)) == NULL) {
     exit_with_message("did not find .xml file");
   }
-
-  /* Enable this send function when node type is SEARCHER or SEARES */
-  /* send a search message */ 
-  if((ret = packedobjectsd_send_search(pod_obj, doc_sent)) == -1){
+ 
+  /* send a normal pub message */
+  if((ret = packedobjectsd_send(pod_obj, doc_sent)) == -1){
     exit_with_message(pod_strerror(pod_obj->error_code));
   }
-
-  /* Enable this send function when node type is RESPONDER or SEARES */
-  /* send a response message */
-  /* if((ret = packedobjectsd_send_response(pod_obj, doc_sent)) == -1){ */
-  /*   exit_with_message(pod_strerror(pod_obj->error_code)); */
-  /* } */
-
-  /* Enable this send function when node type is PUBLISHER or PUBSUB */
-  /* send a normal pub message */
-  /* if((ret = packedobjectsd_send(pod_obj, doc_sent)) == -1){ */
-  /*   exit_with_message(pod_strerror(pod_obj->error_code)); */
-  /* } */
   
   send_count++;
   printf("message sent\n");
@@ -56,23 +43,12 @@ static void receive_file(packedobjectsdObject *pod_obj)
 { 
   xmlDocPtr doc_received = NULL;
 
-  /* Enable this receive function when node type is SEARCHER or SEARES */
-  /* receive a search message */
-  if((doc_received = packedobjectsd_receive_search(pod_obj)) == NULL) {
+    
+  /* receive a normal pub message */
+  if((doc_received = packedobjectsd_receive(pod_obj)) == NULL) {
     exit_with_message(pod_strerror(pod_obj->error_code));
   }
-  
-  /* Enable this receive function when node type is RESPONDER or SEARES */
-  /* receive a response message */
-  /* if((doc_received = packedobjectsd_receive_response(pod_obj)) == NULL) { */
-  /*   exit_with_message(pod_strerror(pod_obj->error_code)); */
-  /* } */
-  
-  /* Enable this receive function when node type is PUBLISHER or PUBSUB */
-  /* receive a normal pub message */
-  /* if((doc_received = packedobjectsd_receive(pod_obj)) == NULL) { */
-  /*   exit_with_message(pod_strerror(pod_obj->error_code)); */
-  /* } */
+
   receive_count++;
   printf("message received\n");
   //xml_dump_doc(doc_received);
@@ -155,18 +131,44 @@ int main (int argc, char *argv [])
  
   while(loop) {
     int ret;
-    send_file(pod_obj, xml_file);
-    receive_file(pod_obj);
+    xmlDocPtr doc_search = NULL;
+    xmlDocPtr doc_response = NULL;
+    xmlDocPtr doc_search_received = NULL;
+    xmlDocPtr doc_response_received = NULL;
+
+    if((doc_search = xml_new_doc(xml_file)) == NULL) {
+      exit_with_message("did not find .xml file");
+    }
   
+    /* send a search message */ 
+    if((ret = packedobjectsd_send_search(pod_obj, doc_search)) == -1){
+      exit_with_message(pod_strerror(pod_obj->error_code));
+    }
+    send_count++;
+
+    /* receive a search message */
+    if((doc_search_received = packedobjectsd_receive_search(pod_obj)) == NULL) {
+    exit_with_message(pod_strerror(pod_obj->error_code));
+    }
+    // xml_dump_doc(doc_search_received);
+      
+    if((doc_response = xml_new_doc(xml_file)) == NULL) {
+      exit_with_message("did not find .xml file");
+    }
+
     /* send a response message */
-    if((ret = packedobjectsd_send_response(pod_obj, xml_new_doc(xml_file))) == -1){
+    if((ret = packedobjectsd_send_response(pod_obj, doc_response)) == -1){
       exit_with_message(pod_strerror(pod_obj->error_code));
     }
     /* receive a response message */
-    if((packedobjectsd_receive_response(pod_obj)) == NULL) {
+    if((doc_response_received = packedobjectsd_receive_response(pod_obj)) == NULL) {
       exit_with_message(pod_strerror(pod_obj->error_code));
     }
+    receive_count++;
+
+    // xml_dump_doc(doc_response_received);
     usleep(1000); /* Do nothing for 1 ms */
+    
     loop--;
   }
 

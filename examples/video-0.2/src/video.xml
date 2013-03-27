@@ -2,7 +2,6 @@
 <video>
   <message>
     <database>
-      <client-id>12345678</client-id>
       <movie>
 	<title>skyfall</title>
 	<genre>action</genre>

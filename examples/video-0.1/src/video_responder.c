@@ -35,7 +35,7 @@ int main(int argc, char *argv [])
   ///////////////////// Initialising ///////////////////
 
   /* Initialise packedobjectsd */
-  if((pod_obj = init_packedobjectsd(XML_SCHEMA, RESPONDER)) == NULL) {
+  if((pod_obj = init_packedobjectsd(XML_SCHEMA, PUBLISHER)) == NULL) {
     printf("failed to initialise libpackedobjectsd\n");
     exit(EXIT_FAILURE);
   }
@@ -53,7 +53,7 @@ int main(int argc, char *argv [])
       }  
 
       /* send video xml document to receiver */
-      if(packedobjectsd_send_response(pod_obj, doc_sent) == -1){
+      if(packedobjectsd_send(pod_obj, doc_sent) == -1){
 	printf("message could not be sent\n");
 	exit(EXIT_FAILURE);
       }

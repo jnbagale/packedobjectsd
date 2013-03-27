@@ -10,7 +10,7 @@
 /* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the */
 /* GNU General Public License for more details. */
 
-/* A simple mobile search program for video data. The searcher will send search request
+/* A simple mobile search program for video data. The searcher will send search request */
 /* to responders and will receive back video data from responders */
 
 #include <stdio.h>
@@ -71,39 +71,39 @@ int read_response(xmlDocPtr doc_response, char *xpathExpr)
   ///////////////////// Processing XML document ///////////////////
 
   /* the xml doc matches "/video/message/response" */
-  xmlNodePtr cur = xmlDocGetRootElement(doc_response);
-  while(cur != NULL)
-    {
-      if(!(xmlStrcmp(cur->name, (const xmlChar *)"sender-id")))
-	{
-	  while(cur != NULL) 
-	    {
-	      if(!(xmlStrcmp(cur->name, (const xmlChar *)"sender-id")))
-		{
-		  xmlChar *key;
-		  key = xmlNodeListGetString(doc_response, cur->xmlChildrenNode, 1);
-		  sender_id = strdup((char *)key);
-		  xmlFree(key);	  
-		}
+  /* xmlNodePtr cur = xmlDocGetRootElement(doc_response); */
+  /* while(cur != NULL) */
+  /*   { */
+  /*     if(!(xmlStrcmp(cur->name, (const xmlChar *)"sender-id"))) */
+  /* 	{ */
+  /* 	  while(cur != NULL)  */
+  /* 	    { */
+  /* 	      if(!(xmlStrcmp(cur->name, (const xmlChar *)"sender-id"))) */
+  /* 		{ */
+  /* 		  xmlChar *key; */
+  /* 		  key = xmlNodeListGetString(doc_response, cur->xmlChildrenNode, 1); */
+  /* 		  sender_id = strdup((char *)key); */
+  /* 		  xmlFree(key);	   */
+  /* 		} */
 	      
-	      cur = cur->next; /* traverse to the next XML element */
-	    }
+  /* 	      cur = cur->next; /\* traverse to the next XML element *\/ */
+  /* 	    } */
 	  
-	  if((strcmp(sender_id, "21081203") == 0)) {
-	    free(sender_id);
-	    return 1;
-	  }
-	  break; /* exit while loop */
-	}
-      cur = cur->xmlChildrenNode; /* traverse to next xml node */
-    }
+  /* 	  if((strcmp(sender_id, "21081203") == 0)) { */
+  /* 	    free(sender_id); */
+  /* 	    return 1; */
+  /* 	  } */
+  /* 	  break; /\* exit while loop *\/ */
+  /* 	} */
+  /*     cur = cur->xmlChildrenNode; /\* traverse to next xml node *\/ */
+  /*   } */
 
   ///////////////////// Freeing ///////////////////
 
   xmlXPathFreeObject(xpathObjPtr); 
   xmlXPathFreeContext(xpathCtxPtr);
   
-  return -1;
+  return 1;
 }
 
 /* main function */
