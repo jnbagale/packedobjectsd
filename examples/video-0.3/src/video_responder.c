@@ -22,7 +22,6 @@
 /* global variables */
 #define XML_DATA "video.xml"
 #define XML_SCHEMA "video.xsd"
-static char client_id[36];
 
 /* function prototypes */
 void send_response(packedobjectsdObject *pod_obj, char *movie_title, double price);
@@ -268,6 +267,7 @@ int main(int argc, char *argv [])
   xmlDocPtr doc_search = NULL;
   packedobjectsdObject *pod_obj = NULL;
 
+  printf("///////////////////// VIDEO RESPONDER VERSION 0.3 /////////////////// \n");
   ///////////////////// Initialising ///////////////////
 
   /* Initialise packedobjectsd */

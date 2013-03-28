@@ -22,7 +22,6 @@
 
 /* global variables */
 #define XML_SCHEMA "video.xsd"
-static char user_id[36];
 
 /* function prototypes */
 int read_response(xmlDocPtr doc_response, char *xpathExpr);
@@ -63,7 +62,6 @@ xmlDocPtr create_search(packedobjectsdObject *pod_obj, char *movie_title, char *
 int read_response(xmlDocPtr doc_response, char *xpathExpr)
 {
   /* Declare variables */
-  char *sender_id = NULL;
   xmlXPathContextPtr xpathCtxPtr = NULL;
   xmlXPathObjectPtr xpathObjPtr = NULL;
 
@@ -100,35 +98,6 @@ int read_response(xmlDocPtr doc_response, char *xpathExpr)
     xmlXPathFreeContext(xpathCtxPtr);
     return -1;
   }
-
-  ///////////////////// Processing XML document ///////////////////
-
-  /* the xml doc matches "/video/message/response" */
-  /* xmlNodePtr cur = xmlDocGetRootElement(doc_response); */
-  /* while(cur != NULL) */
-  /*   { */
-  /*     if(!(xmlStrcmp(cur->name, (const xmlChar *)"sender-id"))) */
-  /* 	{ */
-  /* 	  while(cur != NULL)  */
-  /* 	    { */
-  /* 	      if(!(xmlStrcmp(cur->name, (const xmlChar *)"sender-id"))) */
-  /* 		{ */
-  /* 		  xmlChar *key; */
-  /* 		  key = xmlNodeListGetString(doc_response, cur->xmlChildrenNode, 1); */
-  /* 		  sender_id = strdup((char *)key); */
-  /* 		  xmlFree(key);	   */
-  /* 		} */
-  /* 	      cur = cur->next; /\* traverse to the next XML element *\/ */
-  /* 	    } */
-	  
-  /* 	  if((strcmp(sender_id, user_id) == 0)) { */
-  /* 	    free(sender_id); */
-  /* 	    return 1; */
-  /* 	  } */
-  /* 	  break; /\* exit while loop *\/ */
-  /* 	} */
-  /*     cur = cur->xmlChildrenNode; /\* traverse to next xml node *\/ */
-  /*   } */
 
   ///////////////////// Freeing ///////////////////
 
@@ -236,7 +205,9 @@ int main(int argc, char *argv [])
   pthread_t thread_receiver;
   pthread_t thread_searcher;
   packedobjectsdObject *pod_obj = NULL;
-  
+
+  printf("///////////////////// VIDEO SEARCHER VERSION 0.3 /////////////////// \n");
+
   ///////////////////// Initialising packedobjectsd ///////////////////
 
   /* Initialise packedobjectsd */
