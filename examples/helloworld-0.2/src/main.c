@@ -17,7 +17,7 @@ int main ()
 
   /* Initialise packedobjectsd */
 
-  if((pod_obj = init_packedobjectsd(XML_SCHEMA)) == NULL) {
+  if((pod_obj = init_packedobjectsd(XML_SCHEMA, PUBSUB)) == NULL) {
     printf("failed to initialise libpackedobjectsd");
     exit(1);
   }
