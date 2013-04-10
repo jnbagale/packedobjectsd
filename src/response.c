@@ -64,7 +64,7 @@ char *encode_response(char *broker_address, int port_in, int port_out, int proce
   sprintf(portout, "%d", port_out);
   sprintf(processid, "%d", process_id);
 
-  pc = init_packedobjects(POD_SCHEMA);
+  pc = init_packedobjects(POD_SCHEMA, 0);
   doc = create_response(broker_address, portin, portout, processid);
 
   pdu = packedobjects_encode(pc, doc);
@@ -133,7 +133,7 @@ xmlDocPtr decode_response(char *pdu)
   xmlDocPtr doc = NULL;
   packedobjectsContext *pc;
 
-  pc = init_packedobjects(POD_SCHEMA);
+  pc = init_packedobjects(POD_SCHEMA, 0);
   
   doc = packedobjects_decode(pc, pdu);
   if (pc->decode_error) {

@@ -101,7 +101,7 @@ char *encode_request(char *user_id, char *schema_hash, char *nodetype, int *requ
   char *pdu = NULL;
   packedobjectsContext *pc;
 
-  pc = init_packedobjects(POD_SCHEMA);
+  pc = init_packedobjects(POD_SCHEMA, 0);
   doc = create_request(user_id, schema_hash, nodetype);
 
   pdu = packedobjects_encode(pc, doc);
@@ -119,7 +119,7 @@ xmlDocPtr decode_request(char *pdu)
   xmlDocPtr doc = NULL;
   packedobjectsContext *pc;
 
-  pc = init_packedobjects(POD_SCHEMA);
+  pc = init_packedobjects(POD_SCHEMA, 0);
   
   doc = packedobjects_decode(pc, pdu);
   if (pc->decode_error) {
