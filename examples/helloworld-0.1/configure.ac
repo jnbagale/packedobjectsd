@@ -19,7 +19,7 @@ AC_TYPE_SIZE_T
 AC_FUNC_MALLOC
 
 # Check for libpackedobjects library
-PKG_CHECK_MODULES([LIBPACKEDOBJECTS], [libpackedobjects])
+PKG_CHECK_MODULES([LIBPACKEDOBJECTS], [libpackedobjects >= 0.0.6])
 
 AC_CONFIG_FILES([Makefile src/Makefile])
 

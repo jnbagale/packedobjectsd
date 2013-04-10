@@ -29,11 +29,8 @@ AC_TYPE_SIZE_T
 # Checks for library functions.
 AC_FUNC_MALLOC
 
-# check for uuid-library
-PKG_CHECK_MODULES(UUID, [uuid])
-
 # check for libpackedobjects
-PKG_CHECK_MODULES(LIBPACKEDOBJECTSD, [libpackedobjectsd])
+PKG_CHECK_MODULES(LIBPACKEDOBJECTSD, [libpackedobjectsd >= 0.0.3])
 
 AC_CONFIG_FILES([Makefile src/Makefile])
 

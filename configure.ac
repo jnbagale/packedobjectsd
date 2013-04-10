@@ -1,4 +1,4 @@
-AC_INIT(libpackedobjectsd, 0.2, jnbagale@gmail.com)
+AC_INIT(libpackedobjectsd, 0.3, jnbagale@gmail.com)
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([src/])
 AM_CONFIG_HEADER([src/config.h])
@@ -42,13 +42,13 @@ AC_CHECK_HEADERS(crypt.h,, [AC_MSG_ERROR([crypt.h required])])
 PKG_CHECK_MODULES(UUID, [uuid])
 
 # check for zeromq
-PKG_CHECK_MODULES(LIBZMQ, [libzmq])
+PKG_CHECK_MODULES(LIBZMQ, [libzmq >= 3.2])
 
 # check for libxml2
 PKG_CHECK_MODULES(LIBXML2, [libxml-2.0])
 
 # check for libpackedobjects
-PKG_CHECK_MODULES(LIBPACKEDOBJECTS, [libpackedobjects])
+PKG_CHECK_MODULES(LIBPACKEDOBJECTS, [libpackedobjects >= 0.0.6])
 
 # just create shared library
 AC_DISABLE_STATIC

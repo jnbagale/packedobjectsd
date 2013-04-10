@@ -7,21 +7,25 @@ libpackedobjectsd_la_LIBADD = $(UUID_LIBS) $(LIBZMQ_LIBS) $(LIBXML2_LIBS) $(LIBP
 
 libpackedobjectsd_la_SOURCES = 	packedobjectsd.c packedobjectsd.h message.c message.h broker.c broker.h \
 				response.c response.h request.c request.h xmlutils.c xmlutils.h \
-				$(top_builddir)/pkgconfig/libpackedobjectsd.pc
+				$(top_builddir)/pkgconfig/libpackedobjectsd.pc \
+				$(top_builddir)/schema/packedobjectsd.xsd 
 
 library_includedir = $(includedir)/packedobjectsd
 
 library_include_HEADERS = packedobjectsd.h message.h broker.h request.h response.h xmlutils.h config.h
 
-library_datadirdir = $(datadir)/packedobjectsd
+
+library_datadirdir = $(datadir)/@PACKAGE@
 
 library_datadir_DATA = $(top_builddir)/schema/packedobjectsd.xsd
+
 
 check_PROGRAMS = packedobjectsdtest
 
 packedobjectsdtest_SOURCES = main.c
 
 packedobjectsdtest_LDADD = $(lib_LTLIBRARIES)
+
 
 pkgconfigdir = $(libdir)/pkgconfig
 
