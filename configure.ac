@@ -48,7 +48,7 @@ PKG_CHECK_MODULES(LIBZMQ, [libzmq >= 3.2])
 PKG_CHECK_MODULES(LIBXML2, [libxml-2.0])
 
 # check for libpackedobjects
-PKG_CHECK_MODULES(LIBPACKEDOBJECTS, [libpackedobjects >= 0.0.6])
+PKG_CHECK_MODULES(LIBPACKEDOBJECTS, [libpackedobjects >= 0.0.7])
 
 # just create shared library
 AC_DISABLE_STATIC
