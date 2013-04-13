@@ -13,7 +13,7 @@ int main()
   ///////////////////// Initialising ///////////////////
   
   // initialise packedobjects
-  if ((pc = init_packedobjects(XML_SCHEMA, 0)) == NULL) {
+  if ((pc = init_packedobjects(XML_SCHEMA, 0, 0)) == NULL) {
     printf("failed to initialise libpackedobjects");
     exit(1);
   }

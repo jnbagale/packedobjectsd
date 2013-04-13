@@ -120,7 +120,7 @@ int main(int argc, char *argv [])
 	printf("message could not be received\n");
 	exit(EXIT_FAILURE);
       }
-      
+      xml_dump_doc(doc_response);
       /* ignore if sender-id doesn't match its own id */
       ret = read_response(doc_response, "/video/message/response");
       if(ret == 1) {
