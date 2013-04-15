@@ -29,48 +29,43 @@ int read_response(xmlDocPtr doc_response, char *xpathExpr);
 /* function definitions */
 int read_response(xmlDocPtr doc_response, char *xpathExpr)
 {
-  /* Declare variables */
-  xmlXPathContextPtr xpathCtxPtr = NULL;
-  xmlXPathObjectPtr xpathObjPtr = NULL;
+  /* Declare variables */  
+  char xpath_exp[1000];
+  xmlXPathContextPtr xpathp = NULL;
+  xmlXPathObjectPtr result = NULL;
 
   ///////////////////// Initialising XPATH ///////////////////
 
   /* setup xpath context */
-  xpathCtxPtr = xmlXPathNewContext(doc_response);
-  if (xpathCtxPtr == NULL) {
+  xpathp = xmlXPathNewContext(doc_response);
+  if (xpathp == NULL) {
     printf("Error in xmlXPathNewContext.");
-    xmlXPathFreeContext(xpathCtxPtr);
+    xmlXPathFreeContext(xpathp);
     return -1;
   }
 
-  if(xmlXPathRegisterNs(xpathCtxPtr, (const xmlChar *)NSPREFIX, (const xmlChar *)NSURL) != 0) {
+  if(xmlXPathRegisterNs(xpathp, (const xmlChar *)NSPREFIX, (const xmlChar *)NSURL) != 0) {
     printf("Error: unable to register NS.");
-    xmlXPathFreeContext(xpathCtxPtr);
+    xmlXPathFreeContext(xpathp);
     return -1;
   }
 
   ///////////////////// Evaluating XPATH expression ///////////////////
-
-  /* evaluate xpath expression */
-  xpathObjPtr = xmlXPathEvalExpression((const xmlChar*)xpathExpr, xpathCtxPtr);
-  if (xpathObjPtr == NULL) {
+  
+  sprintf(xpath_exp, "/video/message/response"); // xpath expression which should return the movie-title and max-price
+    
+  result = xmlXPathEvalExpression((const xmlChar *)xpath_exp, xpathp);
+  if (result == NULL) {
     printf("Error in xmlXPathEvalExpression.");
-    xmlXPathFreeObject(xpathObjPtr); 
-    xmlXPathFreeContext(xpathCtxPtr);
-    return -1;
-  }
-
-  /* check if  xml doc matches "/video/message/response" */
-  if(xmlXPathNodeSetIsEmpty(xpathObjPtr->nodesetval)) {
-    xmlXPathFreeObject(xpathObjPtr); 
-    xmlXPathFreeContext(xpathCtxPtr);
+    xmlXPathFreeObject(result); 
+    xmlXPathFreeContext(xpathp);
     return -1;
   }
 
   ///////////////////// Freeing ///////////////////
 
-  xmlXPathFreeObject(xpathObjPtr); 
-  xmlXPathFreeContext(xpathCtxPtr);
+  xmlXPathFreeObject(result); 
+  xmlXPathFreeContext(xpathp);
   
   return 1;
 }

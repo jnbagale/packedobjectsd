@@ -24,12 +24,12 @@
 #define XML_SCHEMA "video.xsd"
 
 /* function prototypes */
-void send_response(packedobjectsdObject *pod_obj, char *movie_title, double price);
-void prepare_response(packedobjectsdObject *pod_obj, char *movie_title, double max_price);
-int process_search(packedobjectsdObject *pod_obj, xmlDocPtr search, char *xpathExpr);
+int send_response(packedobjectsdObject *pod_obj, char *movie_title, double price);
+int prepare_response(packedobjectsdObject *pod_obj, char *movie_title, double max_price);
+int process_search(packedobjectsdObject *pod_obj, xmlDocPtr search);
 
 /* function definitions */
-void send_response(packedobjectsdObject *pod_obj, char *movie_title, double price)
+int send_response(packedobjectsdObject *pod_obj, char *movie_title, double price)
 {
   /* Declare variables */
   char price_string[50];
@@ -61,17 +61,19 @@ void send_response(packedobjectsdObject *pod_obj, char *movie_title, double pric
   /* send the response doc to the searcher */
   if(packedobjectsd_send_response(pod_obj, doc_response) == -1){
     printf("message could not be sent\n");
-    exit(EXIT_FAILURE);
+    return -1;
   }
   printf("response sent to the searcher...\n");
   //xml_dump_doc(doc_response);
 
   xmlFreeDoc(doc_response);
+  return 1;
 }
 
-void prepare_response(packedobjectsdObject *pod_obj, char *movie_title, double max_price)
+int prepare_response(packedobjectsdObject *pod_obj, char *movie_title, double max_price)
 {
   /* Declare variables */
+  int ret = 1;
   double price = 0.0;
   char *title = NULL;
   xmlDocPtr doc_database = NULL;
@@ -82,7 +84,7 @@ void prepare_response(packedobjectsdObject *pod_obj, char *movie_title, double m
 
   if((doc_database = xml_new_doc(XML_DATA)) == NULL) {
     printf("did not find database.xml file");
-    exit(EXIT_FAILURE);
+    return -1;
   }  
 
   ///////////////////// Processing XML document ///////////////////
@@ -119,14 +121,14 @@ void prepare_response(packedobjectsdObject *pod_obj, char *movie_title, double m
   ///////////////////// Comparing search data with video database ///////////////////
 
   /* compare the search video title and max price with video title and price from database */
-  if( (strcmp(movie_title, title) == 0)) {
+  if((strcmp(movie_title, title) == 0)) {
     if(price <= max_price) {
       printf("the movie exists on the database and matches price limit\n");
       
       ///////////////////// Sending  search response ///////////////////
 
       /* send response to searcher */
-      send_response(pod_obj, movie_title, price);
+      ret = send_response(pod_obj, movie_title, price);
     }
     else {
       printf("the movie exists on the database but does not match price limit\n");
@@ -140,97 +142,101 @@ void prepare_response(packedobjectsdObject *pod_obj, char *movie_title, double m
 
   free(title);
   xmlFreeDoc(doc_database);
+  return ret;
 }
 
-int process_search(packedobjectsdObject *pod_obj, xmlDocPtr doc_search, char *xpathExpr)
+int process_search(packedobjectsdObject *pod_obj, xmlDocPtr doc_search)
 {
   /* Declare variables */
+  int i;
+  int ret;
+  int size;
   double max_price = 0.0;
   char *movie_title = NULL;
-  xmlXPathContextPtr xpathCtxPtr = NULL;
-  xmlXPathObjectPtr xpathObjPtr = NULL;
+  char xpath_exp[1000];
+  xmlXPathContextPtr xpathp = NULL;
+  xmlXPathObjectPtr result = NULL;
 
   ///////////////////// Initialising XPATH ///////////////////
 
   /* setup xpath context */
-  xpathCtxPtr = xmlXPathNewContext(doc_search);
-  if (xpathCtxPtr == NULL) {
+  xpathp = xmlXPathNewContext(doc_search);
+  if (xpathp == NULL) {
     printf("Error in xmlXPathNewContext.");
-    xmlXPathFreeContext(xpathCtxPtr);
+    xmlXPathFreeContext(xpathp);
     return -1;
   }
 
-  if(xmlXPathRegisterNs(xpathCtxPtr, (const xmlChar *)NSPREFIX, (const xmlChar *)NSURL) != 0) {
+  if(xmlXPathRegisterNs(xpathp, (const xmlChar *)NSPREFIX, (const xmlChar *)NSURL) != 0) {
     printf("Error: unable to register NS.");
-    xmlXPathFreeContext(xpathCtxPtr);
+    xmlXPathFreeContext(xpathp);
     return -1;
   }
 
   ///////////////////// Evaluating XPATH expression ///////////////////
-
-  /* Evaluate xpath expression */
-  xpathObjPtr = xmlXPathEvalExpression((const xmlChar*)xpathExpr, xpathCtxPtr);
-  if (xpathObjPtr == NULL) {
+  
+  sprintf(xpath_exp, "/video/message/search/*"); // xpath expression which should return the movie-title and max-price
+    
+  result = xmlXPathEvalExpression((const xmlChar *)xpath_exp, xpathp);
+  if (result == NULL) {
     printf("Error in xmlXPathEvalExpression.");
-    xmlXPathFreeObject(xpathObjPtr); 
-    xmlXPathFreeContext(xpathCtxPtr);
-    return -1;
-  }
-
-  /* check if xml doc matches "/video/message/search" */
-  if(xmlXPathNodeSetIsEmpty(xpathObjPtr->nodesetval)) {
-    xmlXPathFreeObject(xpathObjPtr); 
-    xmlXPathFreeContext(xpathCtxPtr);
+    xmlXPathFreeObject(result); 
+    xmlXPathFreeContext(xpathp);
     return -1;
   }
 
   ///////////////////// Processing search broadcast ///////////////////
 
-  /* the xml doc matches "/video/message/search" */
-  xmlNodePtr cur = xmlDocGetRootElement(doc_search);
-  while(cur != NULL)
-    {
-      if(!(xmlStrcmp(cur->name, (const xmlChar *)"movie-title")))
-	{
-	  while(cur != NULL)
-	    {
-	      if(!(xmlStrcmp(cur->name, (const xmlChar *)"movie-title"))) {
-		xmlChar *key;
-		key = xmlNodeListGetString(doc_search, cur->xmlChildrenNode, 1);
-		movie_title = strdup((char *)key);
-		xmlFree(key);
-	      }
+  /* the xml doc matches "/video/message/search/asterik(*)" */
+  if(xmlXPathNodeSetIsEmpty(result->nodesetval)) {
+    xmlXPathFreeObject(result); 
+    xmlXPathFreeContext(xpathp);
+    printf("the search request is not in valid format\n");
+    return -1;
+  }
+  else {
+    size = result->nodesetval->nodeNr;
+    xmlNodePtr cur = result->nodesetval->nodeTab[0];
 
-	      if(!(xmlStrcmp(cur->name, (const xmlChar *)"max-price"))) {
-		xmlChar *key;
-		key = xmlNodeListGetString(doc_search, cur->xmlChildrenNode, 1);
-		max_price = atof((char *)key);
-		xmlFree(key);
-	      }
-	     
-	      cur = cur->next;   /* traverse to the next XML element */
-	    }
-	  printf("\n            ***** search request details ******\n");
-	  printf("              movie title: %s \n", movie_title);
-	  printf("              max price: %g\n\n", max_price);
+    for(i = 0; i < size; i++) 
+      {
+	if(!(xmlStrcmp(cur->name, (const xmlChar *)"movie-title")))
+	  {
+	    xmlChar *key;
+	    key = xmlNodeListGetString(doc_search, cur->xmlChildrenNode, 1);
+	    movie_title = strdup((char *)key);
+	    xmlFree(key);	  
+	  }
 
-	  ///////////////////// Checking on database ///////////////////
+	if(!(xmlStrcmp(cur->name, (const xmlChar *)"max-price")))
+	  {
+	    xmlChar *key;
+	    key = xmlNodeListGetString(doc_search, cur->xmlChildrenNode, 1);
+	    max_price = atof((char *)key);
+	    xmlFree(key);	  
+	  }
+	//printf("cur- name %s \n", cur->name);
+	cur = cur->next;
+      }
+  }
 
-	  /* checking if search broadcast matches record on the database */
-	  prepare_response(pod_obj, movie_title, max_price);  
-	  break; /* exit the while loop */
-	}
-      
-      cur = cur->xmlChildrenNode;  /* traverse to next XML node */
-    }
+  printf("\n************** search request details **************\n");
+  printf("Movie title: %s \n", movie_title);
+  printf("Maximum price: %g\n", max_price);
+  printf("Searcher's id:- %s\n\n", pod_obj->last_searcher_id);
 
+  ///////////////////// Checking on database ///////////////////
+
+  /* checking if search broadcast matches record on the database */
+  ret = prepare_response(pod_obj, movie_title, max_price);
+  
   ///////////////////// Freeing ///////////////////
 
   free(movie_title);
-  xmlXPathFreeObject(xpathObjPtr); 
-  xmlXPathFreeContext(xpathCtxPtr);
+  xmlXPathFreeObject(result); 
+  xmlXPathFreeContext(xpathp);
   
-  return 1;
+  return ret;
 }
 
 /* main function */
@@ -244,7 +250,6 @@ int main(int argc, char *argv [])
   printf(" ///////////////////// VIDEO RESPONDER VERSION-0.2 ////////////////// \n");
   ///////////////////// Initialising ///////////////////
 
-  /* Initialise packedobjectsd */
   if((pod_obj = init_packedobjectsd(XML_SCHEMA, RESPONDER)) == NULL) {
     printf("failed to initialise libpackedobjectsd\n");
     exit(EXIT_FAILURE);
@@ -254,22 +259,18 @@ int main(int argc, char *argv [])
 
   while(1)
     {
-      /* waiting for search request */
       printf("waiting for search request\n");
       if((doc_search = packedobjectsd_receive_search(pod_obj)) == NULL) {
 	printf("message could not be received\n");
-	exit(EXIT_FAILURE);
+	continue;
       }
  
-      usleep(100000); /* Allow searcher program some time to prepare receiving */
-      // xml_dump_doc(doc_search);
-
       ///////////////////// Processing search request ///////////////////
 
-      /* process search request to retrieve search details */
-      if((ret = process_search(pod_obj, doc_search, "/video/message/search")) == -1) {
-	printf("search request couldn't be processed.../n");
+      if((ret = process_search(pod_obj, doc_search)) == -1) {
+	printf("search request couldn't be processed.../n");	
       }
+
       xmlFreeDoc(doc_search);
       usleep(1000);
     }
