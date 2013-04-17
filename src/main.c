@@ -127,8 +127,7 @@ int main (int argc, char *argv [])
   if((pod_obj = init_packedobjectsd(schema_file, SEARES)) == NULL) {
     exit_with_message("failed to init packedobjectsd");
   } 
-  sleep(1); /* Allow broker to start if it's not already running */
- 
+   
   while(loop) {
     int ret;
     xmlDocPtr doc_search = NULL;

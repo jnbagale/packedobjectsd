@@ -173,6 +173,7 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
     return NULL;
   }
    
+  sleep(1); // give some time to broker for init so that it will not miss the first message from a publisher
   return pod_obj;
 }
 

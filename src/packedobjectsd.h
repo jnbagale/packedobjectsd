@@ -20,7 +20,7 @@
 /* #endif */
 #include "xmlutils.h"
 
-#define DEFAULT_SERVER_ADDRESS "buildhost.uwl.ac.uk" /* the default lookup server address */
+#define DEFAULT_SERVER_ADDRESS "buildhost.uwl.ac.uk" // "ec2-107-20-219-103.compute-1.amazonaws.com"  /* the default lookup server address */
 #define DEFAULT_SERVER_PORT 5555  /* the default lookup server port */
 
 enum ERR_CODE {

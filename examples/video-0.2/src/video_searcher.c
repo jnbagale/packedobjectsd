@@ -87,9 +87,7 @@ int main(int argc, char *argv [])
     printf("failed to initialise libpackedobjectsd\n");
     exit(EXIT_FAILURE);
   }
-  // wait for init setup to finish
-  sleep(1);
-
+  
   ///////////////////// Sending search broadcast ///////////////////
   
   /* initialising search XML document */
