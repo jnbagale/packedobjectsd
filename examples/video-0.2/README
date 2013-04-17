@@ -1,7 +1,0 @@
-Video example version 0.2
-
-A simple mobile search program for video data built using libpackedobjects and libpackedobjectsd library. The responder will init_packedobjectsd using the video.xsd schema and responder flag. The searcher will init_packedobjectsd using the video.xsd schema and the searcher flag. The search request and video data are in XML format and will be encoded using libpackedobjects with the help of XML schema before being sent to the searcher.
-
-In this version, Searcher sends search request to responders as broadcast message which will include video title, expected price and its searcher id. Each responder will process the search request to retrieve title and price of video. It will then search the title on it database. The video xml in this version supports only single set of data. If the title exists and the price is less than or equal to the price on search request, it will respond to the searcher with video title, price. The searcher displays the received response XML data without processing it.
-
-To run the program, first compile and install the packedobjectsd library using autoconf tools and then compile this program using autoconf tools. First run the video_responder program and then run the video_searcher. The searcher can send search request only once and it will wait for responses. The searcher needs to be restarted to send new search request. The search request data can be changed by updating the search.xml file.

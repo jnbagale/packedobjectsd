@@ -1,0 +1,3 @@
+Simple distributed video searching program using libpackedobjectsd. The video_searcher program sends search request by taking command line input from user. The request is broadcasted to all the connected responders as XML which is compressed before being sent to the network using libpackedobjects.  The video_responder program maintains a XML database with multiple video data. Upon receiving the search request, it looks up in its database and sends back reply to the searcher if the video exists and also the price matches the requested price limit.
+
+To run the program, first compile and install the packedobjectsd library using autoconf tools and then compile this program using autoconf tools. First run the video_responder program and then run the video_searcher.

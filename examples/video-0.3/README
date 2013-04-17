@@ -1,4 +1,0 @@
-This program is same as version 0.2 but has some improvements. It creates search data from command line instead of reading it from XML file. It also supports database with multiple video data unlike version 0.2 which supports only single data in the database. It also creates unique user id using uuid library to be sent with search request. To install uuid library on to your computer.
-sudo apt-get install uuid-dev
-
-To run the program, first compile and install the packedobjectsd library using autoconf tools and then compile this program using autoconf tools. First run the video_client program then run the video_searcher.
