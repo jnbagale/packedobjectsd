@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>     /* for strlen() */
 #include <stdlib.h>    /* for exit()   */
+#include <unistd.h>   /* for sleep()  */
 #include <inttypes.h> /* for uint64_t */
 #include <zmq.h>     /* for ZeroMQ functions */
 #include <uuid/uuid.h> 
@@ -59,13 +60,10 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
     return NULL;
   }
 
-  /* generate unique id using uuid library */
-  uuid_generate_random(buf);
-  uuid_unparse(buf, pod_obj->unique_id);
-  dbg("unique id created successfully: %s", pod_obj->unique_id);
-
-  /* create custom subscribe filter for searchers using their own unique id */
-  sprintf(resp_filter, "r##%s", pod_obj->unique_id);
+  /* /\* generate unique id using uuid library *\/ */
+  /* uuid_generate_random(buf); */
+  /* uuid_unparse(buf, pod_obj->unique_id); */
+  /* dbg("unique id created successfully: %s", pod_obj->unique_id); */
 
   /* create MD5 Hash of the XML schmea */
   if((pod_obj->schema_hash = xml_to_md5hash(schema_file)) == NULL) {
@@ -80,6 +78,12 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
     alert("Failed to get broker detail from server");
     return NULL;
   }
+
+  /* create custom subscribe filter for searchers using their own unique id */
+  sprintf(resp_filter, "r##%lu", pod_obj->unique_id);
+
+  // create a temp string of the id until better solution for sending
+  sprintf(pod_obj->uid_str, "%lu", pod_obj->unique_id);
 
   switch (pod_obj->node_type) {
   case SUBSCRIBER:
@@ -419,14 +423,15 @@ int packedobjectsd_send_search(packedobjectsdObject *pod_obj, xmlDocPtr doc)
   }
 
   dbg("topic:- s [search]");
-
-  if((rc = send_message(pod_obj->publisher_socket, pod_obj->unique_id, strlen(pod_obj->unique_id), ZMQ_SNDMORE)) == -1) {
+ 
+  
+  if((rc = send_message(pod_obj->publisher_socket, pod_obj->uid_str, strlen(pod_obj->uid_str), ZMQ_SNDMORE)) == -1) {
     alert("Error occurred while sending the message: %s", zmq_strerror (errno));
     pod_obj->error_code = SEND_FAILED;
     return rc;
   }
 
-  dbg("searcher id:- %s", pod_obj->unique_id);
+  dbg("searcher id:- %lu", pod_obj->unique_id);
 
   if((rc = packedobjectsd_send(pod_obj, doc)) == -1) {
     return rc;

@@ -53,7 +53,7 @@ typedef struct {
   void *subscriber_socket;
   char *sub_topic;
   char *pub_topic;
-  char unique_id[50];
+  char uid_str[50];
   char *last_searcher_id;
   char *schema_hash;
   char *server_address;
@@ -64,6 +64,7 @@ typedef struct {
   int error_code;
   int server_port;
   int node_type;
+  unsigned long unique_id;
   packedobjectsContext *pc;
 } packedobjectsdObject;
 

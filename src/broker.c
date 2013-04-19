@@ -3,6 +3,7 @@
 #include <string.h>     /* for strncat() & memcpy() */
 #include <stdlib.h>    /* for exit()   */
 #include <zmq.h>      /* for ZeroMQ functions */
+#include <arpa/inet.h> /* for ntohl() */
 
 #include "config.h"
 #include "broker.h"
@@ -29,6 +30,8 @@
 int get_broker_detail(packedobjectsdObject *pod_obj)
 {
   int rc;
+  int64_t more;
+  size_t more_size = sizeof(more);
   int portin;
   int portout;
   int processid;
@@ -67,7 +70,7 @@ int get_broker_detail(packedobjectsdObject *pod_obj)
     return -1;
   }
 
-  if((request_pdu = encode_request(pod_obj->unique_id, pod_obj->schema_hash, nodetype, &request_size)) == NULL) {
+  if((request_pdu = encode_request(pod_obj->uid_str, pod_obj->schema_hash, nodetype, &request_size)) == NULL) {
     return -1;
   }
 
@@ -76,51 +79,69 @@ int get_broker_detail(packedobjectsdObject *pod_obj)
     return -1;
   }
 
+  // receive node id
   if((response_pdu = receive_message(requester, &response_size)) == NULL){
     alert("The received message is NULL\n");
     return -1;
   }
-
-  if((response_doc = decode_response(response_pdu)) == NULL) {
-    return -1;
-  }
   
-  if((process_response(response_doc, broker_hostname, &portin, &portout, &processid)) == -1) {
-    return -1;
+  pod_obj->unique_id = ntohl(strtoul(response_pdu, NULL, 0));
+  dbg("The node_id assigned is %u", pod_obj->unique_id, strtoul(response_pdu, NULL, 0) , response_pdu);
+
+  if((rc = zmq_getsockopt(requester, ZMQ_RCVMORE, &more, &more_size)) == -1) {
+    alert("Failed to get socket option");
   }
+
+  // receive broker details
+  if(more) {
+  
+    if((response_pdu = receive_message(requester, &response_size)) == NULL){
+      alert("The received message is NULL\n");
+      return -1;
+    }
+
+    if((response_doc = decode_response(response_pdu)) == NULL) {
+      return -1;
+    }
+  
+    if((process_response(response_doc, broker_hostname, &portin, &portout, &processid)) == -1) {
+      return -1;
+    }
  
-  if (pod_obj->node_type == PUBLISHER || pod_obj->node_type == PUBSUB) {
-    if((pod_obj->publisher_endpoint = malloc(MAX_PDU_SIZE)) == NULL){
-      alert("Failed to allocate memory for publisher endpoint");
-      return -1;
+    if (pod_obj->node_type == PUBLISHER || pod_obj->node_type == PUBSUB) {
+      if((pod_obj->publisher_endpoint = malloc(MAX_PDU_SIZE)) == NULL){
+	alert("Failed to allocate memory for publisher endpoint");
+	return -1;
+      }
+      sprintf(pod_obj->publisher_endpoint, "tcp://%s:%d", broker_hostname, portin);
+      dbg("broker endpoint for publisher %s", pod_obj->publisher_endpoint);
     }
-    sprintf(pod_obj->publisher_endpoint, "tcp://%s:%d", broker_hostname, portin);
-    dbg("broker endpoint for publisher %s", pod_obj->publisher_endpoint);
-  }
 
-  if (pod_obj->node_type == SUBSCRIBER || pod_obj->node_type == PUBSUB) {
-    if((pod_obj->subscriber_endpoint = malloc(MAX_PDU_SIZE)) == NULL){
-      alert("Failed to allocate memory for subscriber endpoint");
-      return -1;
+    if (pod_obj->node_type == SUBSCRIBER || pod_obj->node_type == PUBSUB) {
+      if((pod_obj->subscriber_endpoint = malloc(MAX_PDU_SIZE)) == NULL){
+	alert("Failed to allocate memory for subscriber endpoint");
+	return -1;
+      }
+      sprintf(pod_obj->subscriber_endpoint, "tcp://%s:%d", broker_hostname, portout);
+      dbg("broker endpoint for subscriber %s", pod_obj->subscriber_endpoint);
     }
-    sprintf(pod_obj->subscriber_endpoint, "tcp://%s:%d", broker_hostname, portout);
-    dbg("broker endpoint for subscriber %s", pod_obj->subscriber_endpoint);
-  }
 
-  if (pod_obj->node_type == SEARCHER || pod_obj->node_type == RESPONDER || pod_obj->node_type == SEARES) {
-    if((pod_obj->publisher_endpoint = malloc(MAX_PDU_SIZE)) == NULL){
-      alert("Failed to allocate memory for publisher endpoint");
-      return -1;
-    }
-    sprintf(pod_obj->publisher_endpoint, "tcp://%s:%d", broker_hostname, portin);
-    dbg("broker endpoint for publisher %s", pod_obj->publisher_endpoint);
+    if (pod_obj->node_type == SEARCHER || pod_obj->node_type == RESPONDER || pod_obj->node_type == SEARES) {
+      if((pod_obj->publisher_endpoint = malloc(MAX_PDU_SIZE)) == NULL){
+	alert("Failed to allocate memory for publisher endpoint");
+	return -1;
+      }
+      sprintf(pod_obj->publisher_endpoint, "tcp://%s:%d", broker_hostname, portin);
+      dbg("broker endpoint for publisher %s", pod_obj->publisher_endpoint);
 
-    if((pod_obj->subscriber_endpoint = malloc(MAX_PDU_SIZE)) == NULL){
-      alert("Failed to allocate memory for subscriber endpoint");
-      return -1;
+      if((pod_obj->subscriber_endpoint = malloc(MAX_PDU_SIZE)) == NULL){
+	alert("Failed to allocate memory for subscriber endpoint");
+	return -1;
+      }
+      sprintf(pod_obj->subscriber_endpoint, "tcp://%s:%d", broker_hostname, portout);
+      dbg("broker endpoint for subscriber %s", pod_obj->subscriber_endpoint);
     }
-    sprintf(pod_obj->subscriber_endpoint, "tcp://%s:%d", broker_hostname, portout);
-    dbg("broker endpoint for subscriber %s", pod_obj->subscriber_endpoint);
+
   }
 
   /* Freeing up zeromq context, socket and pointers */
