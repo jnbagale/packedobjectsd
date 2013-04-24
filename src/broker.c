@@ -85,8 +85,8 @@ int get_broker_detail(packedobjectsdObject *pod_obj)
     return -1;
   }
   
-  pod_obj->unique_id = ntohl(strtoul(response_pdu, NULL, 0));
-  dbg("The node_id assigned is %u", pod_obj->unique_id, strtoul(response_pdu, NULL, 0) , response_pdu);
+  pod_obj->unique_id = ntohl(*(unsigned long *)response_pdu);
+  dbg("The node_id assigned is %u", pod_obj->unique_id);
 
   if((rc = zmq_getsockopt(requester, ZMQ_RCVMORE, &more, &more_size)) == -1) {
     alert("Failed to get socket option");
