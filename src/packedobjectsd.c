@@ -5,7 +5,7 @@
 #include <unistd.h>   /* for sleep()  */
 #include <inttypes.h> /* for uint64_t */
 #include <zmq.h>     /* for ZeroMQ functions */
-#include <uuid/uuid.h> 
+#include <arpa/inet.h> /* for ntohl() */
 
 #include "config.h"
 #include "broker.h"
@@ -34,7 +34,6 @@ static int packedobjectsd_publish(packedobjectsdObject *pod_obj, char *schema_ha
 packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type)
 {
   int ret;
-  uuid_t buf;
   char resp_filter[100];
   packedobjectsdObject *pod_obj;
  
@@ -43,7 +42,7 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
     return NULL;
   }
 
-  /* Initialise default values for initialisation */
+  /* Initialise default values */
   pod_obj->bytes_sent = -1;
   pod_obj->bytes_received = -1;
   pod_obj->sub_topic = NULL;
@@ -60,11 +59,6 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
     return NULL;
   }
 
-  /* /\* generate unique id using uuid library *\/ */
-  /* uuid_generate_random(buf); */
-  /* uuid_unparse(buf, pod_obj->unique_id); */
-  /* dbg("unique id created successfully: %s", pod_obj->unique_id); */
-
   /* create MD5 Hash of the XML schmea */
   if((pod_obj->schema_hash = xml_to_md5hash(schema_file)) == NULL) {
     alert("Failed to create hash of the schema file.");
@@ -73,7 +67,12 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
   }
   dbg("schema_hash: %s", pod_obj->schema_hash);
 
+  // create a temp string of schema hash as user id
+  // Not used anymore. update pod schema and encode/decode request function to remove it  
+  sprintf(pod_obj->uid_str, "%s", pod_obj->schema_hash);
+  
   /* get broker details from the Look up server using schema hash */
+  /* sets pod_obj->unique_id, pod_obj->publisher_endpoint and pod_obj->subscriber_endpoint */
   if((ret = get_broker_detail(pod_obj)) == -1) {
     alert("Failed to get broker detail from server");
     return NULL;
@@ -81,9 +80,6 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
 
   /* create custom subscribe filter for searchers using their own unique id */
   sprintf(resp_filter, "r##%lu", pod_obj->unique_id);
-
-  // create a temp string of the id until better solution for sending
-  sprintf(pod_obj->uid_str, "%lu", pod_obj->unique_id);
 
   switch (pod_obj->node_type) {
   case SUBSCRIBER:
@@ -319,6 +315,10 @@ xmlDocPtr packedobjectsd_receive_search(packedobjectsdObject *pod_obj)
     pod_obj->error_code = RECEIVE_FAILED;
     return NULL;
     }
+  
+    // convert received node id to host order bytes
+    pod_obj->last_searcher = ntohl(*(unsigned long *)pod_obj->last_searcher_id);
+    dbg("The last searcher_id is %lu", pod_obj->last_searcher);
     dbg("searcher id:- %s", pod_obj->last_searcher_id);
   }
   else {
@@ -374,6 +374,33 @@ xmlDocPtr packedobjectsd_receive_response(packedobjectsdObject *pod_obj)
   }
 }
 
+int send_network_byte(unsigned long host_byte, packedobjectsdObject *pod_obj)
+{
+  int rc;
+  zmq_msg_t z_message;
+  unsigned long network_byte = htonl(host_byte);
+  dbg("network byte %lu", network_byte);
+
+  if((rc = zmq_msg_init_size (&z_message, sizeof(network_byte))) == -1){
+    alert("Error occurred during zmq_msg_init_size(): %s", zmq_strerror (errno));
+    return -1;
+  }
+
+  // Mem copy network byte to zeromq message variable
+  memcpy (zmq_msg_data (&z_message), &network_byte, sizeof(network_byte));
+  dbg("mem copied %d bytes %s", zmq_msg_size(&z_message), (char *)zmq_msg_data (&z_message));
+
+  // send back node id to the client
+  if((rc = zmq_msg_send (&z_message, pod_obj->publisher_socket, ZMQ_SNDMORE)) == -1){
+    alert("Error occurred during zmq_send(): %s", zmq_strerror (errno));
+    return -1;
+  }
+  dbg("sent unique id as network byte %lu", network_byte);
+  zmq_msg_close (&z_message);
+
+  return 1;
+}
+
 int packedobjectsd_send(packedobjectsdObject *pod_obj, xmlDocPtr doc)
 {
   int rc;
@@ -381,7 +408,7 @@ int packedobjectsd_send(packedobjectsdObject *pod_obj, xmlDocPtr doc)
   char *pdu = NULL;
 
   if(pod_obj->publisher_socket == NULL) {
-    alert("packedobjectsd isn't initialised to send message");
+    alert("packedobjectsd isn't initialised properly to send message");
     pod_obj->error_code = SEND_FAILED;
     return -1;
   }
@@ -412,26 +439,26 @@ int packedobjectsd_send_search(packedobjectsdObject *pod_obj, xmlDocPtr doc)
   int rc;
  
   if(pod_obj->publisher_socket == NULL) {
-    alert("packedobjectsd isn't initialised properly");
+    alert("packedobjectsd isn't initialised properly to send search message");
     return -1;
   }
 
+  // sending "s" to notify as a search message
   if((rc = send_message(pod_obj->publisher_socket, "s", 1, ZMQ_SNDMORE)) == -1) {
-    alert("Error occurred while sending the message: %s", zmq_strerror (errno));
+    alert("Error occurred while sending the topic search: %s", zmq_strerror (errno));
+    pod_obj->error_code = SEND_FAILED;
+    return rc;
+  }
+  dbg("topic sent:- s [search]");
+   
+  // sending unique id as network order byte
+  if((rc = send_network_byte(pod_obj->unique_id, pod_obj)) == -1) {
+    alert("Error occurred while sending the unique id: %s", zmq_strerror (errno));
     pod_obj->error_code = SEND_FAILED;
     return rc;
   }
 
-  dbg("topic:- s [search]");
- 
-  
-  if((rc = send_message(pod_obj->publisher_socket, pod_obj->uid_str, strlen(pod_obj->uid_str), ZMQ_SNDMORE)) == -1) {
-    alert("Error occurred while sending the message: %s", zmq_strerror (errno));
-    pod_obj->error_code = SEND_FAILED;
-    return rc;
-  }
-
-  dbg("searcher id:- %lu", pod_obj->unique_id);
+  dbg("searcher id sent:- %lu", pod_obj->unique_id);
 
   if((rc = packedobjectsd_send(pod_obj, doc)) == -1) {
     return rc;
@@ -457,7 +484,7 @@ int packedobjectsd_send_response(packedobjectsdObject *pod_obj, xmlDocPtr doc)
     alert("last searcher id is not known. response may not sent properly");
     //return -1;
   }
-  sprintf(resp_topic, "r##%s", pod_obj->last_searcher_id);
+  sprintf(resp_topic, "r##%lu", pod_obj->last_searcher);
 
   if((rc = send_message(pod_obj->publisher_socket, resp_topic, strlen(resp_topic), ZMQ_SNDMORE)) == -1) {
     alert("Error occurred while sending the message: %s", zmq_strerror (errno));

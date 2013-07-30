@@ -69,7 +69,7 @@ int get_broker_detail(packedobjectsdObject *pod_obj)
     alert("Failed to create zeromq connection: %s", zmq_strerror (errno));
     return -1;
   }
-
+  
   if((request_pdu = encode_request(pod_obj->uid_str, pod_obj->schema_hash, nodetype, &request_size)) == NULL) {
     return -1;
   }
@@ -85,8 +85,9 @@ int get_broker_detail(packedobjectsdObject *pod_obj)
     return -1;
   }
   
+  // convert received node id to host order bytes
   pod_obj->unique_id = ntohl(*(unsigned long *)response_pdu);
-  dbg("The node_id assigned is %u", pod_obj->unique_id);
+  dbg("The node_id assigned is %lu", pod_obj->unique_id);
 
   if((rc = zmq_getsockopt(requester, ZMQ_RCVMORE, &more, &more_size)) == -1) {
     alert("Failed to get socket option");
