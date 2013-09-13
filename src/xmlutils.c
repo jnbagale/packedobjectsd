@@ -1,12 +1,12 @@
 
-#define _XOPEN_SOURCE       /* See feature_test_macros(7) */
-#include <unistd.h>
-#define _GNU_SOURCE
-#include <crypt.h>  /* for crypt() */
+
+#include <string.h>
+#include <openssl/md5.h>
 
 #include "xmlutils.h"
 
 static xmlChar *xml_to_string(xmlDocPtr doc, int *size);
+
 
 xmlDocPtr xml_new_doc(const char *file)
 {
@@ -50,10 +50,13 @@ xmlChar *xml_to_string(xmlDocPtr doc, int *size)
 
 char *xml_to_md5hash(const char *file) 
 {
+  int i;
   int xml_size;
   char *xml_char;
   char *xml_hash;
   xmlDocPtr xml_doc;
+  char mdString[33];
+  unsigned char digest[MD5_DIGEST_LENGTH];
 
  /* Creating MD5 hash of the xml xml using crypt() function */
   xml_doc = xml_new_doc((char *)file); 
@@ -62,7 +65,20 @@ char *xml_to_md5hash(const char *file)
     return NULL;
   }
   xml_char = (char *)xml_to_string(xml_doc, &xml_size);
-  xml_hash = crypt(xml_char, "$1$"); /* $1$ is MD5 */
+  // xml_hash = crypt(xml_char, "$1$"); /* $1$ is MD5 */
+
+
+
+  // generate MD5 hash of the xml string
+  MD5((unsigned char*)xml_char, strlen(xml_char), (unsigned char*)&digest);
+
+  for(i = 0; i < 16; i++)
+    {
+      sprintf(&mdString[i*2], "%02x", (unsigned int)digest[i]);
+    }
+
+  xml_hash = strdup((char *)mdString);
+  //printf("md5 digest: %s %d\n", mdString, strlen(mdString));
 
   /* Freeing up unused memory */
   free(xml_char);
