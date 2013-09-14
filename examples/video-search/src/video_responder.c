@@ -247,7 +247,7 @@ int process_search(packedobjectsdObject *pod_obj, xmlDocPtr doc_search)
   printf("\n************** search request details **************\n");
   printf("Movie title: %s \n", movie_title);
   printf("Maximum price: %g\n", max_price);
-  printf("Searcher's id:- %s\n\n", pod_obj->last_searcher_id);
+  printf("Searcher's id:- %lu\n\n", pod_obj->last_searcher);
 
   ///////////////////// Checking on database ///////////////////
 
