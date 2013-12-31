@@ -8,7 +8,7 @@
 
 #define MAX_HASH_SIZE 128 /* the maximum size for hash of the schema */
 
-int get_broker_detail(packedobjectsdObject *pod_obj);
+int getBrokerInfo(packedobjectsdObject *pod_obj);
 
 #endif
 /* End of broker.h */

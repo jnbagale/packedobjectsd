@@ -25,13 +25,11 @@
   (fprintf(stderr, "libpackedobjectsd" ":%s: " fmtstr "\n", __func__, ##args))
 #endif
 
-xmlDocPtr create_response(char *broker_address, char *port_in, char *port_out, char *process_id)
+xmlDocPtr createResponseDoc(char *broker_address, char *port_in, char *port_out, char *process_id)
 {
   xmlDocPtr doc = NULL;
   xmlNodePtr pod_node = NULL, message_node = NULL, response_node = NULL;
   
-  LIBXML_TEST_VERSION;
-
   doc = xmlNewDoc(BAD_CAST "1.0");
 
   /* create pod node as root node */
@@ -51,7 +49,7 @@ xmlDocPtr create_response(char *broker_address, char *port_in, char *port_out, c
   return doc; /* doc to be freed by calling function */
 }
 
-char *encode_response(char *broker_address, int port_in, int port_out, int process_id, int *response_size)
+char *encodeResponseDoc(char *broker_address, int port_in, int port_out, int process_id, int *response_size)
 {
   xmlDocPtr doc;
   char *pdu = NULL;
@@ -65,7 +63,7 @@ char *encode_response(char *broker_address, int port_in, int port_out, int proce
   sprintf(processid, "%d", process_id);
 
   pc = init_packedobjects(POD_SCHEMA, 0, 0);
-  doc = create_response(broker_address, portin, portout, processid);
+  doc = createResponseDoc(broker_address, portin, portout, processid);
 
   pdu = packedobjects_encode(pc, doc);
   *response_size =  pc->bytes;
@@ -77,7 +75,7 @@ char *encode_response(char *broker_address, int port_in, int port_out, int proce
   return pdu;
 }
 
-int process_response(xmlDocPtr response_doc, char *broker_address, int *port_in, int *port_out, int *process_id)
+int processResponseDoc(xmlDocPtr response_doc, char *broker_address, int *port_in, int *port_out, int *process_id)
 {
   xmlNodePtr cur = xmlDocGetRootElement(response_doc);
 
@@ -128,7 +126,7 @@ int process_response(xmlDocPtr response_doc, char *broker_address, int *port_in,
   return 1;
 }
 
-xmlDocPtr decode_response(char *pdu)
+xmlDocPtr decodeResponseDoc(char *pdu)
 {
   xmlDocPtr doc = NULL;
   packedobjectsContext *pc;

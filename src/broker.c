@@ -27,7 +27,7 @@
   (fprintf(stderr, "libpackedobjectsd" ":%s: " fmtstr "\n", __func__, ##args))
 #endif
 
-int get_broker_detail(packedobjectsdObject *pod_obj)
+int getBrokerInfo(packedobjectsdObject *pod_obj)
 {
   int rc;
   int64_t more;
@@ -70,17 +70,17 @@ int get_broker_detail(packedobjectsdObject *pod_obj)
     return -1;
   }
   
-  if((request_pdu = encode_request(pod_obj->uid_str, pod_obj->schema_hash, nodetype, &request_size)) == NULL) {
+  if((request_pdu = encodeRequestDoc(pod_obj->uid_str, pod_obj->schema_hash, nodetype, &request_size)) == NULL) {
     return -1;
   }
 
-  if((rc = send_message(requester, request_pdu, request_size, 0)) == -1) {
+  if((rc = sendMessagePDU(requester, request_pdu, request_size, 0)) == -1) {
     alert("Failed to send request structure to server: %s", zmq_strerror (errno));
     return -1;
   }
 
   // receive node id
-  if((response_pdu = receive_message(requester, &response_size)) == NULL){
+  if((response_pdu = receiveMessagePDU(requester, &response_size)) == NULL){
     alert("The received message is NULL\n");
     return -1;
   }
@@ -96,16 +96,16 @@ int get_broker_detail(packedobjectsdObject *pod_obj)
   // receive broker details
   if(more) {
   
-    if((response_pdu = receive_message(requester, &response_size)) == NULL){
+    if((response_pdu = receiveMessagePDU(requester, &response_size)) == NULL){
       alert("The received message is NULL\n");
       return -1;
     }
 
-    if((response_doc = decode_response(response_pdu)) == NULL) {
+    if((response_doc = decodeResponseDoc(response_pdu)) == NULL) {
       return -1;
     }
   
-    if((process_response(response_doc, broker_hostname, &portin, &portout, &processid)) == -1) {
+    if((processResponseDoc(response_doc, broker_hostname, &portin, &portout, &processid)) == -1) {
       return -1;
     }
  

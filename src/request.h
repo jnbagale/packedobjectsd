@@ -33,10 +33,10 @@ static inline char *which_node (int node_type) {
     }
 }
 
-xmlDocPtr create_request(char *user_id, char *schema_hash, char *nodetype);
-int process_request(xmlDocPtr request_doc, char *user_id, char *schema_hash, char *node_type);
-char *encode_request(char *user_id, char *schema_hash, char *nodetype, int *request_size);
-xmlDocPtr decode_request(char *pdu);
+xmlDocPtr createRequestDoc(char *user_id, char *schema_hash, char *nodetype);
+int processRequestDoc(xmlDocPtr request_doc, char *user_id, char *schema_hash, char *node_type);
+char *encodeRequestDoc(char *user_id, char *schema_hash, char *nodetype, int *request_size);
+xmlDocPtr decodeRequestDoc(char *pdu);
 
 
 #endif

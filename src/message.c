@@ -22,7 +22,7 @@
   (fprintf(stderr, "libpackedobjectsd" ":%s: " fmtstr "\n", __func__, ##args))
 #endif
 
-int send_message(void *socket, char *message, int message_length, int more) 
+int sendMessagePDU(void *socket, char *message, int message_length, int more) 
 {
   int rc;
   zmq_msg_t z_message;
@@ -41,7 +41,7 @@ int send_message(void *socket, char *message, int message_length, int more)
   return rc;
 }
 
-char *receive_message(void *socket, int *message_length) 
+char *receiveMessagePDU(void *socket, int *message_length) 
 {
   int rc;
   int size;

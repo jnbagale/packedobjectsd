@@ -146,8 +146,6 @@ xmlDocPtr create_search(packedobjectsdObject *pod_obj, char *movie_title, char *
   xmlDocPtr doc_search = NULL;
   xmlNodePtr video_node = NULL, message_node = NULL, search_node = NULL;
   
-  LIBXML_TEST_VERSION;
-
   ///////////////////// Creating Root and other parent nodes ///////////////////
 
   doc_search = xmlNewDoc(BAD_CAST "1.0");

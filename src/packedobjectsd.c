@@ -73,7 +73,7 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
   
   /* get broker details from the Look up server using schema hash */
   /* sets pod_obj->unique_id, pod_obj->publisher_endpoint and pod_obj->subscriber_endpoint */
-  if((ret = get_broker_detail(pod_obj)) == -1) {
+  if((ret = getBrokerInfo(pod_obj)) == -1) {
     alert("Failed to get broker detail from server");
     return NULL;
   }
@@ -173,7 +173,9 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
     return NULL;
   }
    
-  sleep(1); // give some time to broker for init so that it will not miss the first message from a publisher
+  // give some time to broker for initialization 
+  // so that it will not miss the first message from publishers
+  sleep(1);
   return pod_obj;
 }
 
@@ -267,7 +269,7 @@ xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj)
     return NULL;
   }
 
-  if((pdu = receive_message(pod_obj->subscriber_socket, &size)) == NULL) {
+  if((pdu = receiveMessagePDU(pod_obj->subscriber_socket, &size)) == NULL) {
     pod_obj->error_code = RECEIVE_FAILED;
     return NULL;
   }
@@ -300,7 +302,7 @@ xmlDocPtr packedobjectsd_receive_search(packedobjectsdObject *pod_obj)
     return NULL;
   }
  
-  if((pdu = receive_message(pod_obj->subscriber_socket, &size)) == NULL) {
+  if((pdu = receiveMessagePDU(pod_obj->subscriber_socket, &size)) == NULL) {
     pod_obj->error_code = RECEIVE_FAILED;
     return NULL;
   }
@@ -311,7 +313,7 @@ xmlDocPtr packedobjectsd_receive_search(packedobjectsdObject *pod_obj)
   }
 
   if(more) {
-    if((pod_obj->last_searcher_id = receive_message(pod_obj->subscriber_socket, &size)) == NULL) {
+    if((pod_obj->last_searcher_id = receiveMessagePDU(pod_obj->subscriber_socket, &size)) == NULL) {
     pod_obj->error_code = RECEIVE_FAILED;
     return NULL;
     }
@@ -352,7 +354,7 @@ xmlDocPtr packedobjectsd_receive_response(packedobjectsdObject *pod_obj)
     return NULL;
   }
  
-  if((pdu = receive_message(pod_obj->subscriber_socket, &size)) == NULL) {
+  if((pdu = receiveMessagePDU(pod_obj->subscriber_socket, &size)) == NULL) {
     pod_obj->error_code = RECEIVE_FAILED;
     return NULL;
   }
@@ -422,7 +424,7 @@ int packedobjectsd_send(packedobjectsdObject *pod_obj, xmlDocPtr doc)
     return size;
   }
 
-  if((rc = send_message(pod_obj->publisher_socket, pdu, size, 0)) == -1) {
+  if((rc = sendMessagePDU(pod_obj->publisher_socket, pdu, size, 0)) == -1) {
     alert("Error occurred while sending the message: %s", zmq_strerror (errno));
     pod_obj->error_code = SEND_FAILED;
     return rc;
@@ -444,7 +446,7 @@ int packedobjectsd_send_search(packedobjectsdObject *pod_obj, xmlDocPtr doc)
   }
 
   // sending "s" to notify as a search message
-  if((rc = send_message(pod_obj->publisher_socket, "s", 1, ZMQ_SNDMORE)) == -1) {
+  if((rc = sendMessagePDU(pod_obj->publisher_socket, "s", 1, ZMQ_SNDMORE)) == -1) {
     alert("Error occurred while sending the topic search: %s", zmq_strerror (errno));
     pod_obj->error_code = SEND_FAILED;
     return rc;
@@ -486,7 +488,7 @@ int packedobjectsd_send_response(packedobjectsdObject *pod_obj, xmlDocPtr doc)
   }
   sprintf(resp_topic, "r##%lu", pod_obj->last_searcher);
 
-  if((rc = send_message(pod_obj->publisher_socket, resp_topic, strlen(resp_topic), ZMQ_SNDMORE)) == -1) {
+  if((rc = sendMessagePDU(pod_obj->publisher_socket, resp_topic, strlen(resp_topic), ZMQ_SNDMORE)) == -1) {
     alert("Error occurred while sending the message: %s", zmq_strerror (errno));
     pod_obj->error_code = SEND_FAILED;
     return rc;

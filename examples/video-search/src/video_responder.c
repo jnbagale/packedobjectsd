@@ -36,8 +36,6 @@ void send_response(packedobjectsdObject *pod_obj, char *movie_title, double pric
   xmlDocPtr doc_response = NULL;
   xmlNodePtr video_node = NULL, message_node = NULL, response_node = NULL;
   
-  LIBXML_TEST_VERSION;
-
   ///////////////////// Creating Root and other parent nodes ///////////////////
 
   doc_response = xmlNewDoc(BAD_CAST "1.0");

@@ -25,13 +25,11 @@
   (fprintf(stderr, "libpackedobjectsd" ":%s: " fmtstr "\n", __func__, ##args))
 #endif
 
-xmlDocPtr create_request(char *user_id, char *schema_hash, char *nodetype)
+xmlDocPtr createRequestDoc(char *user_id, char *schema_hash, char *nodetype)
 {
   xmlDocPtr doc = NULL;
   xmlNodePtr pod_node = NULL, message_node = NULL, request_node = NULL;
   
-  LIBXML_TEST_VERSION;
-
   doc = xmlNewDoc(BAD_CAST "1.0");
 
   /* create pod node as root node */
@@ -50,7 +48,7 @@ xmlDocPtr create_request(char *user_id, char *schema_hash, char *nodetype)
   return doc; /* doc to be freed by calling function */
 }
 
-int process_request(xmlDocPtr request_doc, char *user_id, char *schema_hash, char *node_type)
+int processRequestDoc(xmlDocPtr request_doc, char *user_id, char *schema_hash, char *node_type)
 {
   xmlNodePtr cur = xmlDocGetRootElement(request_doc);
 
@@ -95,14 +93,14 @@ int process_request(xmlDocPtr request_doc, char *user_id, char *schema_hash, cha
   return 1;
 }
 
-char *encode_request(char *user_id, char *schema_hash, char *nodetype, int *request_size)
+char *encodeRequestDoc(char *user_id, char *schema_hash, char *nodetype, int *request_size)
 {
   xmlDocPtr doc;
   char *pdu = NULL;
   packedobjectsContext *pc;
 
   pc = init_packedobjects(POD_SCHEMA, 0, 0);
-  doc = create_request(user_id, schema_hash, nodetype);
+  doc = createRequestDoc(user_id, schema_hash, nodetype);
 
   pdu = packedobjects_encode(pc, doc);
   *request_size =  pc->bytes;
@@ -114,7 +112,7 @@ char *encode_request(char *user_id, char *schema_hash, char *nodetype, int *requ
   return pdu;
 }
 
-xmlDocPtr decode_request(char *pdu)
+xmlDocPtr decodeRequestDoc(char *pdu)
 {
   xmlDocPtr doc = NULL;
   packedobjectsContext *pc;
