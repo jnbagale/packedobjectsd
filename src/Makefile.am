@@ -1,18 +1,18 @@
 
-INCLUDES = -Wall -g  $(LIBZMQ_CFLAGS) $(LIBXML2_CFLAGS) $(LIBPACKEDOBJECTS_CFLAGS) $(LIBCRYPTO_CFLAGS)
+INCLUDES = -Wall -g  $(LIBZMQ_CFLAGS) $(LIBXML2_CFLAGS) $(LIBPACKEDOBJECTS_CFLAGS)
 
 lib_LTLIBRARIES = libpackedobjectsd.la
 
-libpackedobjectsd_la_LIBADD = $(LIBZMQ_LIBS) $(LIBXML2_LIBS) $(LIBPACKEDOBJECTS_LIBS) $(LIBCRYPTO_LIBS)
+libpackedobjectsd_la_LIBADD = $(LIBZMQ_LIBS) $(LIBXML2_LIBS) $(LIBPACKEDOBJECTS_LIBS) 
 
 libpackedobjectsd_la_SOURCES = 	packedobjectsd.c packedobjectsd.h message.c message.h broker.c broker.h \
-				response.c response.h request.c request.h xmlutils.c xmlutils.h \
+				response.c response.h request.c request.h xmlutils.c xmlutils.h md5_hash.c md5_hash.h global.h \
 				$(top_builddir)/pkgconfig/libpackedobjectsd.pc \
 				$(top_builddir)/schema/packedobjectsd.xsd 
 
 library_includedir = $(includedir)/packedobjectsd
 
-library_include_HEADERS = packedobjectsd.h message.h broker.h request.h response.h xmlutils.h config.h
+library_include_HEADERS = packedobjectsd.h message.h broker.h request.h response.h xmlutils.h md5_hash.h config.h
 
 
 library_datadirdir = $(datadir)/@PACKAGE@
