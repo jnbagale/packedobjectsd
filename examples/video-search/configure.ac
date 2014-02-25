@@ -29,6 +29,10 @@ AC_TYPE_SIZE_T
 # Checks for library functions.
 AC_FUNC_MALLOC
 
+# Check for pthreads library and header
+AC_CHECK_LIB(pthread, pthread_create, , AC_MSG_ERROR(*** pthread library not found))
+AC_CHECK_HEADERS(pthread.h,, [AC_MSG_ERROR([pthread.h required])])
+
 # check for libpackedobjects
 PKG_CHECK_MODULES(LIBPACKEDOBJECTSD, [libpackedobjectsd >= 0.0.3])
 
