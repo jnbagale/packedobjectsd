@@ -59,6 +59,31 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
     return NULL;
   }
 
+  // Handling the extra flags
+
+  int options = NO_HEARTBEAT;// | NO_COMPRESSION 
+
+  //  valid options can be 0, 1, 2 or 3 
+  // if options = 0, both flags are not set
+  // if options = 1, NO_COMPRESSION flag is set NO_HEARTBEAT flag is not set
+  // if options = 2, NO_COMPRESSION flag is not set NO_HEARTBEAT flag is set
+  // if options = 3,  both flags are set
+
+  if ((options & NO_HEARTBEAT) == 0) { // NO_HEARTBEAT flag is not set
+    printf("Heartbeat enabled\n");
+  }
+  else {
+    printf("Heartbeat not enabled\n");
+  }
+ 
+  if ((options & NO_COMPRESSION) == 0) { // NO_COMPRESSION flag is not set
+    printf("Compression enabled\n");
+  } 
+  else {
+    printf("Compression not enabled\n");
+  }
+
+
   /* create MD5 Hash of the XML schmea */
   if((pod_obj->schema_hash = xml_to_md5hash(schema_file)) == NULL) {
     alert("Failed to create hash of the schema file.");
@@ -72,11 +97,11 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
   sprintf(pod_obj->uid_str, "%s", pod_obj->schema_hash);
   
   /* get broker details from the Look up server using schema hash */
-  /* sets pod_obj->unique_id, pod_obj->publisher_endpoint and pod_obj->subscriber_endpoint */
+  
   if((ret = getBrokerInfo(pod_obj)) == -1) {
     alert("Failed to get broker detail from server");
     return NULL;
-  }
+  } // sets pod_obj->unique_id, pod_obj->publisher_endpoint and pod_obj->subscriber_endpoint
 
   /* create custom subscribe filter for searchers using their own unique id */
   sprintf(resp_filter, "r##%lu", pod_obj->unique_id);
@@ -144,7 +169,7 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
       return NULL;
     }  
     break;
-    /* Disabled this type unless the message can be separated for searcher and responder
+    
   case SEARES:
     ret = packedobjectsd_publish(pod_obj, pod_obj->schema_hash);
     if(ret == -1) {
@@ -166,7 +191,7 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
     } 
     dbg("Subscription filter:- s");
     break;
-    */
+    
 
   default:
     alert("Invalid node type."); 

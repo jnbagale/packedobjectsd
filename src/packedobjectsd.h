@@ -46,6 +46,11 @@ enum NODE_TYPE {
   SEARES
 };
 
+enum INIT_FLAGS {
+  NO_COMPRESSION = 1,
+  NO_HEARTBEAT = 2,
+};
+
 typedef struct {
   void *publisher_context;
   void *subscriber_context;
@@ -69,14 +74,21 @@ typedef struct {
   packedobjectsContext *pc;
 } packedobjectsdObject;
 
+// API functions for initialising and freeing
 packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type);
+void free_packedobjectsd(packedobjectsdObject *pod_obj);
+
+// API functions for simple PUB SUB communication
 int packedobjectsd_send(packedobjectsdObject *pod_obj, xmlDocPtr doc);
 xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj);
-void free_packedobjectsd(packedobjectsdObject *pod_obj);
+
+// API functions for SEARCHER RESPONDER communication
 int packedobjectsd_send_search(packedobjectsdObject *pod_obj, xmlDocPtr doc);
 xmlDocPtr packedobjectsd_receive_search(packedobjectsdObject *pod_obj);
 int packedobjectsd_send_response(packedobjectsdObject *pod_obj, xmlDocPtr doc);
 xmlDocPtr packedobjectsd_receive_response(packedobjectsdObject *pod_obj);
+
+// API functions for error handling
 const char *pod_strerror(int error_code);
 
 #endif
