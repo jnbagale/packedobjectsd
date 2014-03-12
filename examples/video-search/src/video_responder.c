@@ -277,6 +277,11 @@ int main(int argc, char *argv [])
     exit(EXIT_FAILURE);
   }
 
+  printf("Connected to POD with schema hash: %s\n", pod_obj->schema_hash);
+  printf("Sending search responses to %s\n", pod_obj->subscriber_endpoint);
+  printf("Receiving search requests from %s\n", pod_obj->publisher_endpoint);
+  printf("POD Node ID %lu\n\n", pod_obj->unique_id);
+
   ///////////////////// Receiving search broadcast ///////////////////
 
   while(1)

@@ -243,11 +243,17 @@ int main(int argc, char *argv [])
   ///////////////////// Initialising packedobjectsd ///////////////////
 
   /* Initialise packedobjectsd */
-  if((pod_obj = init_packedobjectsd(XML_SCHEMA, SEARES)) == NULL) {
+  if((pod_obj = init_packedobjectsd(XML_SCHEMA, SEARCHER)) == NULL) {
     printf("failed to initialise libpackedobjectsd\n");
     exit(EXIT_FAILURE);
   }
 
+  printf("Connected to POD with schema hash: %s\n", pod_obj->schema_hash);
+  printf("Sending search requestes to %s\n", pod_obj->publisher_endpoint);
+  printf("Receiving search responses from %s\n", pod_obj->subscriber_endpoint);
+  printf("POD Node ID %lu\n\n", pod_obj->unique_id);
+  
+  
   ///////////////////// Initialising threads ///////////////////
 
   /* initialise thread to execute send_search() function */

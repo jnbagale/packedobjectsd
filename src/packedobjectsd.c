@@ -144,7 +144,7 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
       return NULL;
     }  
     break;
-  
+    /* Disabled this type unless the message can be separated for searcher and responder
   case SEARES:
     ret = packedobjectsd_publish(pod_obj, pod_obj->schema_hash);
     if(ret == -1) {
@@ -166,6 +166,7 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
     } 
     dbg("Subscription filter:- s");
     break;
+    */
 
   default:
     alert("Invalid node type."); 
@@ -218,7 +219,7 @@ static int packedobjectsd_subscribe(packedobjectsdObject *pod_obj, char *schema_
     dbg("Subscription filter:- %s", filter);
   }
 
-  free(pod_obj->subscriber_endpoint); /* Free up subscriber endpoint pointer */
+  // free(pod_obj->subscriber_endpoint); /* Free up subscriber endpoint pointer */
   return 0;
 }
 
@@ -252,7 +253,7 @@ static int packedobjectsd_publish(packedobjectsdObject *pod_obj, char *schema_ha
 
   dbg("Publisher is ready to send data to broker at %s",pod_obj->publisher_endpoint);
 
-  free(pod_obj->publisher_endpoint); /* Free up publisher endpoint pointer */
+  // free(pod_obj->publisher_endpoint); /* Free up publisher endpoint pointer */
   return 0;
 }
 
@@ -312,7 +313,7 @@ xmlDocPtr packedobjectsd_receive_search(packedobjectsdObject *pod_obj)
     alert("Failed to get socket option");
   }
 
-  if(more) {
+  if(more && (strcmp(pdu,"s") == 0)) {
     if((pod_obj->last_searcher_id = receiveMessagePDU(pod_obj->subscriber_socket, &size)) == NULL) {
     pod_obj->error_code = RECEIVE_FAILED;
     return NULL;
