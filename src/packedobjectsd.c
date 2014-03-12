@@ -364,7 +364,7 @@ xmlDocPtr packedobjectsd_receive_response(packedobjectsdObject *pod_obj)
     alert("Failed to get socket option");
   }
 
-  if(more) {
+  if(more && !(strcmp(pdu,"s") == 0)) {
     xmlDocPtr doc = NULL;
     doc = packedobjectsd_receive(pod_obj);
     dbg("Received message with topic response");

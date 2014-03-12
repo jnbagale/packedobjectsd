@@ -125,7 +125,7 @@ void *receive_response(void *pod_obj)
     {
       if((doc_response = packedobjectsd_receive_response(pod_object)) == NULL) {
 	printf("message could not be received\n");
-	exit(EXIT_FAILURE);
+	//exit(EXIT_FAILURE);
       }
 
       printf("\nnew search response received... \n");
@@ -243,7 +243,7 @@ int main(int argc, char *argv [])
   ///////////////////// Initialising packedobjectsd ///////////////////
 
   /* Initialise packedobjectsd */
-  if((pod_obj = init_packedobjectsd(XML_SCHEMA, SEARCHER)) == NULL) {
+  if((pod_obj = init_packedobjectsd(XML_SCHEMA, SEARES)) == NULL) {
     printf("failed to initialise libpackedobjectsd\n");
     exit(EXIT_FAILURE);
   }
