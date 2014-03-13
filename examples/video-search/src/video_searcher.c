@@ -28,8 +28,19 @@ int read_response(xmlDocPtr doc_response);
 void *receive_response(void *pod_obj);
 xmlDocPtr create_search(packedobjectsdObject *pod_obj, char *movie_title, char *max_price);
 void *send_search(void *pod_obj);
+static inline char *get_input(char *buffer, size_t size);
 
 /* function definitions */
+static inline char *get_input(char *buffer, size_t size)
+{
+  if ( fgets(buffer, size, stdin) != NULL)
+    {
+      strtok(buffer, "\n");
+      return buffer;
+    }
+  return NULL;
+
+}
 
 int read_response(xmlDocPtr doc_response)
 {
@@ -179,21 +190,20 @@ void *send_search(void *pod_obj)
   ///////////////////// Creating search request ///////////////////
   while(quit != 3) 
     {
-      printf("Enter 1 to create new search request\n");
-      printf("Enter 2 to send search request\n");
-      printf("Enter 3 to quit the program\n");
-      quit = atoi(gets(quit_str));
+      printf("Enter 1 to create & send new search request\n");
+      printf("Enter 2 to quit the program\n");
+      quit = atoi(get_input(quit_str, sizeof quit_str));
 
       switch(quit) 
 	{
 	case 1:
 	  printf("Please enter your search details below\n");
 	  printf("Please enter the video title\n");
-	  if(gets(movie_title) == NULL) {
+	  if(get_input(movie_title, sizeof movie_title) == NULL) {
 	    printf("Title input unsuccessful\n");
 	  }
 	  printf("Please enter the maximum price\n");
-	  if(gets(max_price) == NULL) {
+	  if(get_input(max_price, sizeof max_price) == NULL) {
 	    printf("Price input unsuccessful\n");
 	  }	    
 
@@ -202,11 +212,10 @@ void *send_search(void *pod_obj)
 	  }
 	  doc_search = create_search(pod_object, movie_title, max_price);
 	  //xml_dump_doc(doc_search);
-	  break;
-	case 2:
+	  
 	  /* send the search doc to the clients */
 	  if(doc_search == NULL) {
-	    printf("Please create a search request using option 1 first\n");
+	    printf("Search request could not be processed\n");
 	    break;
 	  }
 
@@ -218,7 +227,7 @@ void *send_search(void *pod_obj)
 	  printf("search request sent to the responders...\n");
 	  //xml_dump_doc(doc_search);
 	  break;
-	case 3:
+	case 2:
 	  printf("This program is now quitting...\n");
 	  exit(EXIT_SUCCESS);
 	  break;
@@ -243,7 +252,7 @@ int main(int argc, char *argv [])
   ///////////////////// Initialising packedobjectsd ///////////////////
 
   /* Initialise packedobjectsd */
-  if((pod_obj = init_packedobjectsd(XML_SCHEMA, SEARCHER)) == NULL) {
+  if((pod_obj = init_packedobjectsd(XML_SCHEMA, SEARCHER, NO_COMPRESSION)) == NULL) {
     printf("failed to initialise libpackedobjectsd\n");
     exit(EXIT_FAILURE);
   }

@@ -35,7 +35,7 @@ static void send_file(packedobjectsdObject *pod_obj, const char *xml_file)
   
   send_count++;
   printf("message sent\n");
-  //xml_dump_doc(doc_sent);
+  xml_dump_doc(doc_sent);
   xmlFreeDoc(doc_sent);
 }
 
@@ -51,7 +51,7 @@ static void receive_file(packedobjectsdObject *pod_obj)
 
   receive_count++;
   printf("message received\n");
-  //xml_dump_doc(doc_received);
+  xml_dump_doc(doc_received);
   xmlFreeDoc(doc_received);
   
 }
@@ -124,10 +124,18 @@ int main (int argc, char *argv [])
   if (!xml_file) exit_with_message("did not specify --xml file");
 
   /* Initialise packedobjectsd with schema file and a flag to specify node type */
-  if((pod_obj = init_packedobjectsd(schema_file, SEARES)) == NULL) {
+  if((pod_obj = init_packedobjectsd(schema_file, PUBSUB, NO_COMPRESSION)) == NULL) {
     exit_with_message("failed to init packedobjectsd");
   } 
-   
+
+  // SENDING SIMPLE XML OVER SIMPLE PUB SUB CONNECTION
+
+  /* printf("Sending message on a pub socket\n"); */
+  /* send_file(pod_obj, xml_file); */
+
+  /* printf("Receiving message on a sub socket\n"); */
+  /* receive_file(pod_obj); */
+ 
   while(loop) {
     int ret;
     xmlDocPtr doc_search = NULL;

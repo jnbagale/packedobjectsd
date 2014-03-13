@@ -69,13 +69,14 @@ typedef struct {
   int error_code;
   int server_port;
   int node_type;
+  int init_options;
   unsigned long unique_id;
   unsigned long last_searcher;
   packedobjectsContext *pc;
 } packedobjectsdObject;
 
 // API functions for initialising and freeing
-packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type);
+packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type, int options);
 void free_packedobjectsd(packedobjectsdObject *pod_obj);
 
 // API functions for simple PUB SUB communication

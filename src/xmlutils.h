@@ -2,6 +2,8 @@
 #ifndef XMLUTILS_H_
 #define XMLUTILS_H_
 
+#include <libxml/tree.h>
+#include <libxml/parser.h>
 #include <libxml/xmlschemas.h>
 #include <libxml/xmlschemastypes.h>
 

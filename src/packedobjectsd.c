@@ -31,7 +31,8 @@
 static int packedobjectsd_subscribe(packedobjectsdObject *pod_obj, char *schema_hash, char filter[10]);
 static int packedobjectsd_publish(packedobjectsdObject *pod_obj, char *schema_hash);
 
-packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type)
+// COMPRESSION and HEARTBEAT will be on by default unless NO_COMPRESSION and NO_HEARTBEAT flags have been set
+packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type, int options)
 {
   int ret;
   char resp_filter[100];
@@ -60,27 +61,26 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
   }
 
   // Handling the extra flags
-
-  int options = NO_HEARTBEAT;// | NO_COMPRESSION 
+  pod_obj->init_options = options; // to be used later 
 
   //  valid options can be 0, 1, 2 or 3 
   // if options = 0, both flags are not set
   // if options = 1, NO_COMPRESSION flag is set NO_HEARTBEAT flag is not set
   // if options = 2, NO_COMPRESSION flag is not set NO_HEARTBEAT flag is set
-  // if options = 3,  both flags are set
+  // if options = 3, both flags are set
 
   if ((options & NO_HEARTBEAT) == 0) { // NO_HEARTBEAT flag is not set
-    printf("Heartbeat enabled\n");
+    dbg("Heartbeat enabled");
   }
   else {
-    printf("Heartbeat not enabled\n");
+    dbg("Heartbeat not enabled");
   }
  
   if ((options & NO_COMPRESSION) == 0) { // NO_COMPRESSION flag is not set
-    printf("Compression enabled\n");
+    dbg("Compression enabled");
   } 
   else {
-    printf("Compression not enabled\n");
+    dbg("Compression not enabled");
   }
 
 
@@ -302,12 +302,20 @@ xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj)
 
   pod_obj->bytes_received = size;
 
-  doc = packedobjects_decode(pod_obj->pc, pdu);
-  if (pod_obj->pc->decode_error) {
-    alert("Failed to decode with error %d.", pod_obj->pc->decode_error);
-    pod_obj->error_code = DECODE_FAILED;
-    return NULL;
+  if ((pod_obj->init_options  & NO_COMPRESSION) == 0) { // COMPRESSION ENABLED
+    doc = packedobjects_decode(pod_obj->pc, pdu);
+    if (pod_obj->pc->decode_error) {
+      alert("Failed to decode with error %d.", pod_obj->pc->decode_error);
+      pod_obj->error_code = DECODE_FAILED;
+      return NULL;
+    }
   }
+  else {
+    //convert string to xml document
+    dbg("Received XMl w/o compression\n");
+    doc = xmlReadDoc( (xmlChar *) pdu, NULL, NULL, 0);
+  }
+
   
   dbg("data received and decoded");
   free(pdu);
@@ -404,6 +412,7 @@ xmlDocPtr packedobjectsd_receive_response(packedobjectsdObject *pod_obj)
 
 int send_network_byte(unsigned long host_byte, packedobjectsdObject *pod_obj)
 {
+  // To send network id as long instead of string by converting it to network order byte
   int rc;
   zmq_msg_t z_message;
   unsigned long network_byte = htonl(host_byte);
@@ -441,15 +450,27 @@ int packedobjectsd_send(packedobjectsdObject *pod_obj, xmlDocPtr doc)
     return -1;
   }
 
-  pdu = packedobjects_encode(pod_obj->pc, doc);
-  size =  pod_obj->pc->bytes;
+  if ((pod_obj->init_options  & NO_COMPRESSION) == 0) { // COMPRESSION ENABLED
+    pdu = packedobjects_encode(pod_obj->pc, doc);
+    size =  pod_obj->pc->bytes;
 
-  if (size == -1) {
-    //fprintf(stderr, "Failed to encode with error %d.\n", pod_obj->pc->encode_error);
-    pod_obj->error_code = ENCODE_FAILED;
-    return size;
+    if (size == -1) {
+      //fprintf(stderr, "Failed to encode with error %d.\n", pod_obj->pc->encode_error);
+      pod_obj->error_code = ENCODE_FAILED;
+      return size;
+    }
   }
+  else {
+    dbg("Sending XML w/o compression\n");
+    xmlChar *xmlbuff;
 
+    // convert xml to string
+    xmlDocDumpFormatMemory(doc, &xmlbuff, &size, 0);
+
+    // cast xmlchar to string
+    pdu = (char *) xmlbuff;
+  }
+  
   if((rc = sendMessagePDU(pod_obj->publisher_socket, pdu, size, 0)) == -1) {
     alert("Error occurred while sending the message: %s", zmq_strerror (errno));
     pod_obj->error_code = SEND_FAILED;
