@@ -48,6 +48,7 @@ int read_response(xmlDocPtr doc_response)
   int i;
   int size;
   double movie_price = 0.0;
+  char *responder_id = NULL;
   char *movie_title = NULL;
   char xpath_exp[1000];
   xmlXPathContextPtr xpathp = NULL;
@@ -96,6 +97,13 @@ int read_response(xmlDocPtr doc_response)
 
     for(i = 0; i < size; i++) 
       {
+	if(!(xmlStrcmp(cur->name, (const xmlChar *)"responder-id"))) {
+	  xmlChar *key;
+	  key = xmlNodeListGetString(doc_response, cur->xmlChildrenNode, 1);
+	  responder_id = strdup((char *)key);
+	  xmlFree(key);
+	}
+
 	if(!(xmlStrcmp(cur->name, (const xmlChar *)"movie-title"))) {
 	  xmlChar *key;
 	  key = xmlNodeListGetString(doc_response, cur->xmlChildrenNode, 1);
@@ -113,7 +121,9 @@ int read_response(xmlDocPtr doc_response)
 
 	cur = cur->next;
       }
+
     printf("\n********** search response details ***********\n");
+    printf("Responder ID: %s \n", responder_id);
     printf("Movie title: %s \n", movie_title);
     printf("Movie price: %g\n", movie_price);
   }
@@ -191,7 +201,8 @@ void *send_search(void *pod_obj)
   while(quit != 3) 
     {
       printf("Enter 1 to create & send new search request\n");
-      printf("Enter 2 to quit the program\n");
+      printf("Enter 2 to resend current search request\n");
+      printf("Enter 3 to quit the program\n");
       quit = atoi(get_input(quit_str, sizeof quit_str));
 
       switch(quit) 
@@ -227,7 +238,24 @@ void *send_search(void *pod_obj)
 	  printf("search request sent to the responders...\n");
 	  //xml_dump_doc(doc_search);
 	  break;
+
 	case 2:
+	  	  /* send the search doc to the clients */
+	  if(doc_search == NULL) {
+	    printf("Create a new search request using option 1\n");
+	    break;
+	  }
+
+	  ///////////////////// Sending search request broadcast ///////////////////
+	  if(packedobjectsd_send_search(pod_object, doc_search) == -1){
+	    printf("message could not be sent\n");
+	    exit(EXIT_FAILURE);
+	  }
+	  printf("search request sent to the responders...\n");
+	  //xml_dump_doc(doc_search);
+	  break;
+
+	case 3:
 	  printf("This program is now quitting...\n");
 	  exit(EXIT_SUCCESS);
 	  break;

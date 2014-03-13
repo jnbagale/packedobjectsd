@@ -24,15 +24,16 @@
 #define XML_SCHEMA "video.xsd"
 
 /* function prototypes */
-void send_response(packedobjectsdObject *pod_obj, char *movie_title, double price);
+void send_response(packedobjectsdObject *pod_obj, char *movie_title, double price, char *genre, char *dateofrelease, char *director); 
 int create_response(packedobjectsdObject *pod_obj, char *movie_title, double max_price);
 int process_search(packedobjectsdObject *pod_obj, xmlDocPtr search);
 
 /* function definitions */
-void send_response(packedobjectsdObject *pod_obj, char *movie_title, double price)
+void send_response(packedobjectsdObject *pod_obj, char *movie_title, double price, char *genre, char *dateofrelease, char *director) 
 {
   /* Declare variables */
   char price_string[50];
+  char id_string[100];
   xmlDocPtr doc_response = NULL;
   xmlNodePtr video_node = NULL, message_node = NULL, response_node = NULL;
   
@@ -51,8 +52,14 @@ void send_response(packedobjectsdObject *pod_obj, char *movie_title, double pric
   
   /* create child elements to hold data */
   sprintf(price_string,"%g", price);
+  sprintf(id_string,"%lu", pod_obj->unique_id);
+
+  xmlNewChild(response_node, NULL, BAD_CAST "responder-id", BAD_CAST id_string);
   xmlNewChild(response_node, NULL, BAD_CAST "movie-title", BAD_CAST movie_title);
   xmlNewChild(response_node, NULL, BAD_CAST "price", BAD_CAST price_string);
+  xmlNewChild(response_node, NULL, BAD_CAST "genre", BAD_CAST genre);
+  xmlNewChild(response_node, NULL, BAD_CAST "dateOfRelease", BAD_CAST dateofrelease);
+  xmlNewChild(response_node, NULL, BAD_CAST "director", BAD_CAST director);
 
   ///////////////////// Sending response to the searcher ///////////////////
 
@@ -74,6 +81,9 @@ int create_response(packedobjectsdObject *pod_obj, char *movie_title, double max
   int size;
   double price = 0.0;
   char *title = NULL;
+  char *genre = NULL;
+  char *dateofrelease = NULL;
+  char *director = NULL;
   char xpath_exp[1000];
   xmlDocPtr doc_database = NULL;
 
@@ -106,7 +116,7 @@ int create_response(packedobjectsdObject *pod_obj, char *movie_title, double max
 
   ///////////////////// Evaluating XPATH expression ///////////////////
   
-  sprintf(xpath_exp, "/video/message/database/movie[title='%s']/price", movie_title);
+  sprintf(xpath_exp, "/video/message/database/movie[title='%s']/*", movie_title);
     
   /* Evaluate xpath expression */
   result = xmlXPathEvalExpression((const xmlChar *)xpath_exp, xpathp);
@@ -129,17 +139,36 @@ int create_response(packedobjectsdObject *pod_obj, char *movie_title, double max
   else {
     size = result->nodesetval->nodeNr;
     xmlNodePtr cur = result->nodesetval->nodeTab[0];
-
-    for(i = 0; i < size; i++) 
+    for(i = 0; i < size; i++)
       {
+	if(!(xmlStrcmp(cur->name, (const xmlChar *)"genre")))
+	  {
+	    xmlChar *key;
+	    key = xmlNodeListGetString(doc_database, cur->xmlChildrenNode, 1);
+	    genre = strdup((char *)key);
+	    xmlFree(key);
+	  }
 	if(!(xmlStrcmp(cur->name, (const xmlChar *)"price")))
 	  {
 	    xmlChar *key;
 	    key = xmlNodeListGetString(doc_database, cur->xmlChildrenNode, 1);
 	    price = atof((char *)key);
-	    xmlFree(key);	  
+	    xmlFree(key);
 	  }
-
+	if(!(xmlStrcmp(cur->name, (const xmlChar *)"dateOfRelease")))
+	  {
+	    xmlChar *key;
+	    key = xmlNodeListGetString(doc_database, cur->xmlChildrenNode, 1);
+	    dateofrelease = strdup((char *)key);
+	    xmlFree(key);
+	  }
+	if(!(xmlStrcmp(cur->name, (const xmlChar *)"director")))
+	  {
+	    xmlChar *key;
+	    key = xmlNodeListGetString(doc_database, cur->xmlChildrenNode, 1);
+	    director = strdup((char *)key);
+	    xmlFree(key);
+	  }
 	cur = cur->next;
       }
 
@@ -153,7 +182,7 @@ int create_response(packedobjectsdObject *pod_obj, char *movie_title, double max
       ///////////////////// Sending  search response ///////////////////
 
       /* send response to searcher */
-      send_response(pod_obj, movie_title, price);
+      send_response(pod_obj, movie_title, price, genre, dateofrelease, director);
     }
     else {
       printf("the movie exists on the database but does not match price limit\n");

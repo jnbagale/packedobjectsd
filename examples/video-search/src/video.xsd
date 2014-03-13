@@ -58,8 +58,30 @@
 
   <xs:complexType name="responseType">
     <xs:sequence>
-      <xs:element name="movie-title" type="string"/>
+      <xs:element name="responder-id" type="string"/>
+      <xs:element name="movie-title">
+	<xs:simpleType>
+	  <xs:restriction base="string">
+	    <xs:maxLength value="100"/>
+	  </xs:restriction>
+	</xs:simpleType>
+      </xs:element>
       <xs:element name="price" type="decimal"/>
+      <xs:element name="genre" type="categoryType"/>
+      <xs:element name="dateOfRelease">
+	<xs:simpleType>
+	  <xs:restriction base="numeric-string">
+	    <xs:length value="8" />
+	  </xs:restriction>
+	</xs:simpleType>
+      </xs:element>
+      <xs:element name="director">
+	<xs:simpleType>
+	  <xs:restriction base="string">
+	    <xs:maxLength value="50"/>
+	  </xs:restriction>
+	</xs:simpleType>
+      </xs:element>
     </xs:sequence>
   </xs:complexType>
 
