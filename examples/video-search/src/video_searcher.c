@@ -280,7 +280,7 @@ int main(int argc, char *argv [])
   ///////////////////// Initialising packedobjectsd ///////////////////
 
   /* Initialise packedobjectsd */
-  if((pod_obj = init_packedobjectsd(XML_SCHEMA, SEARCHER, NO_COMPRESSION)) == NULL) {
+  if((pod_obj = init_packedobjectsd(XML_SCHEMA, SEARCHER, 0)) == NULL) {
     printf("failed to initialise libpackedobjectsd\n");
     exit(EXIT_FAILURE);
   }
