@@ -104,7 +104,7 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
   } // sets pod_obj->unique_id, pod_obj->publisher_endpoint and pod_obj->subscriber_endpoint
 
   /* create custom subscribe filter for searchers using their own unique id */
-  sprintf(resp_filter, "r##%lu", pod_obj->unique_id);
+  sprintf(resp_filter, "%lu", pod_obj->unique_id);
 
   switch (pod_obj->node_type) {
   case SUBSCRIBER:
@@ -312,12 +312,12 @@ xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj)
   }
   else {
     //convert string to xml document
-    dbg("Received XMl w/o compression\n");
+    dbg("Received XMl w/o compression");
     doc = xmlReadDoc( (xmlChar *) pdu, NULL, NULL, 0);
   }
 
   
-  dbg("data received and decoded");
+  dbg("data received and decoded\n");
   free(pdu);
   return doc;
 }
@@ -355,7 +355,6 @@ xmlDocPtr packedobjectsd_receive_search(packedobjectsdObject *pod_obj)
     // convert received node id to host order bytes
     pod_obj->last_searcher = ntohl(*(unsigned long *)pod_obj->last_searcher_id);
     dbg("The last searcher_id is %lu", pod_obj->last_searcher);
-    dbg("searcher id:- %s", pod_obj->last_searcher_id);
   }
   else {
     dbg("Could not receive the searcher id");
@@ -365,7 +364,7 @@ xmlDocPtr packedobjectsd_receive_search(packedobjectsdObject *pod_obj)
   if(more) {
     xmlDocPtr doc = NULL;
     doc = packedobjectsd_receive(pod_obj);
-    dbg("Received message with topic search");
+    //dbg("Received message with topic search");
     return doc;
   }
   else {
@@ -401,7 +400,7 @@ xmlDocPtr packedobjectsd_receive_response(packedobjectsdObject *pod_obj)
   if(more && !(strcmp(pdu,"s") == 0)) {
     xmlDocPtr doc = NULL;
     doc = packedobjectsd_receive(pod_obj);
-    dbg("Received message with topic response");
+    //dbg("Received message with topic response");
     return doc;
   }
   else {
@@ -416,7 +415,6 @@ int send_network_byte(unsigned long host_byte, packedobjectsdObject *pod_obj)
   int rc;
   zmq_msg_t z_message;
   unsigned long network_byte = htonl(host_byte);
-  dbg("network byte %lu", network_byte);
 
   if((rc = zmq_msg_init_size (&z_message, sizeof(network_byte))) == -1){
     alert("Error occurred during zmq_msg_init_size(): %s", zmq_strerror (errno));
@@ -425,7 +423,7 @@ int send_network_byte(unsigned long host_byte, packedobjectsdObject *pod_obj)
 
   // Mem copy network byte to zeromq message variable
   memcpy (zmq_msg_data (&z_message), &network_byte, sizeof(network_byte));
-  dbg("mem copied %d bytes %s", zmq_msg_size(&z_message), (char *)zmq_msg_data (&z_message));
+  //dbg("mem copied %d bytes %s", zmq_msg_size(&z_message), (char *)zmq_msg_data (&z_message));
 
   // send back node id to the client
   if((rc = zmq_msg_send (&z_message, pod_obj->publisher_socket, ZMQ_SNDMORE)) == -1){
@@ -461,7 +459,7 @@ int packedobjectsd_send(packedobjectsdObject *pod_obj, xmlDocPtr doc)
     }
   }
   else {
-    dbg("Sending XML w/o compression\n");
+    dbg("Sending XML w/o compression");
     xmlChar *xmlbuff;
 
     // convert xml to string
@@ -478,7 +476,7 @@ int packedobjectsd_send(packedobjectsdObject *pod_obj, xmlDocPtr doc)
   }
   pod_obj->bytes_sent = size;
   
-  dbg("data encoded and sent");
+  dbg("data encoded and sent\n");
  
   return rc;
 }
@@ -531,11 +529,11 @@ int packedobjectsd_send_response(packedobjectsdObject *pod_obj, xmlDocPtr doc)
   }
 
   /* create responder topic using searcher id */
-  if(pod_obj->last_searcher_id == NULL) {
-    alert("last searcher id is not known. response may not sent properly");
+  if(!pod_obj->last_searcher) {
+    alert("last searcher id is not known. response may not be sent properly");
     //return -1;
   }
-  sprintf(resp_topic, "r##%lu", pod_obj->last_searcher);
+  sprintf(resp_topic, "%lu", pod_obj->last_searcher);
 
   if((rc = sendMessagePDU(pod_obj->publisher_socket, resp_topic, strlen(resp_topic), ZMQ_SNDMORE)) == -1) {
     alert("Error occurred while sending the message: %s", zmq_strerror (errno));

@@ -124,7 +124,7 @@ int main (int argc, char *argv [])
   if (!xml_file) exit_with_message("did not specify --xml file");
 
   /* Initialise packedobjectsd with schema file and a flag to specify node type */
-  if((pod_obj = init_packedobjectsd(schema_file, PUBSUB, NO_COMPRESSION)) == NULL) {
+  if((pod_obj = init_packedobjectsd(schema_file, SEARES, NO_COMPRESSION)) == NULL) {
     exit_with_message("failed to init packedobjectsd");
   } 
 
