@@ -330,7 +330,7 @@ xmlDocPtr packedobjectsd_receive_search(packedobjectsdObject *pod_obj)
   size_t more_size = sizeof(more);
   char *pdu;
 
-  if(pod_obj->subscriber_socket == NULL) {
+  if(pod_obj->subscriber_socket == NULL || !(pod_obj->node_type == RESPONDER || pod_obj->node_type == SEARES)) {
     alert("packedobjectsd isn't initialised to receive search message");
     pod_obj->error_code = RECEIVE_FAILED;
     return NULL;
@@ -382,7 +382,7 @@ xmlDocPtr packedobjectsd_receive_response(packedobjectsdObject *pod_obj)
   size_t more_size = sizeof(more);
   char *pdu;
   
-  if(pod_obj->subscriber_socket == NULL) {
+  if(pod_obj->subscriber_socket == NULL || !(pod_obj->node_type == SEARCHER || pod_obj->node_type == SEARES)) {
     alert("packedobjectsd isn't initialised to receive response message");
     pod_obj->error_code = RECEIVE_FAILED;
     return NULL;
@@ -445,7 +445,7 @@ int packedobjectsd_send(packedobjectsdObject *pod_obj, xmlDocPtr doc)
   char *pdu = NULL;
 
   if(pod_obj->publisher_socket == NULL) {
-    alert("packedobjectsd isn't initialised properly to send message");
+    alert("packedobjectsd isn't initialised to send message");
     pod_obj->error_code = SEND_FAILED;
     return -1;
   }
@@ -487,8 +487,9 @@ int packedobjectsd_send_search(packedobjectsdObject *pod_obj, xmlDocPtr doc)
 {
   int rc;
  
-  if(pod_obj->publisher_socket == NULL) {
-    alert("packedobjectsd isn't initialised properly to send search message");
+  if(pod_obj->publisher_socket == NULL || !(pod_obj->node_type == SEARCHER || pod_obj->node_type == SEARES)) {
+    alert("packedobjectsd isn't initialised to send search message");
+    pod_obj->error_code = SEND_FAILED;
     return -1;
   }
 
@@ -523,8 +524,9 @@ int packedobjectsd_send_response(packedobjectsdObject *pod_obj, xmlDocPtr doc)
   int rc;
   char resp_topic[100];
 
-  if(pod_obj->publisher_socket == NULL) {
-    alert("packedobjectsd isn't initialised properly");
+  if(pod_obj->publisher_socket == NULL || !(pod_obj->node_type == RESPONDER || pod_obj->node_type == SEARES)) {
+    alert("packedobjectsd isn't initialised to send response message");
+    pod_obj->error_code = SEND_FAILED;
     return -1;
   }
 
