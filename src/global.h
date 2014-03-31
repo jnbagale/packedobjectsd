@@ -7,6 +7,8 @@ The following makes PROTOTYPES default to 0 if it has not already
 
   been defined with C compiler flags.
  */
+#include <stdint.h>
+
 #ifndef PROTOTYPES
 #define PROTOTYPES 0
 #endif
@@ -18,7 +20,8 @@ typedef unsigned char *POINTER;
 typedef unsigned short int UINT2;
 
 /* UINT4 defines a four byte word */
-typedef unsigned long int UINT4;
+//typedef unsigned long int UNIT4
+typedef uint32_t UINT4; // Fixes different hashing key on 32 bit and 64 bit machines
 
 /* PROTO_LIST is defined depending on how PROTOTYPES is defined above.
 If using PROTOTYPES, then PROTO_LIST returns the list, otherwise it
