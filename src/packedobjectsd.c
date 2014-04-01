@@ -109,7 +109,7 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
 
   switch (pod_obj->node_type) {
   case SUBSCRIBER:
-    ret = packedobjectsd_subscribe(pod_obj, pod_obj->schema_hash, "", sizeof(""));
+    ret = packedobjectsd_subscribe(pod_obj, pod_obj->schema_hash, "", 0);
     if(ret == -1) {
       alert("Failed to subscribe to packedobjectsd");
       // pod_obj->error_code =  SUBSCRIBE_FAILED;
@@ -133,7 +133,8 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
       //  pod_obj->error_code = PUBLISH_FAILED;
       return NULL;
     }
-    ret = packedobjectsd_subscribe(pod_obj, pod_obj->schema_hash, "", sizeof(""));
+
+    ret = packedobjectsd_subscribe(pod_obj, pod_obj->schema_hash, "", 0);
     if(ret == -1) {
       alert("Failed to subscribe to packedobjectsd");
       //  pod_obj->error_code =  SUBSCRIBE_FAILED;
@@ -166,7 +167,7 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
       //  pod_obj->error_code = PUBLISH_FAILED;
       return NULL;
     }
-    ret = packedobjectsd_subscribe(pod_obj, pod_obj->schema_hash, "s", sizeof("s"));  /* to receive message sent by searcher */
+    ret = packedobjectsd_subscribe(pod_obj, pod_obj->schema_hash, "s", 1);  /* to receive message sent by searcher */
     if(ret == -1) {
       alert("Failed to subscribe to packedobjectsd");
       //  pod_obj->error_code =  SUBSCRIBE_FAILED;
@@ -556,6 +557,7 @@ int packedobjectsd_send_response(packedobjectsdObject *pod_obj, xmlDocPtr doc)
 
 
   dbg("topic:- %lu", network_byte);
+  dbg("size of the topic sent %d", sizeof(network_byte));
 
   if((rc = packedobjectsd_send(pod_obj, doc)) == -1) {
     return rc;

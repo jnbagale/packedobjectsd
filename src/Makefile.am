@@ -24,7 +24,7 @@ check_PROGRAMS = packedobjectsdtest
 
 packedobjectsdtest_SOURCES = main.c
 
-packedobjectsdtest_LDADD = $(lib_LTLIBRARIES) 
+packedobjectsdtest_LDADD = $(lib_LTLIBRARIES) # $(LIBXML2_LIBS)
 
 
 pkgconfigdir = $(libdir)/pkgconfig
