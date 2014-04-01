@@ -294,8 +294,12 @@ static int packedobjectsd_publish(packedobjectsdObject *pod_obj, char *schema_ha
 xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj)
 {
   /* Reading the received message */
+  int rc;
   int size;
+  int64_t more;
+  size_t more_size = sizeof(more);
   char *pdu = NULL;
+  char *status_pdu = NULL;
   xmlDocPtr doc = NULL;
 
   if(pod_obj->subscriber_socket == NULL) {
@@ -303,22 +307,37 @@ xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj)
     return NULL;
   }
 
-  if((pdu = receiveMessagePDU(pod_obj->subscriber_socket, &size)) == NULL) {
+  if((status_pdu = receiveMessagePDU(pod_obj->subscriber_socket, &size)) == NULL) {
     pod_obj->error_code = RECEIVE_FAILED;
     return NULL;
   }
 
+  dbg("compression status:- %s", status_pdu);
+  if((rc = zmq_getsockopt(pod_obj->subscriber_socket, ZMQ_RCVMORE, &more, &more_size)) == -1) {
+    alert("Failed to get socket option");
+  }
+
+  if(more) {
+    if((pdu = receiveMessagePDU(pod_obj->subscriber_socket, &size)) == NULL) {
+      pod_obj->error_code = RECEIVE_FAILED;
+      return NULL;
+    }
+  }
   pod_obj->bytes_received = size;
 
-  if ((pod_obj->init_options  & NO_COMPRESSION) == 0) { // COMPRESSION ENABLED
+    if(strcmp(status_pdu,"c") == 0) {
+    dbg("next message is compressed");
+    // if ((pod_obj->init_options  & NO_COMPRESSION) == 0) { // COMPRESSION ENABLED
     doc = packedobjects_decode(pod_obj->pc, pdu);
     if (pod_obj->pc->decode_error) {
       alert("Failed to decode with error %d.", pod_obj->pc->decode_error);
       pod_obj->error_code = DECODE_FAILED;
       return NULL;
     }
+    // }
   }
   else {
+    dbg("next message is not compressed");
     //convert string to xml document
     dbg("Received XMl w/o compression");
     doc = xmlReadDoc( (xmlChar *) pdu, NULL, NULL, 0);
@@ -451,6 +470,7 @@ int packedobjectsd_send(packedobjectsdObject *pod_obj, xmlDocPtr doc)
   int rc;
   int size;
   char *pdu = NULL;
+  char compression_status[2];
 
   if(pod_obj->publisher_socket == NULL) {
     alert("packedobjectsd isn't initialised to send message");
@@ -467,6 +487,7 @@ int packedobjectsd_send(packedobjectsdObject *pod_obj, xmlDocPtr doc)
       pod_obj->error_code = ENCODE_FAILED;
       return size;
     }
+    compression_status[0] = 'c';
   }
   else {
     dbg("Sending XML w/o compression");
@@ -477,8 +498,17 @@ int packedobjectsd_send(packedobjectsdObject *pod_obj, xmlDocPtr doc)
 
     // cast xmlchar to string
     pdu = (char *) xmlbuff;
+    compression_status[0] = 'p';
   }
-  
+
+  // send "c" to notify compression enabled on next message
+  // send "p" to notify compression not enabled on next message
+  if((rc = sendMessagePDU(pod_obj->publisher_socket, compression_status, 1, ZMQ_SNDMORE)) == -1) {
+    alert("Error occurred while sending the compression status: %s", zmq_strerror (errno));
+    pod_obj->error_code = SEND_FAILED;
+    return rc;
+  }
+
   if((rc = sendMessagePDU(pod_obj->publisher_socket, pdu, size, 0)) == -1) {
     alert("Error occurred while sending the message: %s", zmq_strerror (errno));
     pod_obj->error_code = SEND_FAILED;
