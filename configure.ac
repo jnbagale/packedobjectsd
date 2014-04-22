@@ -34,8 +34,6 @@ AC_FUNC_MALLOC
 AC_CHECK_LIB(pthread, pthread_create, , AC_MSG_ERROR(*** pthread library not found))
 AC_CHECK_HEADERS(pthread.h,, [AC_MSG_ERROR([pthread.h required])])
 
-# check for libcrypto
-PKG_CHECK_MODULES(LIBCRYPTO, [libcrypto])
 
 # check for zeromq
 PKG_CHECK_MODULES(LIBZMQ, [libzmq >= 3.2])
