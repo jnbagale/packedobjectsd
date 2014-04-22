@@ -27,7 +27,7 @@ int xml_doc_size(xmlDocPtr doc)
   int size = -1;
   xmlChar *xmlbuff;
 
-  xmlDocDumpFormatMemoryEnc(doc, &xmlbuff, &size,"UTF-8", 1);
+  xmlDocDumpFormatMemory(doc, &xmlbuff, &size, 0);
   free(xmlbuff);
 
   return size;
