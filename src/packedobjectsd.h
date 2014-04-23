@@ -75,6 +75,8 @@ typedef struct {
   int server_port;
   int node_type;
   int init_options;
+  double encode_cpu_time;
+  double decode_cpu_time;
   unsigned long unique_id;
   unsigned long last_searcher;
   packedobjectsContext *pc;
@@ -96,6 +98,6 @@ xmlDocPtr packedobjectsd_receive_response(packedobjectsdObject *pod_obj);
 
 // API functions for error handling
 const char *pod_strerror(int error_code);
-
+double get_process_time(); 
 #endif
 /* End of packedobjectsd.h */

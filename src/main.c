@@ -7,6 +7,10 @@
 #include <string.h>   /* for strcmp()*/
 #include <unistd.h>  /* for sleep() */
 #include <getopt.h>
+#include <stdint.h>#
+#include <time.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 #include "packedobjectsd.h"
 
@@ -124,7 +128,7 @@ int main (int argc, char *argv [])
   if (!xml_file) exit_with_message("did not specify --xml file");
 
   /* Initialise packedobjectsd with schema file and a flag to specify node type */
-  if((pod_obj = init_packedobjectsd(schema_file, SEARES, NO_HEARTBEAT)) == NULL) {
+  if((pod_obj = init_packedobjectsd(schema_file, SEARES, NO_COMPRESSION)) == NULL) {
     exit_with_message("failed to init packedobjectsd");
   } 
 
@@ -135,7 +139,6 @@ int main (int argc, char *argv [])
 
   /* printf("Receiving message on a sub socket\n"); */
   /* receive_file(pod_obj); */
- 
   while(loop) {
     int ret;
     xmlDocPtr doc_search = NULL;
@@ -146,19 +149,22 @@ int main (int argc, char *argv [])
     if((doc_search = xml_new_doc(xml_file)) == NULL) {
       exit_with_message("did not find .xml file");
     }
-  
+ 
     /* send a search message */ 
     if((ret = packedobjectsd_send_search(pod_obj, doc_search)) == -1){
       exit_with_message(pod_strerror(pod_obj->error_code));
     }
-    send_count++;
 
+    printf("Encode cpu time %g\n", pod_obj->encode_cpu_time);
+    send_count++;
     /* receive a search message */
     if((doc_search_received = packedobjectsd_receive_search(pod_obj)) == NULL) {
     exit_with_message(pod_strerror(pod_obj->error_code));
     }
     // xml_dump_doc(doc_search_received);
-      
+    
+    printf("Decode cpu time %g\n", pod_obj->decode_cpu_time);
+
     if((doc_response = xml_new_doc(xml_file)) == NULL) {
       exit_with_message("did not find .xml file");
     }
@@ -167,11 +173,14 @@ int main (int argc, char *argv [])
     if((ret = packedobjectsd_send_response(pod_obj, doc_response)) == -1){
       exit_with_message(pod_strerror(pod_obj->error_code));
     }
+    printf("Encode cpu time %g\n", pod_obj->encode_cpu_time);
+
     /* receive a response message */
     if((doc_response_received = packedobjectsd_receive_response(pod_obj)) == NULL) {
       exit_with_message(pod_strerror(pod_obj->error_code));
     }
     receive_count++;
+    printf("Decode cpu time %g\n", pod_obj->decode_cpu_time);
 
     // xml_dump_doc(doc_response_received);
     usleep(1000); /* Do nothing for 1 ms */

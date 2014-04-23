@@ -3,9 +3,12 @@
 #include <string.h>     /* for strlen() */
 #include <stdlib.h>    /* for exit()   */
 #include <unistd.h>   /* for sleep()  */
-#include <inttypes.h> /* for uint64_t */
-#include <zmq.h>     /* for ZeroMQ functions */
+#include <inttypes.h>/* for uint64_t */
+#include <time.h>   /* for cpu time */
+#include <zmq.h>   /* for ZeroMQ functions */
 #include <arpa/inet.h> /* for ntohl() */
+#include <sys/time.h>
+#include <sys/resource.h>
 
 #include "config.h"
 #include "broker.h"
@@ -290,10 +293,20 @@ static int packedobjectsd_publish(packedobjectsdObject *pod_obj, char *schema_ha
   return 0;
 }
 
+double get_process_time() 
+{
+  struct rusage usage;
+  if( 0 == getrusage(RUSAGE_SELF, &usage) ) {
+    return ((double)(usage.ru_utime.tv_sec + usage.ru_stime.tv_sec) +
+	    (double)(usage.ru_utime.tv_usec + usage.ru_stime.tv_usec));
+  }
+  return 0;
+}
 
 xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj)
 {
   /* Reading the received message */
+  int i;
   int rc;
   int size;
   int64_t more;
@@ -301,6 +314,7 @@ xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj)
   char *pdu = NULL;
   char *status_pdu = NULL;
   xmlDocPtr doc = NULL;
+  double start_time, end_time;
 
   if(pod_obj->subscriber_socket == NULL) {
     alert("packedobjectsd isn't initialised to receive message");
@@ -325,25 +339,32 @@ xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj)
   }
   pod_obj->bytes_received = size;
 
-    if(strcmp(status_pdu,"c") == 0) {
-    dbg("next message is compressed");
-    // if ((pod_obj->init_options  & NO_COMPRESSION) == 0) { // COMPRESSION ENABLED
-    doc = packedobjects_decode(pod_obj->pc, pdu);
-    if (pod_obj->pc->decode_error) {
-      alert("Failed to decode with error %d.", pod_obj->pc->decode_error);
-      pod_obj->error_code = DECODE_FAILED;
-      return NULL;
-    }
-    // }
-  }
-  else {
-    dbg("next message is not compressed");
-    //convert string to xml document
-    dbg("Received XMl w/o compression");
-    doc = xmlReadDoc( (xmlChar *) pdu, NULL, NULL, 0);
-  }
+  start_time = get_process_time ();
 
+  for(i = 0; i < 1000; i++) {
+    if(strcmp(status_pdu,"c") == 0) {
+      dbg("next message is compressed");
+
+      doc = packedobjects_decode(pod_obj->pc, pdu);
   
+    
+      if (pod_obj->pc->decode_error) {
+	alert("Failed to decode with error %d.", pod_obj->pc->decode_error);
+	pod_obj->error_code = DECODE_FAILED;
+	return NULL;
+      }
+    }
+    else {
+      dbg("Received XMl w/o compression");
+
+   
+      doc = xmlReadDoc((xmlChar *) pdu, NULL, NULL, 0);
+    }
+  }
+  end_time = get_process_time();
+  pod_obj->decode_cpu_time = (end_time - start_time) / 1000.00;
+  //alert("CPU time average for thousand decode %g ms", (end_time - start_time) / 1000.00);
+
   dbg("data received and decoded\n");
   free(pdu);
   return doc;
@@ -467,39 +488,48 @@ int send_network_byte(unsigned long network_byte, packedobjectsdObject *pod_obj)
 
 int packedobjectsd_send(packedobjectsdObject *pod_obj, xmlDocPtr doc)
 {
+  int i;
   int rc;
   int size;
   char *pdu = NULL;
   char compression_status[2];
+  double start_time, end_time;
 
   if(pod_obj->publisher_socket == NULL) {
     alert("packedobjectsd isn't initialised to send message");
     pod_obj->error_code = SEND_FAILED;
     return -1;
   }
+  start_time = get_process_time ();
 
-  if ((pod_obj->init_options  & NO_COMPRESSION) == 0) { // COMPRESSION ENABLED
-    pdu = packedobjects_encode(pod_obj->pc, doc);
-    size =  pod_obj->pc->bytes;
+  for(i = 0; i < 1000; i++) {
+    if ((pod_obj->init_options  & NO_COMPRESSION) == 0) { // COMPRESSION ENABLED
+      pdu = packedobjects_encode(pod_obj->pc, doc);
+      size =  pod_obj->pc->bytes;
 
-    if (size == -1) {
-      //fprintf(stderr, "Failed to encode with error %d.\n", pod_obj->pc->encode_error);
-      pod_obj->error_code = ENCODE_FAILED;
-      return size;
+      if (size == -1) {
+	//fprintf(stderr, "Failed to encode with error %d.\n", pod_obj->pc->encode_error);
+	pod_obj->error_code = ENCODE_FAILED;
+	return size;
+      }
+      compression_status[0] = 'c';
     }
-    compression_status[0] = 'c';
-  }
-  else {
-    dbg("Sending XML w/o compression");
-    xmlChar *xmlbuff;
+    else {
+      dbg("Sending XML w/o compression");
+      xmlChar *xmlbuff;
 
-    // convert xml to string
-    xmlDocDumpFormatMemory(doc, &xmlbuff, &size, 0);
+      // convert xml to string
+      xmlDocDumpFormatMemory(doc, &xmlbuff, &size, 0);
 
-    // cast xmlchar to string
-    pdu = (char *) xmlbuff;
-    compression_status[0] = 'p';
+      // cast xmlchar to string
+      pdu = (char *) xmlbuff;
+      compression_status[0] = 'p';
+    }
   }
+  end_time = get_process_time();
+  pod_obj->encode_cpu_time = (end_time - start_time) / 1000.00;
+  //alert("CPU time average for thousand encode %g ms", (end_time - start_time) / 1000.00);
+
 
   // send "c" to notify compression enabled on next message
   // send "p" to notify compression not enabled on next message
@@ -555,7 +585,7 @@ int packedobjectsd_send_search(packedobjectsdObject *pod_obj, xmlDocPtr doc)
     return rc;
   } 
 
-  pod_obj->bytes_sent++;
+  pod_obj->bytes_sent++; // To include the 1 bytes used for sending the compression status 'c' or 'p' before the actual data
 
   return 0;
 }
@@ -593,7 +623,7 @@ int packedobjectsd_send_response(packedobjectsdObject *pod_obj, xmlDocPtr doc)
     return rc;
   } 
 
-  pod_obj->bytes_sent++;
+  pod_obj->bytes_sent++; // To include the 1 bytes used for sending the the compression status 'c' or 'p'before the actual data
 
   return 0;
 }
