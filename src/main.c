@@ -7,10 +7,7 @@
 #include <string.h>   /* for strcmp()*/
 #include <unistd.h>  /* for sleep() */
 #include <getopt.h>
-#include <stdint.h>#
-#include <time.h>
-#include <sys/time.h>
-#include <sys/resource.h>
+#include <stdint.h>
 
 #include "packedobjectsd.h"
 
@@ -155,7 +152,7 @@ int main (int argc, char *argv [])
       exit_with_message(pod_strerror(pod_obj->error_code));
     }
 
-    printf("Encode cpu time %g\n", pod_obj->encode_cpu_time);
+    printf("Encode cpu time %g ms\n", pod_obj->encode_cpu_time);
     send_count++;
     /* receive a search message */
     if((doc_search_received = packedobjectsd_receive_search(pod_obj)) == NULL) {
@@ -163,7 +160,7 @@ int main (int argc, char *argv [])
     }
     // xml_dump_doc(doc_search_received);
     
-    printf("Decode cpu time %g\n", pod_obj->decode_cpu_time);
+    printf("Decode cpu time %g ms\n", pod_obj->decode_cpu_time);
 
     if((doc_response = xml_new_doc(xml_file)) == NULL) {
       exit_with_message("did not find .xml file");
@@ -173,14 +170,14 @@ int main (int argc, char *argv [])
     if((ret = packedobjectsd_send_response(pod_obj, doc_response)) == -1){
       exit_with_message(pod_strerror(pod_obj->error_code));
     }
-    printf("Encode cpu time %g\n", pod_obj->encode_cpu_time);
+    printf("Encode cpu time %g ms\n", pod_obj->encode_cpu_time);
 
     /* receive a response message */
     if((doc_response_received = packedobjectsd_receive_response(pod_obj)) == NULL) {
       exit_with_message(pod_strerror(pod_obj->error_code));
     }
     receive_count++;
-    printf("Decode cpu time %g\n", pod_obj->decode_cpu_time);
+    printf("Decode cpu time %g ms\n", pod_obj->decode_cpu_time);
 
     // xml_dump_doc(doc_response_received);
     usleep(1000); /* Do nothing for 1 ms */

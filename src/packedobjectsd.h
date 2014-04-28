@@ -98,6 +98,5 @@ xmlDocPtr packedobjectsd_receive_response(packedobjectsdObject *pod_obj);
 
 // API functions for error handling
 const char *pod_strerror(int error_code);
-double get_process_time(); 
 #endif
 /* End of packedobjectsd.h */

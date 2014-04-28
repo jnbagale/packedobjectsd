@@ -293,16 +293,6 @@ static int packedobjectsd_publish(packedobjectsdObject *pod_obj, char *schema_ha
   return 0;
 }
 
-double get_process_time() 
-{
-  struct rusage usage;
-  if( 0 == getrusage(RUSAGE_SELF, &usage) ) {
-    return ((double)(usage.ru_utime.tv_sec + usage.ru_stime.tv_sec) +
-	    (double)(usage.ru_utime.tv_usec + usage.ru_stime.tv_usec));
-  }
-  return 0;
-}
-
 xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj)
 {
   /* Reading the received message */
@@ -314,7 +304,7 @@ xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj)
   char *pdu = NULL;
   char *status_pdu = NULL;
   xmlDocPtr doc = NULL;
-  double start_time, end_time;
+  clock_t start_time, end_time;
 
   if(pod_obj->subscriber_socket == NULL) {
     alert("packedobjectsd isn't initialised to receive message");
@@ -339,9 +329,9 @@ xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj)
   }
   pod_obj->bytes_received = size;
 
-  start_time = get_process_time ();
+  start_time = clock();
 
-  for(i = 0; i < 1000; i++) {
+  for(i = 0; i < 3000; i++) {
     if(strcmp(status_pdu,"c") == 0) {
       dbg("next message is compressed");
 
@@ -361,9 +351,15 @@ xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj)
       doc = xmlReadDoc((xmlChar *) pdu, NULL, NULL, 0);
     }
   }
-  end_time = get_process_time();
-  pod_obj->decode_cpu_time = (end_time - start_time) / 1000.00;
-  //alert("CPU time average for thousand decode %g ms", (end_time - start_time) / 1000.00);
+
+  end_time = clock();
+  if(start_time != -1 && end_time != -1) {
+    pod_obj->decode_cpu_time = ((float) end_time / CLOCKS_PER_SEC - (float) start_time / CLOCKS_PER_SEC) / 3000.0 * 1000.0;
+  }
+  else {
+    pod_obj->decode_cpu_time = -1;
+  }
+  //alert("CPU time average for thousand decode %g ms", pod_obj->decode_cpu_time );
 
   dbg("data received and decoded\n");
   free(pdu);
@@ -493,16 +489,16 @@ int packedobjectsd_send(packedobjectsdObject *pod_obj, xmlDocPtr doc)
   int size;
   char *pdu = NULL;
   char compression_status[2];
-  double start_time, end_time;
+  clock_t start_time, end_time;
 
   if(pod_obj->publisher_socket == NULL) {
     alert("packedobjectsd isn't initialised to send message");
     pod_obj->error_code = SEND_FAILED;
     return -1;
   }
-  start_time = get_process_time ();
+  start_time = clock();
 
-  for(i = 0; i < 1000; i++) {
+  for(i = 0; i < 3000; i++) {
     if ((pod_obj->init_options  & NO_COMPRESSION) == 0) { // COMPRESSION ENABLED
       pdu = packedobjects_encode(pod_obj->pc, doc);
       size =  pod_obj->pc->bytes;
@@ -526,9 +522,16 @@ int packedobjectsd_send(packedobjectsdObject *pod_obj, xmlDocPtr doc)
       compression_status[0] = 'p';
     }
   }
-  end_time = get_process_time();
-  pod_obj->encode_cpu_time = (end_time - start_time) / 1000.00;
-  //alert("CPU time average for thousand encode %g ms", (end_time - start_time) / 1000.00);
+
+  end_time = clock();
+  if(start_time != -1 && end_time != -1) {
+    pod_obj->encode_cpu_time = ((float) end_time / CLOCKS_PER_SEC - (float) start_time / CLOCKS_PER_SEC) / 3000.0 * 1000.0;
+  }
+  else {
+    pod_obj->encode_cpu_time = -1;
+  }
+  
+  //alert("CPU time average for thousand encode %g ms", pod_obj->encode_cpu_time);
 
 
   // send "c" to notify compression enabled on next message
