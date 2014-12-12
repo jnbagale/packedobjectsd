@@ -2,8 +2,8 @@
 echo -e "POD test\n\n"
 init()
 { 
-    schemafile=../examples/helloworld-0.1/src/helloworld.xsd
-    xmlfile=../examples/helloworld-0.1/src/helloworld.xml
+    schemafile=../examples/helloworld.xsd
+    xmlfile=../examples/helloworld.xml
     cd ../ && ./configure && make && make check && sudo make install
     echo -e "\n\nRunning packedobjectsdtest program...\n\n"
     send-receive()
