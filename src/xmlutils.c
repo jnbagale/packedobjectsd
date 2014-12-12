@@ -27,7 +27,7 @@ int xml_doc_size(xmlDocPtr doc)
   int size = -1;
   xmlChar *xmlbuff;
 
-  xmlDocDumpFormatMemory(doc, &xmlbuff, &size, 0);
+  xmlDocDumpFormatMemory(doc, &xmlbuff, &size, 1); // 1 will include whitespaces if xmlKeepBlanksDefault was set
   free(xmlbuff);
 
   return size;
