@@ -125,7 +125,7 @@ int main (int argc, char *argv [])
   if (!xml_file) exit_with_message("did not specify --xml file");
 
   /* Initialise packedobjectsd with schema file and a flag to specify node type */
-  if((pod_obj = init_packedobjectsd(schema_file, SEARES, NO_COMPRESSION)) == NULL) {
+  if((pod_obj = init_packedobjectsd(schema_file, SEARES, 0)) == NULL) {
     exit_with_message("failed to init packedobjectsd");
   } 
 
@@ -152,7 +152,7 @@ int main (int argc, char *argv [])
       exit_with_message(pod_strerror(pod_obj->error_code));
     }
 
-    printf("Encode cpu time %g ms\n", pod_obj->encode_cpu_time);
+    printf("Searcher Encode cpu time %g ms\n", pod_obj->encode_cpu_time);
     send_count++;
     /* receive a search message */
     if((doc_search_received = packedobjectsd_receive_search(pod_obj)) == NULL) {
@@ -160,7 +160,7 @@ int main (int argc, char *argv [])
     }
     // xml_dump_doc(doc_search_received);
     
-    printf("Decode cpu time %g ms\n", pod_obj->decode_cpu_time);
+    printf("Responder Decode cpu time %g ms\n", pod_obj->decode_cpu_time);
 
     if((doc_response = xml_new_doc(xml_file)) == NULL) {
       exit_with_message("did not find .xml file");
@@ -170,14 +170,14 @@ int main (int argc, char *argv [])
     if((ret = packedobjectsd_send_response(pod_obj, doc_response)) == -1){
       exit_with_message(pod_strerror(pod_obj->error_code));
     }
-    printf("Encode cpu time %g ms\n", pod_obj->encode_cpu_time);
+    printf("Responder Encode cpu time %g ms\n", pod_obj->encode_cpu_time);
 
     /* receive a response message */
     if((doc_response_received = packedobjectsd_receive_response(pod_obj)) == NULL) {
       exit_with_message(pod_strerror(pod_obj->error_code));
     }
     receive_count++;
-    printf("Decode cpu time %g ms\n", pod_obj->decode_cpu_time);
+    printf("Searcher Decode cpu time %g ms\n", pod_obj->decode_cpu_time);
 
     // xml_dump_doc(doc_response_received);
     usleep(1000); /* Do nothing for 1 ms */

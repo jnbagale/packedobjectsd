@@ -1,17 +1,17 @@
 \input texinfo   @c -*-texinfo-*-
 @c %**start of header
 @setfilename tutorial.info
-@settitle libpackedobjectsd tutorial
+@settitle packedobjectsd tutorial
 @c %**end of header
 
 @copying
-libpackedobjectsd - a light weight XML messaging framework
+packedobjectsd - a light weight XML messaging framework
      
-Copyright @copyright{} 2011 Jiva N. Bagale
+Copyright @copyright{} 2011-2015 Jiva N. Bagale
 @end copying
 
 @titlepage
-@title libpackedobjectsd tutorial
+@title packedobjectsd tutorial
      
 @c The following two commands start the copyright page.
 @page
@@ -24,9 +24,9 @@ Copyright @copyright{} 2011 Jiva N. Bagale
 
 @ifnottex
 @node Top
-@top libpackedobjects tutorial
+@top packedobjectsd tutorial
 
-libpackedobjectsd - a light weight XML messaging framework   
+packedobjectsd - a light weight XML messaging framework   
 @end ifnottex
 
 @menu
@@ -40,13 +40,13 @@ libpackedobjectsd - a light weight XML messaging framework
 @node Introduction
 @chapter Introduction
 
-@section What is libpackedobjectsd?
-@cindex What is libpackedobjectsd
+@section What is packedobjectsd?
+@cindex What is packedobjectsd
 
-libpackedobjectsd is a light-weight XML messaging library. It is created using multiple publisher and subscriber model and built using libpackedobjects and ZeroMQ in C language. It is simple to implement and is suited to embedded systems and mobile devices. The library provides simple API to send and receive XML data to and from multiple nodes. The library connects all the nodes sending/receiving XML data using the same XML schema to one group. The data is also validated by the schema during the send and receive process.
+packedobjectsd is a light-weight XML messaging framework. It is created using multiple publisher and multiple subscriber model and built using packedobjects and ZeroMQ in C language. It is simple to implement and is suited to embedded systems and mobile devices. The library provides simple API to send and receive XML data to and from multiple nodes. The library connects all the nodes sending/receiving XML data using the same XML schema to one group. The data is compressed and validated by the schema during the send and receive process.
 
 @* @*
-libpackedobjectsd is based on libpackedobjects, libxml2 and ZeroMQ and therefore should run on any system that libxml2 and ZeroMQ runs on. 
+packedobjectsd is based on packedobjects, libxml2 and ZeroMQ and therefore should run on any system that libxml2 and ZeroMQ runs on. 
 
 @section Key features
 @cindex Key features
@@ -57,7 +57,7 @@ Light-weight and simple
 @item
 Validates XML data on send and receive
 @item
-Simple API with two main function calls
+Simple API with four main function calls
 @item
 Highly portable - designed for embedded and mobile devices
 @item
@@ -77,8 +77,8 @@ todo
 
 To install from the latest source:
 @smallexample
-git clone git://gitorious.org/libpackedobjectsd/libpackedobjectsd.git
-cd libpackedobjectsd
+git clone https://github.com/jnbagale/packedobjectsd.git
+cd packedobjectsd
 autoreconf -i
 ./configure
 make
@@ -88,6 +88,17 @@ sudo make install
 
 @section Further reading
 @cindex Further reading
+
+@smallexample
+Packedobjects: 
+http://packedobjects.org/pages/home.html
+
+ZeroMQ publisher subscriber: 
+http://zguide.zeromq.org/page:all#Getting-the-Message-Out 
+
+Libxml2:
+http://www.xmlsoft.org/examples/index.html
+@end smallexample
 
 @node Getting started
 @chapter Getting started
@@ -111,10 +122,27 @@ $ ./packedobjectsdtest --schema foo.xsd --xml foo.xml
 @section API basics
 @cindex API basics
 
-There are only 4 main function calls which are made available by adding @code{#include <packedobjectsd/packedobjectsd.h>} to your code.
+There are only 6 function calls which are made available by adding @code{#include <packedobjectsd/packedobjectsd.h>} to your code.
 @smallexample
-packedobjectsdObject *init_packedobjectsd(const char *schema_file);
-   
+
+packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type, int options)
+where node_type can be one of the following:
+
+      @enumerate 
+        @item PUBLISHER
+        @item SUBSCRIBER
+        @item PUBSUB
+        @item SEARCHER
+        @item RESPONDER
+        @item SEARES
+      @end enumerate
+
+and options can be:
+   @itemize @bullet
+        @item NO_COMPRESSION
+        @item NO_HEARTBEAT 
+   @end itemize
+The Compression and Heartbeat options will be enabled by default if 0 is specified for options
 int packedobjectsd_send(packedobjectsdObject *pod_obj, xmlDocPtr doc);
    
 xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj);
