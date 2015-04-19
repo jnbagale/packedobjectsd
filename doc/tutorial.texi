@@ -122,38 +122,61 @@ $ ./packedobjectsdtest --schema foo.xsd --xml foo.xml
 @section API basics
 @cindex API basics
 
-There are only 6 function calls which are made available by adding @code{#include <packedobjectsd/packedobjectsd.h>} to your code.
+There are 2 types of API implementations avaliable for data sharing which are made available by adding @code{#include <packedobjectsd/packedobjectsd.h>} to your code. Both API implementations share same initilisation and free function calls.
 @smallexample
 
 packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type, int options)
-where node_type can be one of the following:
 
-      @enumerate 
-        @item PUBLISHER
-        @item SUBSCRIBER
-        @item PUBSUB
-        @item SEARCHER
-        @item RESPONDER
-        @item SEARES
-      @end enumerate
+void free_packedobjectsd(packedobjectsdObject *pod_obj);
 
-and options can be:
+Options can be:
    @itemize @bullet
         @item NO_COMPRESSION
-        @item NO_HEARTBEAT 
+        @item NO_HEARTBEAT (* not yet fully implemented)
    @end itemize
-The Compression and Heartbeat options will be enabled by default if 0 is specified for options
+# The Compression and Heartbeat options will be enabled by default if 0 is specified for options 
+and the node_type depends on the API type
+@end smallexample
+
+1. Simple Pub/Sub API 
+Node types
+       PUBLISHER
+       SUBSCRIBER
+       PUBSUB
+@smallexample
 int packedobjectsd_send(packedobjectsdObject *pod_obj, xmlDocPtr doc);
    
 xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj);
    
-void free_packedobjectsd(packedobjectsdObject *pod_obj);
+@end smallexample
+
+PUBLISHER nodes can only use the send function, SUBSCRIBER nodes can only use the receive function whereas PUBSUB node (Publisher/Subscriber combo) can use both. The receive function is blocking so it will wait until it receives message from the publisher. It can be run in a loop to receive continuous messages and threads can be used to allow the program to perform other tasks in parallel while waiting for the messages. 
+
+@noindent
+You first must initialise the library using your XML Schema. Typical use would be one called to init_packedobjectsd at startup and then multiple calls to send/receive data. The interface to the packedobjectsd_send function requires a libxml2 doc type and returns the number of bytes sent. The packedobjectsd_receive function returns a libxml2 doc type. 
+
+1. Searcher/Responder API 
+Node types
+       SEARCHER
+       RESPONDER
+       SEARES
+@smallexample
+
+int packedobjectsd_send_search(packedobjectsdObject *pod_obj, xmlDocPtr doc); [SEARCHER]
+
+xmlDocPtr packedobjectsd_receive_search(packedobjectsdObject *pod_obj); [RESPONDER]
+
+int packedobjectsd_send_response(packedobjectsdObject *pod_obj, xmlDocPtr doc); [RESPONDER]
+
+xmlDocPtr packedobjectsd_receive_response(packedobjectsdObject *pod_obj); [SEARCHER]
 
 @end smallexample
+
+The functions will be called in specific sequence due to the nature of the communication between the SEARCHER and the RESPONDER nodes. The responder nodes consist of database to be searched by searcher nodes and thus needs to be initialised/run before the searcher nodes. Once the responder node is ready, searcher nodes can send their search query as XML doc using the send_search function. The responder node will retrieve that using the receive_search which should run in a loop if multiple search queries are expected. The receive_search function provides the search query and the searcher's unique id which will be used later to send response. The responder then sends the response XML using send_response function to the specific searcher by using the unique id. The searcher then receives the response by using receive_response function.
+
+
 @noindent
-You first must initialise the library using your XML Schema. Typical use would be one called to init_packedobjectsd at startup and then multiple calls to send/receive data. The interface to the packedobjectsd_send function requires a libxml2 doc type and returns number of bytes sent. The packedobjectsd_receive function returns a libxml2 doc type. 
-@noindent
-A very simple program demonstrating the API is as follows:
+A very simple program demonstrating the simple Pub/Sub API is as follows:
 @smallformat
 @verbatim
 
@@ -175,7 +198,7 @@ int main ()
 
   /* Initialise packedobjectsd */
 
-  if((pod_obj = init_packedobjectsd(XML_SCHEMA)) == NULL) {
+  if((pod_obj = init_packedobjectsd(XML_SCHEMA, PUBSUB, 0)) == NULL) {
     printf("failed to initialise libpackedobjectsd");
     exit(1);
   }
