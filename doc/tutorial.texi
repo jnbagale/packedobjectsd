@@ -180,75 +180,235 @@ A very simple program demonstrating the simple Pub/Sub API is as follows:
 @smallformat
 @verbatim
 
+
+/************ POD PUBLISHER **************/
+
+
 #include <stdio.h>
-#include <unistd.h>      /* for sleep() */
+#include <stdlib.h>
 #include <packedobjectsd/packedobjectsd.h>
 
-#define XML_DATA "helloworld.xml"
-#define XML_SCHEMA "helloworld.xsd"
-
-
-int main ()
+int main (int argc, char *argv [])
 {
+  ///////// Declarations /////////////
   packedobjectsdObject *pod_obj = NULL;
+  const char *xml_file = "helloworld.xml";
+  const char *schema_file = "helloworld.xsd";
+
   xmlDocPtr doc_sent = NULL;
-  xmlDocPtr doc_received = NULL;
+  int loop = 1;
+  
+  //////// Initialise packedobjectsd with schema file and specify node type  //////////
+  if((pod_obj = init_packedobjectsd(schema_file, PUBLISHER, 0)) == NULL) {
+    printf("failed to init packedobjectsd");
+    exit(EXIT_FAILURE);
+  } 
 
-  ///////////////////// Initialising ///////////////////
-
-  /* Initialise packedobjectsd */
-
-  if((pod_obj = init_packedobjectsd(XML_SCHEMA, PUBSUB, 0)) == NULL) {
-    printf("failed to initialise libpackedobjectsd");
-    exit(1);
+  ///////// SENDING SIMPLE XML OVER SIMPLE PUB SUB CONNECTION ///////
+  if((doc_sent = xml_new_doc(xml_file)) == NULL) {
+    printf("failed to init xml document");
+    exit(EXIT_FAILURE);
   }
-  
-  sleep(1); /* Allow broker to start if it's not already running */
-  
-  ////////////////////// Sending XML data //////////////////////
  
-  /* create an XML DOM */
-  if((doc_sent = xml_new_doc(XML_DATA)) == NULL) {
-    printf("did not find .xml file");
-    exit(1);
-  }
-
-  /* send the XML DOM */
+  /* send a normal pub message */
+  printf("Broadcasting message on a pub socket\n"); 
   if(packedobjectsd_send(pod_obj, doc_sent) == -1){
-    printf("failed to send with error %s", pod_strerror(pod_obj->error_code));
-    exit(1);
+    printf("%s", pod_strerror(pod_obj->error_code));
   }
-
-  printf("size of the original xml: %d bytes\n", xml_doc_size(doc_sent));
-  printf("size after the encoding: %d bytes\n", pod_obj->bytes_sent);
-  /* free the XML DOM */
-  xmlFreeDoc(doc_sent);
- 
-  ////////////////////// Receiving XML data //////////////////////
- 
-  if((doc_received = packedobjectsd_receive(pod_obj)) == NULL) {
-    printf("failed to receive with error %s", pod_strerror(pod_obj->error_code));
-    exit(1);
+  else {
+    printf("message sent successfully\n");
+    xml_dump_doc(doc_sent);
   }
   
-  printf("size before the decoding: %d bytes\n", pod_obj->bytes_received);
-  printf("size of the decoced xml: %d bytes \n", xml_doc_size(doc_received));
+  //////// freeing memory ///////////
+  free_packedobjectsd(pod_obj);
+  xmlFreeDoc(doc_sent);
 
-  /* output the DOM for checking */
-  xml_dump_doc(doc_received);
-  /* free the XML DOM */
+  return EXIT_SUCCESS;
+}
+
+
+
+/************ POD SUBSCRIBER **************/
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <packedobjectsd/packedobjectsd.h>
+
+int main (int argc, char *argv [])
+{
+  ///////// Declarations /////////////
+  packedobjectsdObject *pod_obj = NULL;
+  const char *schema_file = "helloworld.xsd";
+
+  xmlDocPtr doc_received = NULL;
+  int loop = 100;
+  
+  //////// Initialise packedobjectsd with schema file and specify node type  //////////
+  if((pod_obj = init_packedobjectsd(schema_file, SUBSCRIBER, 0)) == NULL) {
+    printf("failed to init packedobjectsd");
+    exit(EXIT_FAILURE);
+  } 
+
+  ///////// RECEIVING SIMPLE XML OVER SIMPLE PUB SUB CONNECTION ///////
+ 
+  printf("Receiving broadcast messages on a sub socket\n"); 
+
+  while(loop) {
+    if((doc_received = packedobjectsd_receive(pod_obj)) == NULL){
+      printf("%s", pod_strerror(pod_obj->error_code));
+    }
+    else {
+      printf("message received successfully\n");
+      xml_dump_doc(doc_received);
+    }
+    loop--;
+  }
+
+  //////// freeing memory ///////////
+  free_packedobjectsd(pod_obj);
   xmlFreeDoc(doc_received);
 
-  ////////////////////// Freeing //////////////////////
-
-  /* free memory created by packedobjectsd */
-  free_packedobjectsd(pod_obj);
-
-  return 0;
+  return EXIT_SUCCESS;
 }
 
 @end verbatim
 @end smallformat
+
+
+@noindent
+A very simple program demonstrating the SEARCHER/RESPONDER API is as follows:
+@smallformat
+@verbatim
+
+/************ POD SEARCHER **************/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <packedobjectsd/packedobjectsd.h>
+
+int main (int argc, char *argv [])
+{
+  ///////// Declarations /////////////
+  int ret;
+  packedobjectsdObject *pod_obj = NULL;
+  const char *xml_file = "helloworld.xml";
+  const char *schema_file = "helloworld.xsd";
+
+  xmlDocPtr doc_search = NULL;
+  xmlDocPtr doc_response_received = NULL;
+  int loop = 1;
+  
+  //////// Initialise packedobjectsd with schema file and specify node type  //////////
+  if((pod_obj = init_packedobjectsd(schema_file, SEARCHER, 0)) == NULL) {
+    printf("failed to init packedobjectsd");
+    exit(EXIT_FAILURE);
+  } 
+
+  ///////// SENDING SIMPLE XML OVER SIMPLE SEARCHER CONNECTION ///////
+  printf("Sending search messages on a searcher socket\n");
+
+  if((doc_search = xml_new_doc(xml_file)) == NULL) {
+    printf("did not find .xml file");
+  }
+  
+  /* send a search message */ 
+  if((ret = packedobjectsd_send_search(pod_obj, doc_search)) == -1){
+    printf("%s", pod_strerror(pod_obj->error_code));
+  }
+  else {
+    printf("search message sent successfully\n");
+  }
+
+  /////// Wait for response messages from Respnders ////////
+  printf("Waiting for response messages on a searcher socket\n");
+
+  /* USE LOOP HERE TO RECEIVE MESSAGES CONTINUOUSLY */
+
+  /* receive a response message */
+  if((doc_response_received = packedobjectsd_receive_response(pod_obj)) == NULL) {
+    printf("%s", pod_strerror(pod_obj->error_code));
+  }
+  else {
+    printf("response message received\n");
+    xml_dump_doc(doc_response_received);
+  }
+  
+  //////// freeing memory ///////////
+  free_packedobjectsd(pod_obj);
+  xmlFreeDoc(doc_search);
+
+  return EXIT_SUCCESS;
+}
+
+/************ POD RESPONDER **************/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <packedobjectsd/packedobjectsd.h>
+
+int main (int argc, char *argv [])
+{
+  ///////// Declarations /////////////
+  int ret;
+  packedobjectsdObject *pod_obj = NULL;
+  const char *schema_file = "helloworld.xsd";
+  const char *xml_file = "helloworld.xml";
+
+  xmlDocPtr doc_response = NULL;
+  xmlDocPtr doc_search_received = NULL;
+  int loop = 100;
+  
+  //////// Initialise packedobjectsd with schema file and specify node type  //////////
+  if((pod_obj = init_packedobjectsd(schema_file, RESPONDER, 0)) == NULL) {
+    printf("failed to init packedobjectsd");
+    exit(EXIT_FAILURE);
+  } 
+
+  ///////// RECEIVING SIMPLE XML OVER SIMPLE RESPONDER CONNECTION ///////
+ 
+  printf("Receiving search messages on a responder socket\n"); 
+
+  while(loop) {
+     /* receive a search message */
+    if((doc_search_received = packedobjectsd_receive_search(pod_obj)) == NULL) {
+      printf("%s", pod_strerror(pod_obj->error_code));
+    }
+    else {
+      printf("search message received successfully\n");
+      xml_dump_doc(doc_search_received);
+    }
+
+    /* PERFORM QUERY PROCESSING HERE! */
+
+    /* send a response message */
+    if((doc_response = xml_new_doc(xml_file)) == NULL) {
+      printf("did not find .xml file");
+    }
+
+    if((ret = packedobjectsd_send_response(pod_obj, doc_response)) == -1){
+      printf("%s", pod_strerror(pod_obj->error_code));
+    }
+    else {
+      printf("response message sent successfully\n");
+    }
+
+    usleep(1000); // sleep for 1ms
+    loop--;
+  }
+
+  //////// freeing memory ///////////
+  free_packedobjectsd(pod_obj);
+  xmlFreeDoc(doc_search_received);
+  xmlFreeDoc(doc_response);
+
+  return EXIT_SUCCESS;
+}
+
+@end verbatim
+@end smallformat
+
 
 @noindent
 helloworld.xsd
@@ -266,8 +426,12 @@ helloworld.xml
 <?xml version="1.0" encoding="UTF-8"?>
 <foo>Hello World!</foo> 
 @end smallexample
-
-    
+   
+An advanced searcher/responder example is available in the examples folder of the project repository(link below). This example also demonstrates XML schema, simple XML database and XML processing. The use of Threads and Loops can be seen along with some utility functions and variables that are available with the POD structure object. 
+@smallexample
+https://github.com/jnbagale/packedobjectsd/tree/master/examples/video-search
+@end smallexample
+ 
 If during runtime your schema changed you must call the init function again with the new file. The library is designed to communicate to the server during the init function which gives it back the network address and port numbers to send or receive the data. Therefore, do not call init_packedobjectsd more than once if you do not plan on supporting dynamically changing protocols at runtime.
 
 To build an application with the software you must link with the library. Using autoconf you can add @code{PKG_CHECK_MODULES([LIBPACKEDOBJECTSD], [libpackedobjectsd])} to your configure.ac file and then use the variables @code{$(LIBPACKEDOBJECTSD_CFLAGS)} and @code{$(LIBPACKEDOBJECTSD_LIBS)} in your Makefile.am file.
