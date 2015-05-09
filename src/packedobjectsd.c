@@ -331,30 +331,29 @@ xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj)
 
   start_time = clock();
 
-  for(i = 0; i < 3000; i++) {
-    if(strcmp(status_pdu,"c") == 0) {
-      dbg("next message is compressed");
+  if(strcmp(status_pdu,"c") == 0) {
+    dbg("next message is compressed");
 
-      doc = packedobjects_decode(pod_obj->pc, pdu);
+    doc = packedobjects_decode(pod_obj->pc, pdu);
   
     
-      if (pod_obj->pc->decode_error) {
-	alert("Failed to decode with error %d.", pod_obj->pc->decode_error);
-	pod_obj->error_code = DECODE_FAILED;
-	return NULL;
-      }
+    if (pod_obj->pc->decode_error) {
+      alert("Failed to decode with error %d.", pod_obj->pc->decode_error);
+      pod_obj->error_code = DECODE_FAILED;
+      return NULL;
     }
-    else {
-      dbg("Received XMl w/o compression");
+  }
+
+  else {
+    dbg("Received XMl w/o compression");
 
    
-      doc = xmlReadDoc((xmlChar *) pdu, NULL, NULL, 0);
-    }
+    doc = xmlReadDoc((xmlChar *) pdu, NULL, NULL, 0);
   }
 
   end_time = clock();
   if(start_time != -1 && end_time != -1) {
-    pod_obj->decode_cpu_time = ((float) end_time / CLOCKS_PER_SEC - (float) start_time / CLOCKS_PER_SEC) / 3000.0 * 1000.0;
+    pod_obj->decode_cpu_time = ((float) end_time / CLOCKS_PER_SEC - (float) start_time / CLOCKS_PER_SEC) * 1000.0;
   }
   else {
     pod_obj->decode_cpu_time = -1;
@@ -498,34 +497,34 @@ int packedobjectsd_send(packedobjectsdObject *pod_obj, xmlDocPtr doc)
   }
   start_time = clock();
 
-  for(i = 0; i < 3000; i++) {
-    if ((pod_obj->init_options  & NO_COMPRESSION) == 0) { // COMPRESSION ENABLED
-      pdu = packedobjects_encode(pod_obj->pc, doc);
-      size =  pod_obj->pc->bytes;
+  // for(i = 0; i < 3000; i++) {
+  if ((pod_obj->init_options  & NO_COMPRESSION) == 0) { // COMPRESSION ENABLED
+    pdu = packedobjects_encode(pod_obj->pc, doc);
+    size =  pod_obj->pc->bytes;
 
-      if (size == -1) {
-	//fprintf(stderr, "Failed to encode with error %d.\n", pod_obj->pc->encode_error);
-	pod_obj->error_code = ENCODE_FAILED;
-	return size;
-      }
-      compression_status[0] = 'c';
+    if (size == -1) {
+      //fprintf(stderr, "Failed to encode with error %d.\n", pod_obj->pc->encode_error);
+      pod_obj->error_code = ENCODE_FAILED;
+      return size;
     }
-    else {
-      dbg("Sending XML w/o compression");
-      xmlChar *xmlbuff;
-
-      // convert xml to string
-      xmlDocDumpFormatMemory(doc, &xmlbuff, &size, 0);
-
-      // cast xmlchar to string
-      pdu = (char *) xmlbuff;
-      compression_status[0] = 'p';
-    }
+    compression_status[0] = 'c';
   }
+  else {
+    dbg("Sending XML w/o compression");
+    xmlChar *xmlbuff;
+
+    // convert xml to string
+    xmlDocDumpFormatMemory(doc, &xmlbuff, &size, 0);
+
+    // cast xmlchar to string
+    pdu = (char *) xmlbuff;
+    compression_status[0] = 'p';
+  }
+  //  }
 
   end_time = clock();
   if(start_time != -1 && end_time != -1) {
-    pod_obj->encode_cpu_time = ((float) end_time / CLOCKS_PER_SEC - (float) start_time / CLOCKS_PER_SEC) / 3000.0 * 1000.0;
+    pod_obj->encode_cpu_time = ((float) end_time / CLOCKS_PER_SEC - (float) start_time / CLOCKS_PER_SEC)  * 1000.0;
   }
   else {
     pod_obj->encode_cpu_time = -1;
