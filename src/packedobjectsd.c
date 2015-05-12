@@ -73,9 +73,11 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
   // if options = 3, both flags are set
 
   if ((options & NO_HEARTBEAT) == 0) { // NO_HEARTBEAT flag is not set
+    pod_obj->heartbeat = 0; // initialise it to 0
     dbg("Heartbeat enabled");
   }
   else {
+    pod_obj->heartbeat = -1;
     dbg("Heartbeat not enabled");
   }
  
@@ -306,6 +308,8 @@ xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj)
   xmlDocPtr doc = NULL;
   clock_t start_time, end_time;
 
+  alert("test: waiting for new msg \n");
+
   if(pod_obj->subscriber_socket == NULL) {
     alert("packedobjectsd isn't initialised to receive message");
     return NULL;
@@ -315,13 +319,14 @@ xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj)
     pod_obj->error_code = RECEIVE_FAILED;
     return NULL;
   }
-
+  alert("test: compression status %s", status_pdu);
   dbg("compression status:- %s", status_pdu);
   if((rc = zmq_getsockopt(pod_obj->subscriber_socket, ZMQ_RCVMORE, &more, &more_size)) == -1) {
     alert("Failed to get socket option");
   }
 
   if(more) {
+    alert("test: more flag on");
     if((pdu = receiveMessagePDU(pod_obj->subscriber_socket, &size)) == NULL) {
       pod_obj->error_code = RECEIVE_FAILED;
       return NULL;
@@ -331,24 +336,34 @@ xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj)
 
   start_time = clock();
 
-  if(strcmp(status_pdu,"c") == 0) {
-    dbg("next message is compressed");
+  if(strcmp(status_pdu,"h") == 0) {
+    // set heartbeat message
+    pod_obj->heartbeat = 1;
+    printf("\n\n******* HEARTBEAT ********\n\n");
+
+    // wait for another regular message
+    doc = packedobjectsd_receive(pod_obj);
+  }
+  else if(strcmp(status_pdu,"c") == 0) {
+    dbg("Received compressed XML");
 
     doc = packedobjects_decode(pod_obj->pc, pdu);
-  
     
     if (pod_obj->pc->decode_error) {
       alert("Failed to decode with error %d.", pod_obj->pc->decode_error);
       pod_obj->error_code = DECODE_FAILED;
       return NULL;
     }
-  }
-
-  else {
-    dbg("Received XMl w/o compression");
-
-   
+  }  
+  else if (strcmp(status_pdu,"p") == 0) {
+    dbg("Received uncompressed XML");
+  
     doc = xmlReadDoc((xmlChar *) pdu, NULL, NULL, 0);
+  }
+  else {
+    alert("%s", status_pdu);
+    alert("received message with invalid prefix");
+    return NULL;
   }
 
   end_time = clock();

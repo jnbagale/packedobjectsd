@@ -26,7 +26,7 @@ int main (int argc, char *argv [])
     printf("failed to init xml document");
     exit(EXIT_FAILURE);
   }
- 
+  while(1) {
   /* send a normal pub message */
   printf("Broadcasting message on a pub socket\n"); 
   if(packedobjectsd_send(pod_obj, doc_sent) == -1){
@@ -35,6 +35,8 @@ int main (int argc, char *argv [])
   else {
     printf("message sent successfully\n");
     xml_dump_doc(doc_sent);
+  }
+  sleep(5);
   }
   
   //////// freeing memory ///////////
