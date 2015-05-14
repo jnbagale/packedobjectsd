@@ -3,6 +3,8 @@
 #define PACKEDOBJECTSD_H_
 
 #include <packedobjects/packedobjects.h>
+#include <sys/time.h>
+
 /* Undefine conflicting macroses from config.h included in packedobjects.h
    and our config.h
 */
@@ -76,6 +78,7 @@ typedef struct {
   int node_type;
   int init_options;
   int heartbeat; // -1 when heartbeat is off, 1 for regular heartbeat and 0 when heartbeat isn't received
+  time_t prev_hb_time;
   double encode_cpu_time;
   double decode_cpu_time;
   unsigned long unique_id;
@@ -90,6 +93,7 @@ void free_packedobjectsd(packedobjectsdObject *pod_obj);
 // API functions for simple PUB SUB communication
 int packedobjectsd_send(packedobjectsdObject *pod_obj, xmlDocPtr doc);
 xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj);
+int query_broker_heartbeat(packedobjectsdObject *pod_obj);
 
 // API functions for SEARCHER RESPONDER communication
 int packedobjectsd_send_search(packedobjectsdObject *pod_obj, xmlDocPtr doc);

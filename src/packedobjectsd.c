@@ -74,6 +74,7 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
 
   if ((options & NO_HEARTBEAT) == 0) { // NO_HEARTBEAT flag is not set
     pod_obj->heartbeat = 0; // initialise it to 0
+    pod_obj->prev_hb_time = time(NULL); // initialise heartbeat received time
     dbg("Heartbeat enabled");
   }
   else {
@@ -308,8 +309,7 @@ xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj)
   xmlDocPtr doc = NULL;
   clock_t start_time, end_time;
 
-  alert("test: waiting for new msg \n");
-
+  
   if(pod_obj->subscriber_socket == NULL) {
     alert("packedobjectsd isn't initialised to receive message");
     return NULL;
@@ -319,14 +319,12 @@ xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj)
     pod_obj->error_code = RECEIVE_FAILED;
     return NULL;
   }
-  alert("test: compression status %s", status_pdu);
   dbg("compression status:- %s", status_pdu);
   if((rc = zmq_getsockopt(pod_obj->subscriber_socket, ZMQ_RCVMORE, &more, &more_size)) == -1) {
     alert("Failed to get socket option");
   }
 
   if(more) {
-    alert("test: more flag on");
     if((pdu = receiveMessagePDU(pod_obj->subscriber_socket, &size)) == NULL) {
       pod_obj->error_code = RECEIVE_FAILED;
       return NULL;
@@ -337,6 +335,9 @@ xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj)
   start_time = clock();
 
   if(strcmp(status_pdu,"h") == 0) {
+    // get current system time
+    pod_obj->prev_hb_time = time(NULL);
+
     // set heartbeat message
     pod_obj->heartbeat = 1;
     printf("\n\n******* HEARTBEAT ********\n\n");
@@ -367,6 +368,7 @@ xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj)
   }
 
   end_time = clock();
+
   if(start_time != -1 && end_time != -1) {
     pod_obj->decode_cpu_time = ((float) end_time / CLOCKS_PER_SEC - (float) start_time / CLOCKS_PER_SEC) * 1000.0;
   }
@@ -644,6 +646,27 @@ int packedobjectsd_send_response(packedobjectsdObject *pod_obj, xmlDocPtr doc)
 
   return 0;
 }
+
+int query_broker_heartbeat(packedobjectsdObject *pod_obj)
+{
+  unsigned long diff_in_seconds;
+  clock_t current_time = time(NULL);
+
+  if(current_time != -1 && pod_obj->prev_hb_time != -1) { 
+    diff_in_seconds = difftime(current_time, pod_obj->prev_hb_time);
+    dbg("time since last heartbeat: %ld seconds", diff_in_seconds);
+
+    if(diff_in_seconds > 60) {
+      pod_obj->heartbeat = 0;
+      return 0;
+    }
+    else if(diff_in_seconds <= 60 & diff_in_seconds >=0) {
+      pod_obj->heartbeat = 1;
+      return 1;
+    }
+  }
+    return -1;
+  }
 
 void free_packedobjectsd(packedobjectsdObject *pod_obj)
 {
