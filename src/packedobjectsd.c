@@ -115,12 +115,30 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
 
   switch (pod_obj->node_type) {
   case SUBSCRIBER:
-    ret = packedobjectsd_subscribe(pod_obj, pod_obj->schema_hash, "", 0);
+    ret = packedobjectsd_subscribe(pod_obj, pod_obj->schema_hash, "c", 1);
     if(ret == -1) {
       alert("Failed to subscribe to packedobjectsd");
       // pod_obj->error_code =  SUBSCRIBE_FAILED;
       return NULL;
     }
+
+    ret = zmq_setsockopt (pod_obj->subscriber_socket, ZMQ_SUBSCRIBE, "p", 1);
+    if (ret == -1){
+      alert("Failed to set subscribe filter for searcher: %s", zmq_strerror (errno));
+      return NULL;
+    } 
+    dbg("Subscriber's subscription filter for plain data:- p\n");
+    
+    if ((options & NO_HEARTBEAT) == 0) { // NO_HEARTBEAT flag is not set
+      ret = zmq_setsockopt (pod_obj->subscriber_socket, ZMQ_SUBSCRIBE, "h", 1);
+
+      if (ret == -1){
+	alert("Failed to set subscribe filter for searcher: %s", zmq_strerror (errno));
+	return NULL;
+      } 
+      dbg("Subscriber's subscription filter for broker heartbeat:- h\n");
+    }
+
     break;
 
   case PUBLISHER:
@@ -140,12 +158,30 @@ packedobjectsdObject *init_packedobjectsd(const char *schema_file, int node_type
       return NULL;
     }
 
-    ret = packedobjectsd_subscribe(pod_obj, pod_obj->schema_hash, "", 0);
+    ret = packedobjectsd_subscribe(pod_obj, pod_obj->schema_hash, "c", 1);
     if(ret == -1) {
       alert("Failed to subscribe to packedobjectsd");
       //  pod_obj->error_code =  SUBSCRIBE_FAILED;
       return NULL;
-    }  
+    }
+
+    ret = zmq_setsockopt (pod_obj->subscriber_socket, ZMQ_SUBSCRIBE, "p", 1);
+    if (ret == -1){
+      alert("Failed to set subscribe filter for searcher: %s", zmq_strerror (errno));
+      return NULL;
+    } 
+    dbg("Subscriber's subscription filter for plain data:- p\n");
+    
+    if ((options & NO_HEARTBEAT) == 0) { // NO_HEARTBEAT flag is not set
+      ret = zmq_setsockopt (pod_obj->subscriber_socket, ZMQ_SUBSCRIBE, "h", 1);
+
+      if (ret == -1){
+	alert("Failed to set subscribe filter for searcher: %s", zmq_strerror (errno));
+	return NULL;
+      } 
+      dbg("Subscriber's subscription filter for broker heartbeat:- h\n");
+    }
+
     break;
 
   case SEARCHER:
@@ -299,7 +335,6 @@ static int packedobjectsd_publish(packedobjectsdObject *pod_obj, char *schema_ha
 xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj)
 {
   /* Reading the received message */
-  int i;
   int rc;
   int size;
   int64_t more;
@@ -363,8 +398,8 @@ xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj)
   }
   else {
     alert("%s", status_pdu);
-    alert("received message with invalid prefix");
-    return NULL;
+    alert("received message with invalid prefix \n ignore and wait for another message");
+    packedobjectsd_receive(pod_obj);
   }
 
   end_time = clock();
@@ -500,7 +535,6 @@ int send_network_byte(unsigned long network_byte, packedobjectsdObject *pod_obj)
 
 int packedobjectsd_send(packedobjectsdObject *pod_obj, xmlDocPtr doc)
 {
-  int i;
   int rc;
   int size;
   char *pdu = NULL;
@@ -660,7 +694,7 @@ int query_broker_heartbeat(packedobjectsdObject *pod_obj)
       pod_obj->heartbeat = 0;
       return 0;
     }
-    else if(diff_in_seconds <= 60 & diff_in_seconds >=0) {
+    else if(diff_in_seconds <= 60 && diff_in_seconds >=0) {
       pod_obj->heartbeat = 1;
       return 1;
     }
