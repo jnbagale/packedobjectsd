@@ -1,0 +1,23 @@
+
+compression status? sent as 'c' or 'p' 
+
+How to store heartbeat? 
+    heartbeat variable 0 and 1.
+    query_broker_heartbeat();
+
+Issues!
+
+1. Subscribers won't receive HeartBeat unless there is a publisher running or a broker is already registered for the schema.
+   It should work w/o any publisher as it is sent by broker.
+   Linked to Subscribers not being able to start brokers!
+
+2. Subscriber and Responder using same port and broker. Should be separate ones to avoid issues.
+
+
+init_packedobjectsd: set pod_obj->heartbeat = 0; // -1 means no heartbeat will be received
+
+packedobjectsd_receive:  sets pod_obj->heartbeat = 1 
+
+60 seconds 
+query_heartbeat_broker --> reset pod_obj->heartbeat = 0;
+Where?

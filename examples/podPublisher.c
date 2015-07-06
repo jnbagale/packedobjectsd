@@ -16,7 +16,7 @@ int main (int argc, char *argv [])
   int loop = 1;
   
   //////// Initialise packedobjectsd with schema file and specify node type  //////////
-  if((pod_obj = init_packedobjectsd(schema_file, PUBLISHER, 0)) == NULL) {
+  if((pod_obj = init_packedobjectsd(schema_file, PUBLISHER, NO_COMPRESSION)) == NULL) {
     printf("failed to init packedobjectsd");
     exit(EXIT_FAILURE);
   } 
