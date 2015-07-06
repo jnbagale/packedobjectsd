@@ -1,9 +1,9 @@
-AC_INIT(packedobjectsd, 0.0.4, jnbagale@gmail.com)
+AC_INIT(libpackedobjectsd, 0.0.4, jnbagale@gmail.com)
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([src/])
 AM_CONFIG_HEADER([src/config.h])
 
-AC_DEFINE([PROGNAME],["packedobjectsd"],["lightweight XML messaging library"])
+AC_DEFINE([PROGNAME],["libpackedobjectsd"],["lightweight XML messaging library"])
 AC_DEFINE([POD_SCHEMA],["/usr/local/share/libpackedobjectsd/packedobjectsd.xsd"],["schema used for initialisation to server"])
 
 # --enable-debug flag
