@@ -27,7 +27,7 @@
 #define POD_SCHEMA "app/native/packedobjectsd.xsd" // Using local path for pod schema in blackberry 10 QNX
 #endif
 
-#define DEFAULT_SERVER_ADDRESS "127.0.0.1" //"buildhost.uwl.ac.uk"   /* the default lookup server address */
+#define DEFAULT_SERVER_ADDRESS "buildhost.uwl.ac.uk"   /* the default lookup server address */
 #define DEFAULT_SERVER_PORT 5555  /* the default lookup server port */
 
 enum ERR_CODE {
