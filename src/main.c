@@ -28,9 +28,13 @@ static void send_file(packedobjectsdObject *pod_obj, const char *xml_file)
   if((doc_sent = xml_new_doc(xml_file)) == NULL) {
     exit_with_message("did not find .xml file");
   }
- 
+  
+  xmlChar *xml = NULL;
+  int size;
+  xmlDocDumpMemory(doc_sent, &xml, &size);
+
   /* send a normal pub message */
-  if((ret = packedobjectsd_send(pod_obj, doc_sent)) == -1){
+  if((ret = packedobjectsd_send_string(pod_obj, (const char *)xml)) == -1){
     exit_with_message(pod_strerror(pod_obj->error_code));
   }
   
@@ -43,18 +47,22 @@ static void send_file(packedobjectsdObject *pod_obj, const char *xml_file)
 static void receive_file(packedobjectsdObject *pod_obj)
 { 
   xmlDocPtr doc_received = NULL;
-
-    
+  const char *xml = NULL;  
   /* receive a normal pub message */
-  if((doc_received = packedobjectsd_receive(pod_obj)) == NULL) {
+  if((xml = packedobjectsd_receive_string(pod_obj)) == NULL) {
     exit_with_message(pod_strerror(pod_obj->error_code));
   }
 
   receive_count++;
-  printf("message received\n");
+  printf("message received\n"); 
+ 
+  if ((doc_received = xmlParseMemory(xml, strlen(xml))) == NULL) {
+    exit_with_message("Failed to parse XML string.");
+  }
   xml_dump_doc(doc_received);
+
+  free((void *)xml);
   xmlFreeDoc(doc_received);
-  
 }
 
 static void exit_with_message(const char *message)
@@ -132,11 +140,12 @@ int main (int argc, char *argv [])
   // SENDING SIMPLE XML OVER SIMPLE PUB SUB CONNECTION
 
   /* printf("Sending message on a pub socket\n"); */
-  /* send_file(pod_obj, xml_file); */
+  /* send_file(pod_obj, xml_file);  */
 
   /* printf("Receiving message on a sub socket\n"); */
   /* receive_file(pod_obj); */
-  while(loop) {
+
+ while(loop) {
     int ret;
     xmlDocPtr doc_search = NULL;
     xmlDocPtr doc_response = NULL;

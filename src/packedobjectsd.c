@@ -417,6 +417,23 @@ xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj)
   return doc;
 }
 
+unsigned char *packedobjectsd_receive_string(packedobjectsdObject *pod_obj)
+{
+  xmlDocPtr doc = NULL;
+  xmlChar *xml = NULL;
+  int size;
+
+  doc = packedobjectsd_receive(pod_obj);
+  if (doc != NULL) {
+    xmlDocDumpMemory(doc, &xml, &size);
+  }
+
+  xmlFreeDoc(doc);
+
+  // needs to be freed
+  return xml;
+}
+
 xmlDocPtr packedobjectsd_receive_search(packedobjectsdObject *pod_obj)
 {
   int rc;
@@ -580,12 +597,10 @@ int packedobjectsd_send(packedobjectsdObject *pod_obj, xmlDocPtr doc)
   else {
     pod_obj->encode_cpu_time = -1;
   }
-  
-  //alert("CPU time average for thousand encode %g ms", pod_obj->encode_cpu_time);
-
-
+   //alert("CPU time average for thousand encode %g ms", pod_obj->encode_cpu_time);
   // send "c" to notify compression enabled on next message
   // send "p" to notify compression not enabled on next message
+  
   if((rc = sendMessagePDU(pod_obj->publisher_socket, compression_status, 1, ZMQ_SNDMORE)) == -1) {
     alert("Error occurred while sending the compression status: %s", zmq_strerror (errno));
     pod_obj->error_code = SEND_FAILED;
@@ -601,6 +616,23 @@ int packedobjectsd_send(packedobjectsdObject *pod_obj, xmlDocPtr doc)
   
   dbg("data encoded and sent\n");
  
+  return rc;
+}
+
+int packedobjectsd_send_string(packedobjectsdObject *pod_obj, const char *xml)
+{
+  int rc;
+  xmlDocPtr doc = NULL;
+
+  if ((doc = xmlParseMemory(xml, strlen(xml))) == NULL) {
+    alert("Failed to parse XML string.");
+    return -1;
+  }
+
+  rc = packedobjectsd_send(pod_obj, doc);
+
+  xmlFree(doc);
+
   return rc;
 }
 

@@ -1,5 +1,5 @@
 
-INCLUDES = -Wall -g  $(LIBZMQ_CFLAGS) $(LIBXML2_CFLAGS) $(LIBPACKEDOBJECTS_CFLAGS)
+AM_CPPFLAGS = -Wall -g  $(LIBZMQ_CFLAGS) $(LIBXML2_CFLAGS) $(LIBPACKEDOBJECTS_CFLAGS)
 
 lib_LTLIBRARIES = libpackedobjectsd.la
 
@@ -24,7 +24,7 @@ check_PROGRAMS = packedobjectsdtest
 
 packedobjectsdtest_SOURCES = main.c
 
-packedobjectsdtest_LDADD = $(lib_LTLIBRARIES) # $(LIBXML2_LIBS)
+packedobjectsdtest_LDADD = $(lib_LTLIBRARIES) $(LIBXML2_LIBS)
 
 
 pkgconfigdir = $(libdir)/pkgconfig

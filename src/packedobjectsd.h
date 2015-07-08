@@ -95,6 +95,10 @@ int packedobjectsd_send(packedobjectsdObject *pod_obj, xmlDocPtr doc);
 xmlDocPtr packedobjectsd_receive(packedobjectsdObject *pod_obj);
 int query_broker_heartbeat(packedobjectsdObject *pod_obj);
 
+// Convenience functions for sending xml as string in a PUB SUB communication
+int packedobjectsd_send_string(packedobjectsdObject *pod_obj, const char *xml);
+unsigned char *packedobjectsd_receive_string(packedobjectsdObject *pod_obj);
+
 // API functions for SEARCHER RESPONDER communication
 int packedobjectsd_send_search(packedobjectsdObject *pod_obj, xmlDocPtr doc);
 xmlDocPtr packedobjectsd_receive_search(packedobjectsdObject *pod_obj);
